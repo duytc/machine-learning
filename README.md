@@ -5,20 +5,31 @@ Scoring service for Unified Report database
 Get started
 -----------
 
-- Modify src/main/java/App.java
+####  1. Config parameters
+- Open run.sh in unified-report-scorer folder and edit parameter in ```-Dexec.args```
+    
+```
+#!/bin/bash
+sudo apt-get install maven
+mvn compile
+mvn exec:java -Dexec.mainClass="com.pubvantage.AppMain" -Dexec.args="--autoOptimizationId = 1,2 --identifier = allenwestrepublic.com,androidauthority.com" -Dexec.cleanupDaemonThreads=false
+```
 
-- Build
+- Bellow is som example of parameters
 
 ```
-mvn install
+-Dexec.args examples
+-Dexec.args="--autoOptimizationId = all --identifier = allenwestrepublic.com,androidauthority.com"
+-Dexec.args="--autoOptimizationId = all --identifier = all"
+-Dexec.args="--autoOptimizationId = all"
+-Dexec.args="--autoOptimizationId = 1,2"
 ```
 
-- Download apache spark from [http://spark.apache.org/downloads.html](http://spark.apache.org/downloads.html), extract to `dev/`
-
-- Run
+#### 2. Run
 
 ```
-./dev/spark-2.2.1-bin-hadoop2.7/bin/spark-submit --master local[*] --class App target/unified-report-scorer-1.0-SNAPSHOT.jar
+cd path/of/unified-report-scorer/
+./run.sh
 ```
 
 References

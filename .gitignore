@@ -1,3 +1,14 @@
 /build/
 .idea
 /target/
+/dev
+logging.log
+config.properties
+hibernate.cfg.xml
+ConvertedData/
+tmp/
+logging.*
+run-cluster2.sh
+unified-report-scorer.iml
+spark-2.2.0-bin-hadoop2.7.tgz
+
