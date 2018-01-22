@@ -1,9 +1,28 @@
 #!/bin/bash
 sudo apt-get install maven
 mvn compile
-mvn exec:java -Dexec.mainClass="com.pubvantage.AppMain" -Dexec.args="--autoOptimizationId = 1,2 --identifier = allenwestrepublic.com,androidauthority.com" -Dexec.cleanupDaemonThreads=false
-#-Dexec.args examples
-#-Dexec.args="--autoOptimizationId = all --identifier = allenwestrepublic.com,androidauthority.com"
-#-Dexec.args="--autoOptimizationId = all --identifier = all"
-#-Dexec.args="--autoOptimizationId = all"
-#-Dexec.args="--autoOptimizationId = 1,2"
+
+for i in "$@"
+do
+case $i in
+    -a=*|--autoOptimizationId=*)
+    autoOptimizationId="${i#*=}"
+    shift # past argument=value
+    ;;
+    -i=*|--identifier=*)
+    identifier="${i#*=}"
+    shift # past argument=value
+    ;;
+    --default)
+    DEFAULT=YES
+    shift # past argument with no value
+    ;;
+    *)
+          # unknown option
+    ;;
+esac
+done
+#echo "FILE autoOptimizationId  = ${autoOptimizationId}"
+#echo "SEARCH PATH     = ${identifier}"
+
+mvn exec:java -Dexec.mainClass="com.pubvantage.AppMain" -Dexec.args="--autoOptimizationId = ${autoOptimizationId} --identifier = ${identifier}" -Dexec.cleanupDaemonThreads=false
