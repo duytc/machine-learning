@@ -5,32 +5,23 @@ Scoring service for Unified Report database
 Get started
 -----------
 
-####  1. Config parameters
-- Open run.sh in unified-report-scorer folder and edit parameter in ```-Dexec.args```
-    
+####  1. Requirements
+
+- JDK 8.
+- Maven:
 ```
-#!/bin/bash
 sudo apt-get install maven
-mvn compile
-mvn exec:java -Dexec.mainClass="com.pubvantage.AppMain" -Dexec.args="--autoOptimizationId = 1,2 --identifier = allenwestrepublic.com,androidauthority.com" -Dexec.cleanupDaemonThreads=false
-```
-
-- Bellow is som example of parameters
-
-```
--Dexec.args examples
--Dexec.args="--autoOptimizationId = all --identifier = allenwestrepublic.com,androidauthority.com"
--Dexec.args="--autoOptimizationId = all --identifier = all"
--Dexec.args="--autoOptimizationId = all"
--Dexec.args="--autoOptimizationId = 1,2"
 ```
 
 #### 2. Run
 
 ```
 cd path/of/unified-report-scorer/
-./run.sh
+./run.sh -a=1,2,3 -i='identifier 1','identifier 2'
 ```
+
+- -a : Auto optimization config ids
+- -i : Identifiers
 
 References
 ----------
