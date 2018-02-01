@@ -1,5 +1,7 @@
 package com.pubvantage.converter;
 
+import com.pubvantage.entity.ConvertedDataWrapper;
+
 public interface DataConverterInterface {
-    boolean doConvert(long autoOptimizationId, String identifier);
+    ConvertedDataWrapper doConvert(long autoOptimizationId, String identifier);
 }

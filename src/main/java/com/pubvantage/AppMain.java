@@ -1,181 +1,310 @@
 package com.pubvantage;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.pubvantage.Authentication.Authentication;
+import com.pubvantage.RestParams.LearnerResponse;
+import com.pubvantage.RestParams.LearningProcessParams;
+import com.pubvantage.RestParams.PredictionProcessParams;
 import com.pubvantage.converter.DataConverterInterface;
 import com.pubvantage.converter.LinearRegressionConverter;
+import com.pubvantage.entity.ConvertedDataWrapper;
+import com.pubvantage.entity.CoreAutoOptimizationConfig;
 import com.pubvantage.entity.CoreLearningModel;
 import com.pubvantage.learner.LearnerInterface;
 import com.pubvantage.learner.LinearRegressionLearner;
-import com.pubvantage.service.DataTrainingService;
-import com.pubvantage.service.DataTrainingServiceImpl;
+import com.pubvantage.service.*;
+import com.pubvantage.service.Learner.LinearRegressionScoring;
 import com.pubvantage.utils.*;
+import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.regression.LinearRegressionModel;
 import org.apache.spark.sql.SparkSession;
+import spark.Request;
+import spark.Response;
 
 import java.util.*;
 import java.util.stream.IntStream;
 
+import static spark.Spark.*;
+
 public class AppMain {
-    //    private static final String MASTER = "spark://dtag-litpu:7077";
-    public static final String LINEAR_REGRESSION_TYPE = "LinearRegression";
-    public static SparkSession spark;
-    public static JavaSparkContext sparkContext;
-    static Logger logger = Logger.getLogger(AppMain.class.getName());
-    private static DataTrainingService trainingService = new DataTrainingServiceImpl();
-    private static AppResource appResource;
-    private static Properties properties;
-    private static SparkDataUtil dataUtil = new SparkDataTrainingUtilImpl();
+
+    private static final String LINEAR_REGRESSION_TYPE = "LinearRegression";
+    private static final int MAX_THREADS = 8;
+    private static final int MIN_THREADS = 2;
+    private static final int TIME_OUT_MILLIS = 30000;
+    public static SparkSession sparkSession;
+    private static JavaSparkContext sparkContext;
+    private static String sparkMaster;
+    private static String SPARK_MASTER_DEFAULT = "local[*]";
+    private static Logger logger = Logger.getLogger(AppMain.class.getName());
+    private static DataTrainingServiceInterface dataTrainingService;
+    private static CoreLearningModelServiceInterface coreLearnerService;
+    private static Properties defaultConfig;
+    private static Properties userConfig;
+    private static int DEFAULT_PORT = 8086;
+    private static int PORT;
 
     static {
-        appResource = new AppResource();
-        properties = appResource.getPropValues();
+        AppResource appResource = new AppResource();
+        defaultConfig = appResource.getPropValues();
+        userConfig = appResource.getUserConfiguration();
     }
 
     public static void main(String[] args) {
-//        args = createTestData();
-        printArgumentValues(args);
+        getUserConfiguration();
 
-        createSparkContext();
+        sparkMaster = extractCommandLineParameter(args);
+        if (!createSparkContext(sparkMaster)) {
+            logger.info("------------------------");
+            logger.info("sparkMaster: " + sparkMaster);
+            logger.error("Please check your configuration");
+            logger.info("------------------------");
+            return;
+        }
 
-        Map<Long, String[]> items = getAutoOptimizationConfigAndIdentifiers(args);
-        logger.info("Generate model and save to data base");
-        items.forEach(AppMain::generateAndSaveModel);
+        logger.info("------------------------");
+        logger.info("sparkMaster: " + sparkMaster);
+        logger.info("Waiting for requests ...");
+        logger.info("------------------------");
 
-        stopSparkContext();
+        //REST config
+        port(PORT);
+        threadPool(MAX_THREADS, MIN_THREADS, TIME_OUT_MILLIS);
+        learningProcessAction();
+        predictScoreAction();
+
     }
 
+    /**
+     * listen and process learning request
+     */
+    private static void learningProcessAction() {
+        post("api/learner", AppMain::activeLearningProcess);
+    }
+
+    /**
+     * listen and process score request
+     */
+    private static void predictScoreAction() {
+        post("api/scores", AppMain::predictScores);
+    }
+
+    /**
+     * @param args parameters from command line
+     * @return spark master
+     */
+    private static String extractCommandLineParameter(String[] args) {
+        logger.info("--------------------------------------------");
+        if (args == null || args.length == 0) {
+            logger.info("Use default spark master: " + SPARK_MASTER_DEFAULT);
+            return SPARK_MASTER_DEFAULT;
+        }
+        logger.info("Use spark master: " + args[0]);
+        return args[0];
+    }
+
+    /**
+     * get user configuration
+     */
+    private static void getUserConfiguration() {
+        PORT = getPortConfig();
+        sparkMaster = getSparkMasterConfig();
+    }
+
+    /**
+     * @return spark master depend on configuration
+     */
+    private static String getSparkMasterConfig() {
+        String master = defaultConfig.getProperty("spark.master");
+        if (master == null || master.isEmpty()) {
+            master = SPARK_MASTER_DEFAULT;
+        }
+        return master;
+    }
+
+    /**
+     * @return user desire port to run rest api
+     */
+    private static int getPortConfig() {
+        int port;
+
+        String portNumberString = userConfig.getProperty("api.port");
+        try {
+            port = Integer.parseInt(portNumberString);
+        } catch (Exception e) {
+            logger.warn("port " + portNumberString + "from user config is not valid");
+            portNumberString = defaultConfig.getProperty("api.port");
+            try {
+                port = Integer.parseInt(portNumberString);
+            } catch (Exception ex) {
+                port = DEFAULT_PORT;
+                logger.info("Use default port " + port);
+            }
+        }
+        return port;
+    }
+
+    /**
+     * process learning request
+     *
+     * @param request  request
+     * @param response response
+     * @return json data contain result of process
+     */
+    private static String activeLearningProcess(Request request, Response response) {
+        response.type("application/json");
+
+        //extract data from request
+        LearningProcessParams learningProcessParams = new LearningProcessParams(request);
+        boolean isValidParams = learningProcessParams.validateParams();
+        if (!isValidParams) {
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, "Parameter is invalid", null);
+            response.status(HttpStatus.SC_BAD_REQUEST);
+            return new Gson().toJson(learnerResponse);
+        }
+
+        //verify token
+        Authentication authentication = new Authentication(learningProcessParams.getAutoOptimizationConfigId(), learningProcessParams.getToken());
+        boolean isPassAuthentication = authentication.authenticate();
+        if (!isPassAuthentication) {
+            response.status(HttpStatus.SC_UNAUTHORIZED);
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, "Fail authentication", null);
+            return new Gson().toJson(learnerResponse);
+        }
+
+        //pass verify token
+        //get data then convert and learn
+        Long autoOptimizationConfigId = learningProcessParams.getAutoOptimizationConfigId();
+        String[] identifiers = getIdentifiers(autoOptimizationConfigId);
+        JsonArray dataResponseArray = new JsonArray();
+       List<String> successIdentifiers =  generateAndSaveModel(autoOptimizationConfigId, identifiers);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("autoOptimizationConfigId", autoOptimizationConfigId);
+        jsonObject.add("identifiers", JsonUtil.toJsonArray(successIdentifiers.toArray(new String[0])));
+        dataResponseArray.add(jsonObject);
+        //return response
+        LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, "Learn successfully", dataResponseArray);
+        response.status(HttpStatus.SC_OK);
+
+        return new Gson().toJson(learnerResponse);
+    }
+
+    /**
+     * Predict the scores for multiple conditions
+     *
+     * @param request  rest request
+     * @param response response
+     * @return json array that are score for multiple condition
+     */
+    private static String predictScores(Request request, Response response) {
+        response.type("application/json");
+        PredictionProcessParams predictionProcessParams = new PredictionProcessParams(request);
+        boolean isValidParams = predictionProcessParams.validates();
+        if (!isValidParams) {
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, "Parameter is invalid", null);
+            response.status(HttpStatus.SC_BAD_REQUEST);
+            return new Gson().toJson(learnerResponse);
+        }
+
+        Long autoOptimizationConfigId = predictionProcessParams.getAutoOptimizationConfigId();
+        List<String> identifiers = predictionProcessParams.getIdentifiers();
+        JsonArray conditions = predictionProcessParams.getConditions();
+        String token = predictionProcessParams.getToken();
+
+        Authentication authentication = new Authentication(autoOptimizationConfigId, token);
+        boolean isValid = authentication.authenticate();
+        if (!isValid) {
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, "The request is unauthenticated", null);
+            response.status(HttpStatus.SC_UNAUTHORIZED);
+            return new Gson().toJson(learnerResponse);
+        }
+
+        CoreAutoOptimizationConfigService coreAutoOptimizationConfigService = new CoreAutoOptimizationConfigService();
+        CoreAutoOptimizationConfig coreAutoOptimizationConfig = coreAutoOptimizationConfigService.findById(autoOptimizationConfigId);
+
+        LinearRegressionScoring linearRegressionScoring = new LinearRegressionScoring(coreAutoOptimizationConfig, identifiers, conditions);
+        Map<String, Map<String, Double>> predictions = linearRegressionScoring.predict();
+
+        return new Gson().toJson(predictions);
+    }
+
+    /**
+     * stop spark, hibernate
+     */
     private static void stopSparkContext() {
         HibernateUtil.shutdown();
-        spark.stop();
+        sparkSession.stop();
         sparkContext.stop();
     }
 
-    private static void createSparkContext() {
-
-        String appName = properties.getProperty("spark.app.name");
-        String master = properties.getProperty("spark.master");
-
+    /**
+     * create spark context
+     *
+     * @param master master url
+     * @return status of creating spark context
+     */
+    private static boolean createSparkContext(String master) {
+        String appName = defaultConfig.getProperty("spark.app.name");
         SparkConf sparkConf = new SparkConf()
                 .setAppName(appName)
                 .setMaster(master);
-        sparkContext = new JavaSparkContext(sparkConf);
-        spark = SparkSession
-                .builder()
-                .appName(appName)
-                .getOrCreate();
+        try {
+            sparkContext = new JavaSparkContext(sparkConf);
+            sparkSession = SparkSession
+                    .builder()
+                    .appName(appName)
+                    .getOrCreate();
 
-        HibernateUtil.startSession();
+            HibernateUtil.startSession();
+
+            dataTrainingService = new DataTrainingService();
+            coreLearnerService = new CoreLearningModelService();
+            return true;
+        } catch (Exception e) {
+            logger.error("Error occurs when create spark context: " + e.getMessage(), e);
+            return false;
+        }
     }
 
     /**
-     * @param args input parameters form command line
-     * @return auto optimization config id and identifiers data
-     */
-    private static Map<Long, String[]> getAutoOptimizationConfigAndIdentifiers(String[] args) {
-        Map<Long, String[]> items = new LinkedHashMap<>();
-
-        String autoOptimizationIdKeyParameter = properties.getProperty("command.parameter.auto.optimization.id");
-        String identifierKeyParameter = properties.getProperty("command.parameter.identifier");
-        String allKey = properties.getProperty("command.parameter.value.all");
-
-        int autoOptimizationIdParameterIndex = getIndexOfStringInArray(autoOptimizationIdKeyParameter, args);
-
-        if (autoOptimizationIdParameterIndex < 0) {
-            int identifierParameterIndex = getIndexOfStringInArray(identifierKeyParameter, args);
-
-
-            if (identifierParameterIndex >= 0) {
-                logger.error("WRONG PARAMETER: Auto optimization id is required");
-                return items;
-            }
-            //get all config id and identifiers
-            String[] autoOptimizationIdParameterArray = filterListAutoOptimizationConfigId(new String[0], true);
-
-            for (String autoOptimizationConfigId : autoOptimizationIdParameterArray) {
-                String[] identifiers = filterIdentifier(autoOptimizationConfigId, new String[0], true);
-                items.put(Long.parseLong(autoOptimizationConfigId), identifiers);
-            }
-        } else if (args.length > autoOptimizationIdParameterIndex + 2) {
-            String autoOptimizationIdParameterString = args[autoOptimizationIdParameterIndex + 2];
-            String[] autoOptimizationIdParameterArray = autoOptimizationIdParameterString.split(",");
-            boolean runAllAutoOptimizationConfigId = getIndexOfStringInArray(allKey, autoOptimizationIdParameterArray) >= 0;
-
-            autoOptimizationIdParameterArray = filterListAutoOptimizationConfigId(autoOptimizationIdParameterArray, runAllAutoOptimizationConfigId);
-
-            //filter identifiers for each config id
-            for (String autoOptimizationConfigId : autoOptimizationIdParameterArray) {
-                String[] identifierParameterArray = new String[0];
-                boolean runAllIdentifier = false;
-                int identifierParameterIndex = getIndexOfStringInArray(identifierKeyParameter, args);
-
-                if (identifierParameterIndex < 0) {
-                    runAllIdentifier = true;
-                } else if (args.length > identifierParameterIndex + 2) {
-                    String identifierParameterString = args[identifierParameterIndex + 2];
-                    identifierParameterArray = identifierParameterString.split(",");
-                    runAllIdentifier = getIndexOfStringInArray(allKey, identifierParameterArray) >= 0;
-                }
-
-                String[] identifiers = filterIdentifier(autoOptimizationConfigId, identifierParameterArray, runAllIdentifier);
-
-                items.put(Long.parseLong(autoOptimizationConfigId), identifiers);
-            }
-
-        }
-        return items;
-    }
-
-    private static String[] filterIdentifier(String autoOptimizationConfigId, String[] identifierParameterArray, boolean runAllIdentifier) {
-        return dataUtil.filterIdentifier(autoOptimizationConfigId, identifierParameterArray, runAllIdentifier);
-
-    }
-
-    private static int getIndexOfStringInArray(String autoOptimizationIdKeyParameter, String[] parameterData) {
-        if (autoOptimizationIdKeyParameter == null || autoOptimizationIdKeyParameter.isEmpty()) {
-            return -1;
-        }
-        int size = parameterData.length;
-        for (int index = 0; index < size; index++) {
-            if (autoOptimizationIdKeyParameter.toLowerCase().equals(parameterData[index].toLowerCase())) {
-                return index;
-            }
-        }
-        return -1;
-    }
-
-
-    /**
-     * get All auto optimization id
+     * get list identifiers
      *
-     * @return
+     * @param autoOptimizationConfigId auto optomization config id
+     * @return list of identifiers
      */
-    private static String[] filterListAutoOptimizationConfigId(String[] autoOptimizationIdParameterArray, boolean runAllAutoOptimizationConfigId) {
-        return dataUtil.filterListAutoOptimizationConfigId(autoOptimizationIdParameterArray, runAllAutoOptimizationConfigId);
+    private static String[] getIdentifiers(Long autoOptimizationConfigId) {
+        return dataTrainingService.getIdentifiers(autoOptimizationConfigId);
+
     }
 
     /**
      * @param autoOptimizationId auto optimization id
      * @param identifiers        identifiers
      */
-    private static void generateAndSaveModel(long autoOptimizationId, String[] identifiers) {
+    private static List<String> generateAndSaveModel(long autoOptimizationId, String[] identifiers) {
+
+        List<String> successIdentifiers = new ArrayList<>();
         List<CoreLearningModel> modelList = new ArrayList<>();
         //converter
         DataConverterInterface converter = new LinearRegressionConverter();
         //leaner
         IntStream.range(0, identifiers.length).forEach((int i) -> {
-            boolean didConvert = converter.doConvert(autoOptimizationId, identifiers[i]);
-            if (didConvert) {
+            ConvertedDataWrapper convertedDataWrapper = converter.doConvert(autoOptimizationId, identifiers[i]);
+            if (convertedDataWrapper != null && convertedDataWrapper.getDataSet() != null) {
                 String identifier = identifiers[i];
-                LearnerInterface leaner = new LinearRegressionLearner(autoOptimizationId, identifier, spark);
+                LearnerInterface leaner = new LinearRegressionLearner(autoOptimizationId, identifier, sparkSession, convertedDataWrapper);
                 modelList.add(generateModel(leaner));
+                successIdentifiers.add(identifier);
             }
         });
         saveModelToDatabase(modelList);
-
+        return successIdentifiers;
     }
 
     /**
@@ -185,14 +314,15 @@ public class AppMain {
      */
     private static CoreLearningModel generateModel(LearnerInterface learner) {
         CoreLearningModel model = new CoreLearningModel();
-        model.setId(0l);
+        model.setId(0L);
         model.setAutoOptimizationConfigId(learner.getAutoOptimizationConfigId());
         model.setType(LINEAR_REGRESSION_TYPE);
         model.setUpdatedDate(new Date());
-        model.setCategoricalFieldWeights(getCategory(learner.getAutoOptimizationConfigId(), learner.getIdentifier()));
-        model.setForecastFactorValues(getForeCast(learner.getAutoOptimizationConfigId(), learner.getIdentifier()));
+        model.setCategoricalFieldWeights(learner.getConvertedDataWrapper().getCategoryWeight().toString());
+        model.setForecastFactorValues(learner.getConvertedDataWrapper().getForecast().toString());
         model.setModel(getModelStringData(learner));
         model.setIdentifier(learner.getIdentifier());
+        model.setModePath(FilePathUtil.getLearnerModelPath(learner.getAutoOptimizationConfigId(), learner.getIdentifier()));
 
         return model;
     }
@@ -203,33 +333,15 @@ public class AppMain {
      * @param modelList list of model
      */
     private static void saveModelToDatabase(List<CoreLearningModel> modelList) {
-        trainingService.saveListModel(modelList);
-    }
-
-    /**
-     * @return forecast data from file
-     */
-    private static String getForeCast(long autoOptimizationId, String identifier) {
-        JsonObject jsonObject = JsonFileHelper.getJsonFromFile(FilePathHelper.getConvertedDataPath(autoOptimizationId, identifier),
-                properties.getProperty("factor.forecast.value"));
-        return jsonObject.toString();
-    }
-
-    /**
-     * @return category weight from file
-     */
-    private static String getCategory(long autoOptimizationId, String identifier) {
-        JsonObject jsonObject = JsonFileHelper.getJsonFromFile(FilePathHelper.getConvertedDataPath(autoOptimizationId, identifier),
-                properties.getProperty("field.category.weight"));
-        return jsonObject.toString();
+        coreLearnerService.saveListModel(modelList);
     }
 
     /**
      * @param learner learned data
-     * @return
+     * @return json data of model
      */
     private static String getModelStringData(LearnerInterface learner) {
-        String[] objectiveAndFactor = CSVHelper.read(properties.getProperty("path.header"));
+        List<String> objectiveAndFactor = learner.getConvertedDataWrapper().getObjectiveAndFactors();
 
         JsonObject jsonObject = new JsonObject();
         LinearRegressionModel model = learner.getLrModel();
@@ -243,21 +355,29 @@ public class AppMain {
         for (int i = 0; i < coefficientsArray.length; i++) {
             int factorIndex = i + 1;// index 0 is objective
             if (Double.isNaN(coefficientsArray[i])) {
-                coefficient.addProperty(objectiveAndFactor[factorIndex], "null");
+                coefficient.addProperty(objectiveAndFactor.get(factorIndex), "null");
             } else {
-                coefficient.addProperty(objectiveAndFactor[factorIndex], coefficientsArray[i]);
+                double value = ConvertUtil.convertObjectToDecimal(coefficientsArray[i]).doubleValue();
+                coefficient.addProperty(objectiveAndFactor.get(factorIndex), value);
             }
         }
 
         jsonObject.add("coefficient", coefficient);
-        jsonObject.addProperty("intercept", model.intercept());
+
+        if (Double.isNaN(model.intercept())) {
+            jsonObject.addProperty("intercept", "null");
+        } else {
+            double value = ConvertUtil.convertObjectToDecimal(model.intercept()).doubleValue();
+            jsonObject.addProperty("intercept", value);
+        }
+
         return jsonObject.toString();
     }
 
     /**
      * Create test data sample
      *
-     * @return
+     * @return data test
      */
     private static String[] createTestData() {
         String[] args;
@@ -273,15 +393,4 @@ public class AppMain {
         return args;
     }
 
-    /**
-     * Print values of parameter
-     *
-     * @param args
-     */
-    private static void printArgumentValues(String[] args) {
-        logger.info("Argument values:");
-        for (int i = 0; i < args.length; i++) {
-            logger.info(" " + args[i]);
-        }
-    }
 }

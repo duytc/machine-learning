@@ -9,7 +9,7 @@ public class CoreLearningModel {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
-    private Long id;
+    private long id;
 
     @Column(name = "auto_optimization_config_id")
     private Long autoOptimizationConfigId;
@@ -32,6 +32,10 @@ public class CoreLearningModel {
 
     @Column(name = "categorical_field_weights")
     private String categoricalFieldWeights;
+
+    @Column(name = "model_path")
+    private String modelPath;
+
 
     public CoreLearningModel() {
     }
@@ -108,5 +112,13 @@ public class CoreLearningModel {
 
     public void setCategoricalFieldWeights(String categoricalFieldWeights) {
         this.categoricalFieldWeights = categoricalFieldWeights;
+    }
+
+    public String getModelPath() {
+        return modelPath;
+    }
+
+    public void setModePath(String modelPath) {
+        this.modelPath = modelPath;
     }
 }

@@ -2,40 +2,42 @@ package com.pubvantage.converter;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.pubvantage.AppMain;
-import com.pubvantage.entity.DataType;
-import com.pubvantage.entity.DoubleAccumulator;
-import com.pubvantage.utils.*;
+import com.pubvantage.entity.ConvertedDataWrapper;
+import com.pubvantage.entity.FactorDataType;
+import com.pubvantage.service.CoreAutoOptimizationConfigService;
+import com.pubvantage.service.CoreAutoOptimizationConfigServiceInterface;
+import com.pubvantage.service.DataTrainingService;
+import com.pubvantage.service.DataTrainingServiceInterface;
+import com.pubvantage.utils.ConvertUtil;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.log4j.Logger;
+import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructType;
 
 import java.util.*;
 
 public class LinearRegressionConverter implements DataConverterInterface {
-    private final int objectiveIndex = 0;
-    private SparkDataUtil sparkDataUtil = new SparkDataTrainingUtilImpl();
-    private Dataset<Row> trainingDataSet;
-    private JsonObject fieldType;
+    private CoreAutoOptimizationConfigServiceInterface autoOptimizationConfigService;
+    private DataTrainingServiceInterface dataTrainingService;
     private String[] orderFieldType;
-    private List<String> positiveFactors;
-    private List<String> negativeFactors;
     private int[] positiveOrder;
     private int[] negativeOrder;
-    private AppResource appResource;
-    private Properties properties;
-
     private String objectiveAndFactor[];
-
+    private final int objectiveIndex = 0;
     private List<String> numberTypeFactors;
-    private Map<Integer, Map<String, Double>> textValueMap;
     private List<String> textAndDateFactors;
-    static Logger logger = Logger.getLogger(AppMain.class.getName());
+
+    private final int POSITIVE = 1;
+    private final int NEGATIVE = -1;
 
     public LinearRegressionConverter() {
-        appResource = new AppResource();
-        properties = appResource.getPropValues();
+        autoOptimizationConfigService = new CoreAutoOptimizationConfigService();
+        dataTrainingService = new DataTrainingService();
     }
 
     /**
@@ -44,63 +46,56 @@ public class LinearRegressionConverter implements DataConverterInterface {
      * @param autoOptimizationId input autoOptimizationId
      * @param identifier         input identifier
      */
-    public boolean doConvert(long autoOptimizationId, String identifier) {
+    public ConvertedDataWrapper doConvert(long autoOptimizationId, String identifier) {
+        ConvertedDataWrapper convertedDataWrapper = new ConvertedDataWrapper();
         //[objective, factor1, factor2,...]
-        objectiveAndFactor = sparkDataUtil.getListFactor(autoOptimizationId);
-        FilePathHelper.createDataConvertedFolder(properties.getProperty("path.header"));
-        CSVHelper.writeNoHeader(properties.getProperty("path.header"), objectiveAndFactor, false);
+        objectiveAndFactor = autoOptimizationConfigService.getObjectiveAndFactors(autoOptimizationId);
 
         //prepare field type data
-        fieldType = sparkDataUtil.getFieldType(autoOptimizationId);
+        JsonObject fieldType = autoOptimizationConfigService.getFieldType(autoOptimizationId);
         orderFieldType = generateOrderFieldType(fieldType);
-
         numberTypeFactors = generateNumberTypeFactors(objectiveAndFactor);
         textAndDateFactors = generateTextFactors(objectiveAndFactor);
-
         // get data from DB
-        trainingDataSet = sparkDataUtil.getDataSetByTable(new StringBuilder("__data_training_")
-                .append(autoOptimizationId).toString(), identifier, objectiveAndFactor);
-
+        Dataset<Row> trainingDataSet = dataTrainingService.getDataSetByTable(autoOptimizationId, identifier, objectiveAndFactor);
+//        trainingDataSet.show();
         if (trainingDataSet == null || trainingDataSet.count() == 0) {
-            return false;
+            return null;
         }
-
         //prepare positive, negative, objective
-        positiveFactors = sparkDataUtil.getPositiveNegativeField(autoOptimizationId, "positive_factors");
-        negativeFactors = sparkDataUtil.getPositiveNegativeField(autoOptimizationId, "negative_factors");
-
+        List<String> positiveFactors = autoOptimizationConfigService.getPositiveFactors(autoOptimizationId);
+        List<String> negativeFactors = autoOptimizationConfigService.getNegativeFactors(autoOptimizationId);
         positiveFactors = handleBothPositiveAndNegativeFactorIsEmpty(positiveFactors, negativeFactors, objectiveAndFactor);
-
         positiveOrder = new int[objectiveAndFactor.length];
-        positiveOrder = updateOrder(positiveFactors, 1);
+        positiveOrder = generateArrayFollowByFactorOrder(positiveFactors, POSITIVE);
         negativeOrder = new int[objectiveAndFactor.length];
-        negativeOrder = updateOrder(negativeFactors, -1);
+        negativeOrder = generateArrayFollowByFactorOrder(negativeFactors, NEGATIVE);
 
         //each factor: group by -> sum
         List<Dataset<Row>> sumNumberedDataByTextGroups = sumNumberedDataByTextGroup(trainingDataSet);
-        textValueMap = computeTextValue(sumNumberedDataByTextGroups);
-
-        //create folder to save
-        String fileName = properties.getProperty("data.convert");
-        if (fileName == null || fileName.isEmpty()) {
-            fileName = "converted_data";
-        }
-        String filePath = createDataConvertedFilePath(getPathToSaveFile(autoOptimizationId, identifier, fileName, "txt"));
-
-        saveConvertedDataToFile(filePath, trainingDataSet, textValueMap);
+        Map<Integer, Map<String, Double>> textValueMap = computeTextValue(sumNumberedDataByTextGroups);
+        //save data set
+        convertedDataWrapper.setDataSet(convertedData(trainingDataSet, textValueMap));
         //category
-        handleCategory(textValueMap, autoOptimizationId, identifier);
+        convertedDataWrapper.setCategoryWeight(generateCategoryFieldWeight(textValueMap));
         //forecast
-        handleForecast(textValueMap, autoOptimizationId, identifier);
-
-        return true;
+        convertedDataWrapper.setForecast(generateForecastFactorValuesLocal(textValueMap, trainingDataSet));
+        //save objectiveAndFactor
+        convertedDataWrapper.setObjectiveAndFactors(Arrays.asList(objectiveAndFactor));
+        return convertedDataWrapper;
     }
 
+    /**
+     * @param positiveFactors    positive factors
+     * @param negativeFactors    negative factors
+     * @param objectiveAndFactor objective
+     * @return If both positiveFactors and negativeFactors are null -> all factors are positive
+     */
     private List<String> handleBothPositiveAndNegativeFactorIsEmpty(List<String> positiveFactors, List<String> negativeFactors, String[] objectiveAndFactor) {
         if ((positiveFactors == null || positiveFactors.isEmpty()) && (negativeFactors == null || negativeFactors.isEmpty())) {
             positiveFactors = new ArrayList<>();
             for (int i = 1; i < objectiveAndFactor.length; i++) {
-                if (DataType.NUMBER.equals(orderFieldType[i]) || DataType.DECIMAL.equals(orderFieldType[i]))
+                if (FactorDataType.NUMBER.equals(orderFieldType[i]) || FactorDataType.DECIMAL.equals(orderFieldType[i]))
                     positiveFactors.add(objectiveAndFactor[i]);
             }
         }
@@ -108,50 +103,62 @@ public class LinearRegressionConverter implements DataConverterInterface {
     }
 
     /**
-     * @param filePath        path need to save file
      * @param trainingDataSet training data
-     * @param textValueMap    data after converted text & data to number
+     * @param textValueMap    converted text data (text -> number)
+     * @return data set contain all value is number
      */
 
-    private void saveConvertedDataToFile(String filePath, Dataset<Row> trainingDataSet, Map<Integer, Map<String, Double>> textValueMap) {
-        //need to create local variable to access in trainingDataSet.foreachPartition()
-        String[] objectiveAndFactor = this.objectiveAndFactor;
+    private Dataset<Row> convertedData(Dataset<Row> trainingDataSet, Map<Integer, Map<String, Double>> textValueMap) {
+        StructType structType = new StructType();
+        for (String anObjectiveAndFactor : objectiveAndFactor) {
+            structType = structType.add(anObjectiveAndFactor, DataTypes.DoubleType, false);
+        }
+        ExpressionEncoder<Row> encoder = RowEncoder.apply(structType);
+
+        final String[] objectiveAndFactor = this.objectiveAndFactor;
         final int objIndex = this.objectiveIndex;
-        String[] orderFieldType = this.orderFieldType;
+        final String[] orderFieldType = this.orderFieldType;
 
-        trainingDataSet.foreachPartition(iterator -> {
-            while (iterator.hasNext()) {
-                Row rowData = iterator.next();
-                String[] rowDataToWrite = new String[objectiveAndFactor.length];
-                rowDataToWrite[0] = String.valueOf(0);
-                if (rowData.get(objIndex) instanceof Number) {
-                    rowDataToWrite[0] = String.valueOf(ConvertUtil.convertObjectToDecimal(Double.parseDouble(rowData.get(objIndex).toString())));
-                }
-
-                int colIndex = 1;
-                int textFactorIndex = -1;
-                for (int col = 0; col < objectiveAndFactor.length; col++) {
-
-                    if (DataType.TEXT.equals(orderFieldType[col]) || DataType.DATE.equals(orderFieldType[col])) {
-                        textFactorIndex++;
-                        String data = rowData.get(col).toString();
-                        double effort = textValueMap.get(textFactorIndex).get(data);
-                        rowDataToWrite[colIndex++] = String.valueOf(effort);
-                    } else {
-                        if (col != objIndex) {
-                            String value = "";
-                            if (rowData.get(col) instanceof Number) {
-                                value = String.valueOf(ConvertUtil.convertObjectToDecimal(Double.parseDouble(rowData.get(col).toString())));
-                            }
-                            rowDataToWrite[colIndex++] = value;
+        Dataset<Row> output = trainingDataSet.flatMap((FlatMapFunction<Row, Row>) rowData -> {
+            Double[] rowDataToWrite = new Double[objectiveAndFactor.length];
+            rowDataToWrite[0] = 0d;
+            if (rowData.get(objIndex) instanceof Number) {
+                rowDataToWrite[0] = ConvertUtil.scaleDouble(Double.parseDouble(rowData.get(objIndex).toString()));
+            }
+            int colIndex = 1;
+            int textFactorIndex = -1;
+            for (int col = 0; col < objectiveAndFactor.length; col++) {
+                if (FactorDataType.TEXT.equals(orderFieldType[col]) || FactorDataType.DATE.equals(orderFieldType[col])) {
+                    textFactorIndex++;
+                    String data = rowData.get(col).toString();
+                    Double effort = textValueMap.get(textFactorIndex).get(data);
+                    rowDataToWrite[colIndex++] = effort;
+                } else {
+                    if (col != objIndex) {
+                        Double value = 0d;
+                        if (rowData.get(col) instanceof Number) {
+                            value = ConvertUtil.scaleDouble(Double.parseDouble(rowData.get(col).toString()));
                         }
+                        rowDataToWrite[colIndex++] = value;
                     }
                 }
-
-                TextFileHelper.write(filePath, true, rowDataToWrite);
             }
 
-        });
+            List<Double> data = new ArrayList<>(Arrays.asList(rowDataToWrite));
+            ArrayList<Row> list = new ArrayList<>();
+            list.add(RowFactory.create(data.toArray()));
+            return list.iterator();
+        }, encoder);
+
+        List<Row> result = output.collectAsList();
+        for (Row row : result) {
+            for (int i = 0; i < row.length(); i++) {
+                System.out.print(" " + row.get(i).toString());
+            }
+            System.out.println();
+        }
+
+        return output;
     }
 
     /**
@@ -165,8 +172,7 @@ public class LinearRegressionConverter implements DataConverterInterface {
             Map<String, Double> textFactorMap = new LinkedHashMap<>();
             List<Row> rowList = sumData.get(index).collectAsList();
 
-            for (int rowIndex = 0; rowIndex < rowList.size(); rowIndex++) {
-                Row row = rowList.get(rowIndex);
+            for (Row row : rowList) {
                 double positiveSubtractNegativeSum = 0;
                 double objectiveSum = ConvertUtil.convertObjectToDouble(row.get(objectiveIndex + 1));
                 double result = 0;
@@ -175,9 +181,9 @@ public class LinearRegressionConverter implements DataConverterInterface {
                     String name = getNumberTypeColumnName(colIndex - 1);
                     int orderIndex = getOrderIndexByName(name);
 
-                    if (positiveOrder[orderIndex] == 1) {
+                    if (positiveOrder[orderIndex] == POSITIVE) {
                         positiveSubtractNegativeSum += ConvertUtil.convertObjectToDouble(row.get(colIndex));
-                    } else if (negativeOrder[orderIndex] == -1) {
+                    } else if (negativeOrder[orderIndex] == NEGATIVE) {
                         positiveSubtractNegativeSum -= ConvertUtil.convertObjectToDouble(row.get(colIndex));
                     }
                 }
@@ -218,11 +224,11 @@ public class LinearRegressionConverter implements DataConverterInterface {
 
         //check text and date type factors. 0 is objective (is number)
         for (int i = 1; i < objectiveAndFactor.length; i++) {
-            if (DataType.TEXT.equals(orderFieldType[i]) || DataType.DATE.equals(orderFieldType[i])) {
+            if (FactorDataType.TEXT.equals(orderFieldType[i]) || FactorDataType.DATE.equals(orderFieldType[i])) {
 
                 Map<String, String> map = new LinkedHashMap<>();
                 for (int col = 0; col < objectiveAndFactor.length; col++) {
-                    if (!DataType.TEXT.equals(orderFieldType[col]) && !DataType.DATE.equals(orderFieldType[col])) {
+                    if (!FactorDataType.TEXT.equals(orderFieldType[col]) && !FactorDataType.DATE.equals(orderFieldType[col])) {
                         map.put(objectiveAndFactor[col], "sum");
                     }
                 }
@@ -235,26 +241,9 @@ public class LinearRegressionConverter implements DataConverterInterface {
         return dataSetList;
     }
 
-    /**
-     * save forecast data to file
-     *
-     * @param textValueMap       data after convert text to number
-     * @param autoOptimizationId auto optimization id
-     * @param identifier         identifier
-     */
-    private void handleForecast(Map<Integer, Map<String, Double>> textValueMap, long autoOptimizationId, String identifier) {
-        JsonObject jsonForecast = generateForecastFactorValuesLocal(textValueMap, trainingDataSet);
-
-        String fileName = properties.getProperty("factor.forecast.value");
-        if (fileName == null || fileName.isEmpty()) {
-            fileName = "forecast_factor_values";
-        }
-        JsonFileHelper.writeToFile(getPathToSaveFile(autoOptimizationId, identifier, fileName, "json"), jsonForecast.toString());
-    }
 
     /**
-     *
-     * @param textValueMap data after convert text to number
+     * @param textValueMap    data after convert text to number
      * @param trainingDataSet training data
      * @return forecast data
      */
@@ -267,11 +256,10 @@ public class LinearRegressionConverter implements DataConverterInterface {
         final String[] orderFieldType = this.orderFieldType;
 
         List<Row> data = avgDataSet.collectAsList();
-        for (int col1 = 0; col1 < data.size(); col1++) {
-            Row row = data.get(col1);
+        for (Row row : data) {
             int numberTypeFactorIndex = -1;
             for (int col = 0; col < objectiveAndFactor.length; col++) {
-                if (!DataType.TEXT.equals(orderFieldType[col]) && !DataType.DATE.equals(orderFieldType[col])) {
+                if (!FactorDataType.TEXT.equals(orderFieldType[col]) && !FactorDataType.DATE.equals(orderFieldType[col])) {
                     numberTypeFactorIndex++;
                     if (row.get(numberTypeFactorIndex) instanceof Number) {
                         forecastFactorValues[col] = ConvertUtil.convertObjectToDouble(row.get(numberTypeFactorIndex).toString());
@@ -305,7 +293,6 @@ public class LinearRegressionConverter implements DataConverterInterface {
     }
 
 
-
     /**
      * @param trainingDataSet training data
      * @return average value of each factor and objective
@@ -313,7 +300,7 @@ public class LinearRegressionConverter implements DataConverterInterface {
     private Dataset<Row> avgNumberedData(Dataset<Row> trainingDataSet) {
         Map<String, String> map = new LinkedHashMap<>();
         for (int col = 0; col < objectiveAndFactor.length; col++) {
-            if (!DataType.TEXT.equals(orderFieldType[col]) && !DataType.DATE.equals(orderFieldType[col])) {
+            if (!FactorDataType.TEXT.equals(orderFieldType[col]) && !FactorDataType.DATE.equals(orderFieldType[col])) {
                 map.put(objectiveAndFactor[col], "avg");
             }
         }
@@ -325,51 +312,16 @@ public class LinearRegressionConverter implements DataConverterInterface {
 
 
     /**
-     * save category weight to file
-     *
-     * @param textValueMap       data after convert text to number
-     * @param autoOptimizationId auto optimization id
-     * @param identifier         identifier
-     */
-    private void handleCategory(Map<Integer, Map<String, Double>> textValueMap, long autoOptimizationId, String identifier) {
-        JsonObject jsonCategory = generateCategoryFieldWeight(textValueMap);
-        String fileName = properties.getProperty("field.category.weight");
-        if (fileName == null || fileName.isEmpty()) {
-            fileName = "categorical_field_weight";
-        }
-        JsonFileHelper.writeToFile(getPathToSaveFile(autoOptimizationId, identifier, fileName, "json"), jsonCategory.toString());
-    }
-
-    /**
-     * @param filePath directory need to create
-     * @return created path
-     */
-    private String createDataConvertedFilePath(String filePath) {
-        return FilePathHelper.createDataConvertedFolder(filePath);
-    }
-
-    /**
-     * @param autoOptimizationId auto optimization id
-     * @param identifier         identifier
-     * @param fileName           name of file
-     * @param fileType           extension of file
-     * @return path to save file
-     */
-    private String getPathToSaveFile(long autoOptimizationId, String identifier, String fileName, String fileType) {
-        return FilePathHelper.getPathToSaveConvertData(autoOptimizationId, identifier, fileName, fileType);
-    }
-
-    /**
      * @param factors positive, negative factor data
      * @param value   positive: 1. Negative: -1
-     * @return array contain 0, 1, -1.
+     * @return array contain 0, (1 or -1)
      */
 
-    private int[] updateOrder(List<String> factors, int value) {
+    private int[] generateArrayFollowByFactorOrder(List<String> factors, int value) {
         int[] newOrder = new int[objectiveAndFactor.length];
         if (factors != null) {
-            for (int i = 0; i < factors.size(); i++) {
-                int index = ArrayUtils.indexOf(objectiveAndFactor, factors.get(i));
+            for (String factor : factors) {
+                int index = ArrayUtils.indexOf(objectiveAndFactor, factor);
                 newOrder[index] = value;
             }
         }
@@ -387,7 +339,7 @@ public class LinearRegressionConverter implements DataConverterInterface {
         String[] fieldByOrder = new String[size];
         for (Map.Entry<String, JsonElement> entry : fieldTypeObj.entrySet()) {
             String key = entry.getValue().getAsString();
-            String value = entry.getKey().toString();
+            String value = entry.getKey();
             int newIndex = ArrayUtils.indexOf(objectiveAndFactor, value);
             if (newIndex >= 0) {
                 fieldByOrder[newIndex] = key;
@@ -427,7 +379,7 @@ public class LinearRegressionConverter implements DataConverterInterface {
     private List<String> generateNumberTypeFactors(String[] allFactor) {
         List<String> list = new ArrayList<>();
         for (int col = 0; col < allFactor.length; col++) {
-            if (!DataType.TEXT.equals(orderFieldType[col]) && !DataType.DATE.equals(orderFieldType[col])) {
+            if (!FactorDataType.TEXT.equals(orderFieldType[col]) && !FactorDataType.DATE.equals(orderFieldType[col])) {
                 list.add(allFactor[col]);
             }
         }
@@ -441,12 +393,10 @@ public class LinearRegressionConverter implements DataConverterInterface {
     private List<String> generateTextFactors(String[] allFactor) {
         List<String> list = new ArrayList<>();
         for (int col = 0; col < allFactor.length; col++) {
-            if (DataType.TEXT.equals(orderFieldType[col]) || DataType.DATE.equals(orderFieldType[col])) {
+            if (FactorDataType.TEXT.equals(orderFieldType[col]) || FactorDataType.DATE.equals(orderFieldType[col])) {
                 list.add(allFactor[col]);
             }
         }
         return list;
     }
-
-
 }

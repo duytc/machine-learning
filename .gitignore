@@ -3,8 +3,7 @@
 /target/
 /dev
 logging.log
-config.properties
-hibernate.cfg.xml
+user.config.properties
 ConvertedData/
 tmp/
 logging.*
