@@ -121,6 +121,4 @@ public class LinearRegressionLearner implements LearnerInterface {
 
         return output;
     }
-
-
 }
