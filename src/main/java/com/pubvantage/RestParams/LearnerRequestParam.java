@@ -1,23 +1,23 @@
 package com.pubvantage.RestParams;
 
 public class LearnerRequestParam {
-    private Long autoOptimizationConfigId;
+    private Long optimizationRuleId;
     private String token;
 
     public LearnerRequestParam() {
     }
 
-    public LearnerRequestParam(Long autoOptimizationConfigId, String token) {
-        this.autoOptimizationConfigId = autoOptimizationConfigId;
+    public LearnerRequestParam(Long optimizationRuleId, String token) {
+        this.optimizationRuleId = optimizationRuleId;
         this.token = token;
     }
 
-    public Long getAutoOptimizationConfigId() {
-        return autoOptimizationConfigId;
+    public Long getOptimizationRuleId() {
+        return optimizationRuleId;
     }
 
-    public void setAutoOptimizationConfigId(Long autoOptimizationConfigId) {
-        this.autoOptimizationConfigId = autoOptimizationConfigId;
+    public void setOptimizationRuleId(Long optimizationRuleId) {
+        this.optimizationRuleId = optimizationRuleId;
     }
 
     public String getToken() {

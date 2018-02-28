@@ -7,13 +7,10 @@ import com.pubvantage.Authentication.Authentication;
 import com.pubvantage.RestParams.LearnerResponse;
 import com.pubvantage.RestParams.LearningProcessParams;
 import com.pubvantage.RestParams.PredictionProcessParams;
-import com.pubvantage.converter.DataConverterInterface;
-import com.pubvantage.converter.LinearRegressionConverter;
-import com.pubvantage.entity.ConvertedDataWrapper;
 import com.pubvantage.entity.CoreAutoOptimizationConfig;
+import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreLearningModel;
 import com.pubvantage.learner.LearnerInterface;
-import com.pubvantage.learner.LinearRegressionLearner;
 import com.pubvantage.service.*;
 import com.pubvantage.service.Learner.LinearRegressionScoring;
 import com.pubvantage.utils.*;
@@ -28,7 +25,6 @@ import spark.Request;
 import spark.Response;
 
 import java.util.*;
-import java.util.stream.IntStream;
 
 import static spark.Spark.*;
 
@@ -161,8 +157,10 @@ public class AppMain {
         response.type("application/json");
 
         //extract data from request
-        LearningProcessParams learningProcessParams = new LearningProcessParams(request);
-        boolean isValidParams = learningProcessParams.validateParams();
+        String jsonParams = request.body();
+
+        LearningProcessParams learningProcessParams = new LearningProcessParams(jsonParams);
+        boolean isValidParams = learningProcessParams.validateToken() && learningProcessParams.validateOptimizationRules();
         if (!isValidParams) {
             LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, "Parameter is invalid", null);
             response.status(HttpStatus.SC_BAD_REQUEST);
@@ -170,7 +168,7 @@ public class AppMain {
         }
 
         //verify token
-        Authentication authentication = new Authentication(learningProcessParams.getAutoOptimizationConfigId(), learningProcessParams.getToken());
+        Authentication authentication = new Authentication(learningProcessParams.getOptimizationRuleId(), learningProcessParams.getToken());
         boolean isPassAuthentication = authentication.authenticate();
         if (!isPassAuthentication) {
             response.status(HttpStatus.SC_UNAUTHORIZED);
@@ -178,14 +176,13 @@ public class AppMain {
             return new Gson().toJson(learnerResponse);
         }
 
-        //pass verify token
         //get data then convert and learn
-        Long autoOptimizationConfigId = learningProcessParams.getAutoOptimizationConfigId();
-        String[] identifiers = getIdentifiers(autoOptimizationConfigId);
+        Long optimizationRuleId = learningProcessParams.getOptimizationRuleId();
+
         JsonArray dataResponseArray = new JsonArray();
-       List<String> successIdentifiers =  generateAndSaveModel(autoOptimizationConfigId, identifiers);
+        List<String> successIdentifiers = generateAndSaveModel(optimizationRuleId);
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("autoOptimizationConfigId", autoOptimizationConfigId);
+        jsonObject.addProperty("autoOptimizationConfigId", optimizationRuleId);
         jsonObject.add("identifiers", JsonUtil.toJsonArray(successIdentifiers.toArray(new String[0])));
         dataResponseArray.add(jsonObject);
         //return response
@@ -225,8 +222,8 @@ public class AppMain {
             return new Gson().toJson(learnerResponse);
         }
 
-        CoreAutoOptimizationConfigService coreAutoOptimizationConfigService = new CoreAutoOptimizationConfigService();
-        CoreAutoOptimizationConfig coreAutoOptimizationConfig = coreAutoOptimizationConfigService.findById(autoOptimizationConfigId);
+        CoreOptimizationRuleService coreOptimizationRuleService = new CoreOptimizationRuleService();
+        CoreAutoOptimizationConfig coreAutoOptimizationConfig = coreOptimizationRuleService.findById(autoOptimizationConfigId);
 
         LinearRegressionScoring linearRegressionScoring = new LinearRegressionScoring(coreAutoOptimizationConfig, identifiers, conditions);
         Map<String, Map<String, Double>> predictions = linearRegressionScoring.predict();
@@ -284,27 +281,61 @@ public class AppMain {
     }
 
     /**
-     * @param autoOptimizationId auto optimization id
-     * @param identifiers        identifiers
+     * @param autoOptimizationId
+     * @return
      */
-    private static List<String> generateAndSaveModel(long autoOptimizationId, String[] identifiers) {
+    private static List<String> generateAndSaveModel(long autoOptimizationId) {
 
         List<String> successIdentifiers = new ArrayList<>();
-        List<CoreLearningModel> modelList = new ArrayList<>();
-        //converter
-        DataConverterInterface converter = new LinearRegressionConverter();
-        //leaner
-        IntStream.range(0, identifiers.length).forEach((int i) -> {
-            ConvertedDataWrapper convertedDataWrapper = converter.doConvert(autoOptimizationId, identifiers[i]);
-            if (convertedDataWrapper != null && convertedDataWrapper.getDataSet() != null) {
-                String identifier = identifiers[i];
-                LearnerInterface leaner = new LinearRegressionLearner(autoOptimizationId, identifier, sparkSession, convertedDataWrapper);
-                modelList.add(generateModel(leaner));
-                successIdentifiers.add(identifier);
-            }
-        });
+        List<CoreLearner> modelList = new ArrayList<>();
+
+        CoreOptimizationRuleService coreOptimizationRuleService = new CoreOptimizationRuleService();
+        String[] identifiers = coreOptimizationRuleService.getIdentifiers(autoOptimizationId);
+        String[] segmentFields = coreOptimizationRuleService.getSegmentFields(autoOptimizationId);
+        List<Arrays> segmentFieldGroups = createSegmentFieldGroups(segmentFields);
+
+        if (identifiers.length == 0) {
+            return null;
+        }
+
+        for (int i = 0; i < identifiers.length; i++) {
+            modelList = generateModelForOneIdentifier(autoOptimizationId, identifiers[i], segmentFieldGroups);
+        }
         saveModelToDatabase(modelList);
+
         return successIdentifiers;
+    }
+
+    private static List<CoreLearner> generateModelForOneIdentifier(long autoOptimizationId, String $identifier, List<Arrays> segmentFieldGroups) {
+        List<CoreLearner> coreLearnersList = new LinkedList<>();
+
+        if (segmentFieldGroups.isEmpty()) {
+            return null;
+        }
+
+        long length = segmentFieldGroups.size();
+        for (int i = 0; i < length; i++) {
+            Arrays segmentFields = segmentFieldGroups.get(i);
+            List<CoreLearner> coreLearners = generateModelForOneIdentifierAndOneSegmentFieldGroup(autoOptimizationId, $identifier, segmentFields);
+            coreLearnersList.addAll(coreLearners);
+        }
+
+        return coreLearnersList;
+    }
+
+    private static List<CoreLearner> generateModelForOneIdentifierAndOneSegmentFieldGroup(long autoOptimizationId, String $identifier, Arrays segmentFields) {
+
+
+        return null;
+    }
+
+    /**
+     * @param segmentFields
+     * @return
+     */
+    private static List<Arrays> createSegmentFieldGroups(String[] segmentFields) {
+
+        return new LinkedList<>();
     }
 
     /**
@@ -332,7 +363,7 @@ public class AppMain {
      *
      * @param modelList list of model
      */
-    private static void saveModelToDatabase(List<CoreLearningModel> modelList) {
+    private static void saveModelToDatabase(List<CoreLearner> modelList) {
         coreLearnerService.saveListModel(modelList);
     }
 

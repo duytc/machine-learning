@@ -1,5 +1,4 @@
 import com.pubvantage.entity.CoreAutoOptimizationConfig;
-import com.pubvantage.entity.CoreLearningModel;
 import com.pubvantage.service.*;
 import com.pubvantage.utils.AppResource;
 import com.pubvantage.utils.HibernateUtil;
@@ -28,7 +27,7 @@ public class DBTest {
     public void findCoreOptimizationConfigById() {
 
         HibernateUtil.startSession();
-        CoreAutoOptimizationConfigServiceInterface service = new CoreAutoOptimizationConfigService();
+        CoreOptimizationRuleServiceInterface service = new CoreOptimizationRuleService();
         CoreAutoOptimizationConfig item = service.findById(1l);
 
         return;

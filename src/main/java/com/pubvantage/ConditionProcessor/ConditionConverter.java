@@ -6,8 +6,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.pubvantage.entity.CoreAutoOptimizationConfig;
 import com.pubvantage.entity.CoreLearningModel;
-import com.pubvantage.service.CoreAutoOptimizationConfigService;
-import com.pubvantage.service.CoreAutoOptimizationConfigServiceInterface;
+import com.pubvantage.service.CoreOptimizationRuleService;
+import com.pubvantage.service.CoreOptimizationRuleServiceInterface;
 import com.pubvantage.service.CoreLearningModelService;
 import com.pubvantage.service.CoreLearningModelServiceInterface;
 import com.pubvantage.utils.ConvertUtil;
@@ -52,7 +52,7 @@ public class ConditionConverter {
         }
         JsonObject forecast = parser.parse(forecastString).getAsJsonObject();
         //get list of factors and fields type
-        CoreAutoOptimizationConfigServiceInterface coreAutoOptimizationConfigService = new CoreAutoOptimizationConfigService();
+        CoreOptimizationRuleServiceInterface coreAutoOptimizationConfigService = new CoreOptimizationRuleService();
         List<String> factors = coreAutoOptimizationConfigService.getFactors(coreAutoOptimizationConfig.getId());
         JsonObject fieldType = coreAutoOptimizationConfigService.getFieldType(coreAutoOptimizationConfig.getId());
 

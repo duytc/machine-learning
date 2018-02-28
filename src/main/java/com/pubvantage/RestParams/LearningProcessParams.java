@@ -3,7 +3,6 @@ package com.pubvantage.RestParams;
 import com.google.gson.Gson;
 import com.pubvantage.AppMain;
 import org.apache.log4j.Logger;
-import spark.Request;
 
 public class LearningProcessParams {
 
@@ -11,19 +10,21 @@ public class LearningProcessParams {
 
     private LearnerRequestParam requestParam;
 
-    public LearningProcessParams(Request request) {
+    public LearningProcessParams(String stringJson) {
+        // Check string json before call API
+
         try {
-            requestParam = new Gson().fromJson(request.body(), LearnerRequestParam.class);
+            requestParam = new Gson().fromJson(stringJson, LearnerRequestParam.class);
         } catch (Exception e) {
             logger.error("Request is invalid");
         }
     }
 
-    public Long getAutoOptimizationConfigId() {
+    public Long getOptimizationRuleId() {
         if (requestParam == null)
             return null;
 
-        return requestParam.getAutoOptimizationConfigId();
+        return requestParam.getOptimizationRuleId();
     }
 
     public String getToken() {
@@ -33,13 +34,24 @@ public class LearningProcessParams {
         return requestParam.getToken();
     }
 
+
+    public boolean validateOptimizationRules()
+    {
+        return  true;
+    }
+
+    public boolean validateToken()
+    {
+        return  true;
+    }
+
     /**
      * @return true if parameters is valid. Otherwise, return false
      */
     public boolean validateParams() {
         return null != requestParam
-                && null != requestParam.getAutoOptimizationConfigId()
-                && 0 != requestParam.getAutoOptimizationConfigId()
+                && null != requestParam.getOptimizationRuleId()
+                && 0 != requestParam.getOptimizationRuleId()
                 && null != requestParam.getToken()
                 && !requestParam.getToken().isEmpty();
 

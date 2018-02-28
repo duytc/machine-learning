@@ -1,20 +1,20 @@
 package com.pubvantage.Authentication;
 
-import com.pubvantage.service.CoreAutoOptimizationConfigServiceInterface;
-import com.pubvantage.service.CoreAutoOptimizationConfigService;
+import com.pubvantage.service.CoreOptimizationRuleServiceInterface;
+import com.pubvantage.service.CoreOptimizationRuleService;
 
 public class Authentication {
 
-    private Long autoOptimizationConfigId;
+    private Long autoOptimizationRuleId;
     private String token;
 
-    public Authentication(Long autoOptimizationConfigId, String token) {
-        this.autoOptimizationConfigId = autoOptimizationConfigId;
+    public Authentication(Long autoOptimizationRuleId, String token) {
+        this.autoOptimizationRuleId = autoOptimizationRuleId;
         this.token = token;
     }
 
     public boolean authenticate() {
-        CoreAutoOptimizationConfigServiceInterface sqlService = new CoreAutoOptimizationConfigService();
-        return sqlService.checkToken(this.autoOptimizationConfigId, this.token);
+        CoreOptimizationRuleServiceInterface sqlService = new CoreOptimizationRuleService();
+        return sqlService.checkToken(this.autoOptimizationRuleId, this.token);
     }
 }
