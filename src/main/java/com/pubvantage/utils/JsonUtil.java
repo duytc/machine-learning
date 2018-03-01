@@ -8,6 +8,7 @@ import com.jsoniter.JsonIterator;
 import spark.ResponseTransformer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class JsonUtil {
@@ -45,4 +46,7 @@ public class JsonUtil {
         return JsonIterator.deserialize(jsonArrayString, ArrayList.class);
     }
 
+    public static List<HashMap<String, String>> jsonArrayObjectsToListMap(String jsonArrayObjects){
+        return JsonIterator.deserialize(jsonArrayObjects, ArrayList.class);
+    }
 }

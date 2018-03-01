@@ -132,6 +132,10 @@ public class ConvertUtilTest {
 
         Any obj = JsonIterator.deserialize(input);
         List<String> array = JsonIterator.deserialize(input, ArrayList.class);
+
+        String listObjectInput = "[{\"field\":\"largetext2_2\",\"goal\":\"Min\",\"weight\":0.2}]";
+        List<HashMap<String, String>> anyList = JsonIterator.deserialize(listObjectInput, ArrayList.class);
+        HashMap<String, String> any = anyList.get(0);
         return;
     }
 

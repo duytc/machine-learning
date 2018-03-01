@@ -287,9 +287,8 @@ public class AppMain {
         List<String> successIdentifiers = new ArrayList<>();
         List<CoreLearner> modelList = new ArrayList<>();
 
-        OptimizationRuleService coreOptimizationRuleService = new OptimizationRuleService();
         List<String> identifiers = JsonUtil.jsonArrayStringToJavaList(optimizationRule.getIdentifierFields());
-        List<String> segmentFields = coreOptimizationRuleService.getSegmentFields(optimizationRule);
+        List<String> segmentFields = JsonUtil.jsonArrayStringToJavaList(optimizationRule.getSegmentFields());
         List<Arrays> segmentFieldGroups = createSegmentFieldGroups(segmentFields);
 
         if (identifiers.size() == 0) {
