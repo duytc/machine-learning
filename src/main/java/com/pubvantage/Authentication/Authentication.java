@@ -1,7 +1,7 @@
 package com.pubvantage.Authentication;
 
-import com.pubvantage.service.CoreOptimizationRuleServiceInterface;
-import com.pubvantage.service.CoreOptimizationRuleService;
+import com.pubvantage.service.OptimizationRuleServiceInterface;
+import com.pubvantage.service.OptimizationRuleService;
 
 public class Authentication {
 
@@ -14,7 +14,7 @@ public class Authentication {
     }
 
     public boolean authenticate() {
-        CoreOptimizationRuleServiceInterface sqlService = new CoreOptimizationRuleService();
+        OptimizationRuleServiceInterface sqlService = new OptimizationRuleService();
         return sqlService.checkToken(this.autoOptimizationRuleId, this.token);
     }
 }

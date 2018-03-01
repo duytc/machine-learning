@@ -6,7 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.pubvantage.RestParams.FactorConditionData;
 import com.pubvantage.entity.CoreAutoOptimizationConfig;
-import com.pubvantage.service.CoreOptimizationRuleService;
+import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.DataTrainingService;
 import com.pubvantage.service.DataTrainingServiceInterface;
 
@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class ConditionGenerator {
 
-    private CoreOptimizationRuleService optimizationConfigService = new CoreOptimizationRuleService();
+    private OptimizationRuleService optimizationConfigService = new OptimizationRuleService();
     private DataTrainingServiceInterface trainingService = new DataTrainingService();
     private CoreAutoOptimizationConfig coreAutoOptimizationConfig;
     private JsonArray conditions;

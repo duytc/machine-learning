@@ -4,8 +4,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.pubvantage.entity.ConvertedDataWrapper;
 import com.pubvantage.entity.FactorDataType;
-import com.pubvantage.service.CoreOptimizationRuleService;
-import com.pubvantage.service.CoreOptimizationRuleServiceInterface;
+import com.pubvantage.service.OptimizationRuleService;
+import com.pubvantage.service.OptimizationRuleServiceInterface;
 import com.pubvantage.service.DataTrainingService;
 import com.pubvantage.service.DataTrainingServiceInterface;
 import com.pubvantage.utils.ConvertUtil;
@@ -22,7 +22,7 @@ import org.apache.spark.sql.types.StructType;
 import java.util.*;
 
 public class LinearRegressionConverter implements DataConverterInterface {
-    private CoreOptimizationRuleServiceInterface autoOptimizationConfigService;
+    private OptimizationRuleServiceInterface autoOptimizationConfigService;
     private DataTrainingServiceInterface dataTrainingService;
     private String[] orderFieldType;
     private int[] positiveOrder;
@@ -36,7 +36,7 @@ public class LinearRegressionConverter implements DataConverterInterface {
     private final int NEGATIVE = -1;
 
     public LinearRegressionConverter() {
-        autoOptimizationConfigService = new CoreOptimizationRuleService();
+        autoOptimizationConfigService = new OptimizationRuleService();
         dataTrainingService = new DataTrainingService();
     }
 

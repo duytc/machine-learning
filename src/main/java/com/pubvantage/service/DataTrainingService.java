@@ -31,7 +31,7 @@ public class DataTrainingService implements DataTrainingServiceInterface {
      */
     @Override
     public LinkedHashMap<String, List<Object>> getFilteredConditions(Long autoOptimizationConfigId, List<FactorConditionData> conditionDataList) {
-        CoreOptimizationRuleServiceInterface coreAutoOptimizationConfigService = new CoreOptimizationRuleService();
+        OptimizationRuleServiceInterface coreAutoOptimizationConfigService = new OptimizationRuleService();
         JsonObject fieldType = coreAutoOptimizationConfigService.getFieldType(autoOptimizationConfigId);
 
         LinkedHashMap<String, List<Object>> filteredConditions = new LinkedHashMap<>();

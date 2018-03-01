@@ -1,18 +1,18 @@
 package com.pubvantage.service;
 
 import com.google.gson.JsonObject;
-import com.pubvantage.entity.CoreAutoOptimizationConfig;
+import com.pubvantage.entity.CoreOptimizationRule;
 
 import java.util.List;
 
-public interface CoreOptimizationRuleServiceInterface {
-    String[] getSegmentFields(long optimizationRuleId);
+public interface OptimizationRuleServiceInterface {
+    List<String> getSegmentFields(CoreOptimizationRule optimizationRule);
 
     String[] getOptimizeFields(long optimizationRuleId);
 
     String[] getMetrics(long optimizationRuleId);
 
-    String[] getIdentifiers(long optimizationRuleId);
+    List<String> getIdentifiers(CoreOptimizationRule optimizationRule);
 
     boolean checkToken(long autoOptimizationConfigId, String token);
 
@@ -20,7 +20,7 @@ public interface CoreOptimizationRuleServiceInterface {
 
     JsonObject getFieldType(Long id);
 
-    CoreAutoOptimizationConfig findById(Long autoOptimizationConfigId);
+    CoreOptimizationRule findById(Long autoOptimizationConfigId);
 
     String[] getObjectiveAndFactors(long autoOptimizationId);
 

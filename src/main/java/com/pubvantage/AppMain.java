@@ -10,6 +10,7 @@ import com.pubvantage.RestParams.PredictionProcessParams;
 import com.pubvantage.entity.CoreAutoOptimizationConfig;
 import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreLearningModel;
+import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.learner.LearnerInterface;
 import com.pubvantage.service.*;
 import com.pubvantage.service.Learner.LinearRegressionScoring;
@@ -177,9 +178,10 @@ public class AppMain {
 
         //get data then convert and learn
         Long optimizationRuleId = learningProcessParams.getOptimizationRuleId();
-
+        OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
+        CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId);
         JsonArray dataResponseArray = new JsonArray();
-        List<String> successIdentifiers = generateAndSaveModel(optimizationRuleId);
+        List<String> successIdentifiers = generateAndSaveModel(optimizationRule);
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("autoOptimizationConfigId", optimizationRuleId);
         jsonObject.add("identifiers", JsonUtil.toJsonArray(successIdentifiers.toArray(new String[0])));
@@ -209,6 +211,7 @@ public class AppMain {
         }
 
         Long autoOptimizationConfigId = predictionProcessParams.getAutoOptimizationConfigId();
+
         List<String> identifiers = predictionProcessParams.getIdentifiers();
         JsonArray conditions = predictionProcessParams.getConditions();
         String token = predictionProcessParams.getToken();
@@ -221,12 +224,12 @@ public class AppMain {
             return new Gson().toJson(learnerResponse);
         }
 
-        CoreOptimizationRuleService coreOptimizationRuleService = new CoreOptimizationRuleService();
-        CoreAutoOptimizationConfig coreAutoOptimizationConfig = coreOptimizationRuleService.findById(autoOptimizationConfigId);
+        OptimizationRuleService coreOptimizationRuleService = new OptimizationRuleService();
+        CoreOptimizationRule optimizationRule = coreOptimizationRuleService.findById(autoOptimizationConfigId);
 
-        LinearRegressionScoring linearRegressionScoring = new LinearRegressionScoring(coreAutoOptimizationConfig, identifiers, conditions);
-        Map<String, Map<String, Double>> predictions = linearRegressionScoring.predict();
-
+//        LinearRegressionScoring linearRegressionScoring = new LinearRegressionScoring(optimizationRule, identifiers, conditions);
+//        Map<String, Map<String, Double>> predictions = linearRegressionScoring.predict();
+        String predictions = "";
         return new Gson().toJson(predictions);
     }
 
@@ -279,26 +282,23 @@ public class AppMain {
 
     }
 
-    /**
-     * @param autoOptimizationId
-     * @return
-     */
-    private static List<String> generateAndSaveModel(long autoOptimizationId) {
+
+    private static List<String> generateAndSaveModel(CoreOptimizationRule optimizationRule) {
 
         List<String> successIdentifiers = new ArrayList<>();
         List<CoreLearner> modelList = new ArrayList<>();
 
-        CoreOptimizationRuleService coreOptimizationRuleService = new CoreOptimizationRuleService();
-        String[] identifiers = coreOptimizationRuleService.getIdentifiers(autoOptimizationId);
-        String[] segmentFields = coreOptimizationRuleService.getSegmentFields(autoOptimizationId);
+        OptimizationRuleService coreOptimizationRuleService = new OptimizationRuleService();
+        List<String> identifiers = coreOptimizationRuleService.getIdentifiers(optimizationRule);
+        List<String> segmentFields = coreOptimizationRuleService.getSegmentFields(optimizationRule);
         List<Arrays> segmentFieldGroups = createSegmentFieldGroups(segmentFields);
 
-        if (identifiers.length == 0) {
+        if (identifiers.size() == 0) {
             return null;
         }
 
-        for (int i = 0; i < identifiers.length; i++) {
-            modelList = generateModelForOneIdentifier(autoOptimizationId, identifiers[i], segmentFieldGroups);
+        for (int i = 0; i < identifiers.size(); i++) {
+            modelList = generateModelForOneIdentifier(optimizationRule.getId(), identifiers.get(i), segmentFieldGroups);
         }
         saveModelToDatabase(modelList);
 
@@ -332,7 +332,7 @@ public class AppMain {
      * @param segmentFields
      * @return
      */
-    private static List<Arrays> createSegmentFieldGroups(String[] segmentFields) {
+    private static List<Arrays> createSegmentFieldGroups(List<String> segmentFields) {
 
         return new LinkedList<>();
     }
