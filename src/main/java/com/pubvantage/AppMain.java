@@ -300,7 +300,7 @@ public class AppMain {
     }
 
         private static List<CoreLearner> generateModelForOneIdentifier(PredictionParam predictionParam) {
-        List<CoreLearner> coreLearnersList = new LinkedList<>();
+        List<CoreLearner> coreLearnersList = new ArrayList<>();
 
         Long optimizationRuleId = predictionParam.getAutoOptimizationId();
         String identifier = predictionParam.getIdentifier();
