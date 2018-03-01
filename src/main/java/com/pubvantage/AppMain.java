@@ -272,17 +272,6 @@ public class AppMain {
         }
     }
 
-    /**
-     * get list identifiers
-     *
-     * @param autoOptimizationConfigId auto optomization config id
-     * @return list of identifiers
-     */
-    private static String[] getIdentifiers(Long autoOptimizationConfigId) {
-        return dataTrainingService.getIdentifiers(autoOptimizationConfigId);
-
-    }
-
     private static List<String> generateAndSaveModel(CoreOptimizationRule optimizationRule) {
         List<String> successIdentifiers = new ArrayList<>();
         List<CoreLearner> modelList = new ArrayList<>();
@@ -329,14 +318,6 @@ public class AppMain {
     private static List<CoreLearner> generateModelForOneIdentifierAndOneSegmentFieldGroup(SegmentFieldGroup segmentFieldGroup) {
 
         return null;
-    }
-
-    /**
-     * @param segmentFields
-     * @return
-     */
-    private static  List<List<String>> createSegmentFieldGroups(List<String> segmentFields) {
-        return ConvertUtil.generateSubsets(segmentFields);
     }
 
     /**

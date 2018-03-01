@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PredictionParam {
-    private long autoOptimizationId;
+    private Long autoOptimizationId;
     private String identifier;
     private List<String> segmentFields;
 
@@ -25,14 +25,13 @@ public class PredictionParam {
         this.identifier = identifier;
     }
 
-    public long getAutoOptimizationId() {
+    public Long getAutoOptimizationId() {
         return autoOptimizationId;
     }
 
-    public void setAutoOptimizationId(long autoOptimizationId) {
+    public void setAutoOptimizationId(Long autoOptimizationId) {
         this.autoOptimizationId = autoOptimizationId;
     }
-
 
 
     public List<String> getSegmentFields() {
@@ -45,10 +44,10 @@ public class PredictionParam {
 
     /**
      * Return segment field groups
+     *
      * @return
      */
     public List<List<String>> generateMultipleSegmentFieldGroups() {
-
-        return null;
+        return ConvertUtil.generateSubsets(segmentFields);
     }
 }
