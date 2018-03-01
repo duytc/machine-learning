@@ -1,5 +1,6 @@
 package com.pubvantage.service.DataTraning;
 
+import com.google.gson.JsonObject;
 import com.pubvantage.learner.Params.SegmentFieldGroup;
 
 import java.util.List;
@@ -42,7 +43,7 @@ public class DataTrainingService {
         this.oneSegmentFieldGroup = oneSegmentFieldGroup;
     }
 
-    public List<Object> getAllUniqueValuesForOneSegmentFieldGroup() {
+    public List<JsonObject> getAllUniqueValuesForOneSegmentFieldGroup() {
         // Select distinct values of one segment field groups
         return  null;
     }

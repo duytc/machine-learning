@@ -11,6 +11,7 @@ import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreLearningModel;
 import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.learner.LearnerInterface;
+import com.pubvantage.learner.Params.LearnerParams;
 import com.pubvantage.learner.Params.SegmentFieldGroup;
 import com.pubvantage.service.*;
 import com.pubvantage.service.DataTraning.DataTrainingService;
@@ -328,15 +329,40 @@ public class AppMain {
     }
 
     private static List<CoreLearner> generateModelForSegmentFieldGroup(SegmentFieldGroup segmentFieldGroup) {
+        List<CoreLearner> coreLearners = new LinkedList<>();
+
+        OptimizationRuleServiceInterface optimizationRuleService =  new OptimizationRuleService();
+        List<String>  optimizeFields =  optimizationRuleService.getOptimizeFields(segmentFieldGroup.getOptimizationRuleId());
+
+        for (String optimizeField: optimizeFields) {
+            coreLearners.addAll(generateModelForOneOptimizeField(segmentFieldGroup, optimizeField));
+        }
+
+        return  coreLearners;
+    }
+
+    private static List<CoreLearner> generateModelForOneOptimizeField(SegmentFieldGroup segmentFieldGroup, String optimizeField )
+    {
+        List<CoreLearner> coreLearners = new LinkedList<>();
+
         Long optimizationRuleId = segmentFieldGroup.getOptimizationRuleId();
         String identifier = segmentFieldGroup.getIdentifier();
         List<String> oneSegmentGroup = segmentFieldGroup.getOneSegmentFieldGroup();
 
         DataTrainingService dataTrainingService = new DataTrainingService(optimizationRuleId, identifier, oneSegmentGroup);
-        List<Object> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
-        OptimizationRuleServiceInterface optimizationRuleService =  new OptimizationRuleService();
-        List<String>  optimizeFields =  optimizationRuleService.getOptimizeFields(segmentFieldGroup.getOptimizationRuleId());
+        List<JsonObject> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
 
+        for (JsonObject uniqueValue: uniqueValuesOfOneSegmentFieldGroup) {
+            LearnerParams learnerParams =  new LearnerParams(optimizationRuleId, identifier, oneSegmentGroup, uniqueValue, optimizeField);
+            List<CoreLearner> learners = generateModelForOneValueOfSegmentFieldGroups(learnerParams);
+            coreLearners.addAll(learners);
+        }
+
+        return  coreLearners;
+    }
+
+    private static List<CoreLearner> generateModelForOneValueOfSegmentFieldGroups(LearnerParams learnerParams)
+    {
 
         return null;
     }
