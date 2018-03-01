@@ -2,6 +2,8 @@ package com.pubvantage.RestParams;
 
 import com.google.gson.Gson;
 import com.pubvantage.AppMain;
+import com.pubvantage.service.CoreOptimizationRuleService;
+import com.pubvantage.service.CoreOptimizationRuleServiceInterface;
 import org.apache.log4j.Logger;
 
 public class LearningProcessParams {
@@ -42,7 +44,8 @@ public class LearningProcessParams {
 
     public boolean validateToken()
     {
-        return  true;
+        CoreOptimizationRuleServiceInterface sqlService = new CoreOptimizationRuleService();
+        return sqlService.checkToken(requestParam.getOptimizationRuleId(), requestParam.getToken());
     }
 
     /**
