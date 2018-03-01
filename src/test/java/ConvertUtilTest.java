@@ -110,13 +110,19 @@ public class ConvertUtilTest {
         unsortedMap.put("key4", 1.2);
         unsortedMap.put("key5", 3.2);
 
-
         Map<String, Double> ascSortedMap = ConvertUtil.ascendingSortMapByValue(unsortedMap);
-
         Map<String, Double> desSortedMap = ConvertUtil.descendingSortMapByValue(unsortedMap);
-
 
         return;
     }
 
+    @Test
+    public void generateSubSet() {
+        List<String> set = new ArrayList<>();
+        set.add("a");
+        set.add("b");
+        set.add("c");
+        Map<Integer, List<String>> map = ConvertUtil.generateSubsets(set);
+        return;
+    }
 }

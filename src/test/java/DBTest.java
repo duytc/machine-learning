@@ -1,11 +1,15 @@
-import com.pubvantage.entity.CoreAutoOptimizationConfig;
-import com.pubvantage.service.*;
+import com.pubvantage.service.CoreOptimizationRuleService;
+import com.pubvantage.service.CoreOptimizationRuleServiceInterface;
+import com.pubvantage.service.DataTrainingService;
 import com.pubvantage.utils.AppResource;
+import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.HibernateUtil;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class DBTest {
@@ -28,11 +32,10 @@ public class DBTest {
 
         HibernateUtil.startSession();
         CoreOptimizationRuleServiceInterface service = new CoreOptimizationRuleService();
-        CoreAutoOptimizationConfig item = service.findById(1l);
+//        CoreAutoOptimizationConfig item = service.findById(1l);
 
         return;
     }
-
 
     @Test
     public void getIdentifiers() {
@@ -42,4 +45,5 @@ public class DBTest {
 
         return;
     }
+
 }

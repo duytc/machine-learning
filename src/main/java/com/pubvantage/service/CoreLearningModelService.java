@@ -3,6 +3,7 @@ package com.pubvantage.service;
 import com.pubvantage.dao.CoreLearningModelDao;
 import com.pubvantage.dao.CoreLearningModelDaoInterface;
 import com.pubvantage.entity.CoreAutoOptimizationConfig;
+import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreLearningModel;
 import com.pubvantage.utils.HibernateUtil;
 import org.apache.log4j.Logger;
@@ -14,6 +15,11 @@ import java.util.List;
 public class CoreLearningModelService implements CoreLearningModelServiceInterface {
     private static Logger logger = Logger.getLogger(CoreLearningModelService.class.getName());
     private CoreLearningModelDaoInterface coreLearningModelDAO = new CoreLearningModelDao();
+
+    @Override
+    public void saveListLearnerModel(List<CoreLearner> modelList) {
+
+    }
 
     /**
      * save list of models to database

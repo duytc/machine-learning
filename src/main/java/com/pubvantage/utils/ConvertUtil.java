@@ -13,6 +13,7 @@ public class ConvertUtil {
         AppResource appResource = new AppResource();
         properties = appResource.getPropValues();
     }
+
     /**
      * @param number an double value. Example: 1.2345678
      * @param scale  a number. Example 3
@@ -23,6 +24,7 @@ public class ConvertUtil {
                 .setScale(scale, RoundingMode.HALF_UP)
                 .doubleValue();
     }
+
     /**
      * @param obj an object
      * @return Double value of object
@@ -35,6 +37,7 @@ public class ConvertUtil {
             return truncate(0d, scale);
         }
     }
+
     /**
      * @param object an object
      * @return decimal value of object
@@ -55,6 +58,7 @@ public class ConvertUtil {
         return BigDecimal.valueOf(input)
                 .setScale(scale, RoundingMode.HALF_UP).doubleValue();
     }
+
     /**
      * @param inputType input string
      * @return check if inputType is Number
@@ -62,6 +66,7 @@ public class ConvertUtil {
     public static boolean isTextOrDate(String inputType) {
         return FactorDataType.TEXT.equals(inputType) || FactorDataType.DATE.equals(inputType);
     }
+
     /**
      * @param inputType input string
      * @return check if inputType is Number
@@ -105,7 +110,6 @@ public class ConvertUtil {
     }
 
     /**
-     *
      * @param listFactors list of factors
      * @return SQL String check all factors is not null
      */
@@ -116,4 +120,28 @@ public class ConvertUtil {
         return string2;
     }
 
+    public static Map<Integer, List<String>> generateSubsets(List<String> set) {
+        Map<Integer, List<String>> result = new LinkedHashMap<>();
+        int size = set.size();
+        for (int i = 1; i < (1 << size); i++) {
+            List<String> subSet = new ArrayList<>();
+            //skip empty set so start from 1
+            System.out.print("{ ");
+            // Print current subset
+            for (int j = 0; j < size; j++) {
+                // (1<<j) is a number with jth bit 1
+                // so when we 'and' them with the
+                // subset number we get which numbers
+                // are present in the subset and which
+                // are not
+                if ((i & (1 << j)) > 0) {
+                    System.out.print(set.get(j) + " ");
+                    subSet.add(set.get(j));
+                }
+            }
+            System.out.println("}");
+            result.put(i, subSet);
+        }
+        return result;
+    }
 }

@@ -8,9 +8,12 @@ import java.util.List;
 
 public interface CoreLearningModelServiceInterface {
 
-    void saveListModel(List<CoreLearner> modelList);
+    void saveListLearnerModel(List<CoreLearner> modelList);
+
+    void saveListModel(List<CoreLearningModel> modelList);
 
     String getModelPath(CoreAutoOptimizationConfig coreAutoOptimizationConfig, String identifier);
 
     CoreLearningModel findOne(Long autOptimizationConfigId, String identifier);
+
 }

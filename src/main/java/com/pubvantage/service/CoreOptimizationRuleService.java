@@ -1,6 +1,10 @@
 package com.pubvantage.service;
 
-import scala.Long;
+
+import com.google.gson.JsonObject;
+import com.pubvantage.entity.CoreAutoOptimizationConfig;
+
+import java.util.List;
 
 public class CoreOptimizationRuleService implements CoreOptimizationRuleServiceInterface {
     @Override
@@ -14,8 +18,8 @@ public class CoreOptimizationRuleService implements CoreOptimizationRuleServiceI
     }
 
     @Override
-    public String getMetrics(Long optimizationRuleId) {
-        return null;
+    public String[] getMetrics(long optimizationRuleId) {
+        return new String[0];
     }
 
     @Override
@@ -24,7 +28,38 @@ public class CoreOptimizationRuleService implements CoreOptimizationRuleServiceI
     }
 
     @Override
-    public boolean checkToken(Long autoOptimizationConfigId, String token) {
+    public boolean checkToken(long autoOptimizationConfigId, String token) {
         return false;
     }
+
+    @Override
+    public List<String> getFactors(Long id) {
+        return null;
+    }
+
+    @Override
+    public JsonObject getFieldType(Long id) {
+        return null;
+    }
+
+    @Override
+    public CoreAutoOptimizationConfig findById(Long autoOptimizationConfigId) {
+        return null;
+    }
+
+    @Override
+    public String[] getObjectiveAndFactors(long autoOptimizationId) {
+        return new String[0];
+    }
+
+    @Override
+    public List<String> getPositiveFactors(long autoOptimizationId) {
+        return null;
+    }
+
+    @Override
+    public List<String> getNegativeFactors(long autoOptimizationId) {
+        return null;
+    }
+
 }

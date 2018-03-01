@@ -364,7 +364,7 @@ public class AppMain {
      * @param modelList list of model
      */
     private static void saveModelToDatabase(List<CoreLearner> modelList) {
-        coreLearnerService.saveListModel(modelList);
+//        coreLearnerService.saveListModel(modelList);
     }
 
     /**
