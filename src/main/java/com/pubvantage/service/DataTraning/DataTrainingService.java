@@ -4,7 +4,7 @@ import com.pubvantage.learner.Params.SegmentFieldGroup;
 
 import java.util.List;
 
-public class DataTrainingService {
+public class DataTrainingService implements DataTrainingServiceInterface {
     private Long optimizationRuleId;
     private String identifier;
     private List<String> oneSegmentFieldGroup;
@@ -18,32 +18,39 @@ public class DataTrainingService {
         this.oneSegmentFieldGroup = oneSegmentFieldGroup;
     }
 
+
+    @Override
     public Long getOptimizationRuleId() {
-        return optimizationRuleId;
+        return null;
     }
 
+    @Override
     public void setOptimizationRuleId(Long optimizationRuleId) {
-        this.optimizationRuleId = optimizationRuleId;
+
     }
 
+    @Override
     public String getIdentifier() {
-        return identifier;
+        return null;
     }
 
+    @Override
     public void setIdentifier(String identifier) {
-        this.identifier = identifier;
+
     }
 
+    @Override
     public List<String> getOneSegmentFieldGroup() {
-        return oneSegmentFieldGroup;
+        return null;
     }
 
+    @Override
     public void setOneSegmentFieldGroup(List<String> oneSegmentFieldGroup) {
-        this.oneSegmentFieldGroup = oneSegmentFieldGroup;
+
     }
 
+    @Override
     public List<Object> getAllUniqueValuesForOneSegmentFieldGroup() {
-        // Select distinct values of one segment field groups
-        return  null;
+        return null;
     }
 }
