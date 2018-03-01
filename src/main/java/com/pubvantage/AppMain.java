@@ -11,6 +11,7 @@ import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreLearningModel;
 import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.learner.LearnerInterface;
+import com.pubvantage.learner.Params.SegmentFieldGroup;
 import com.pubvantage.service.*;
 import com.pubvantage.utils.*;
 import org.apache.http.HttpStatus;
@@ -283,20 +284,18 @@ public class AppMain {
     }
 
     private static List<String> generateAndSaveModel(CoreOptimizationRule optimizationRule) {
-
         List<String> successIdentifiers = new ArrayList<>();
         List<CoreLearner> modelList = new ArrayList<>();
 
-        OptimizationRuleService coreOptimizationRuleService = new OptimizationRuleService();
-        List<String> identifiers = coreOptimizationRuleService.getIdentifiers(optimizationRule);
-        List<String> segmentFields = coreOptimizationRuleService.getSegmentFields(optimizationRule);
-
+        List<String> identifiers = JsonUtil.jsonArrayStringToJavaList(optimizationRule.getIdentifierFields());
+        List<String> segmentFields = JsonUtil.jsonArrayStringToJavaList(optimizationRule.getSegmentFields());
 
         if (identifiers.size() == 0) {
             return null;
         }
 
-        ArrayList<PredictionParam> predictionParams = new ArrayList<>();
+        List<PredictionParam> predictionParams = new ArrayList<>();
+
         for (String identifier : identifiers) {
             PredictionParam predictionParam = new PredictionParam(optimizationRule.getId(), identifier, segmentFields);
             predictionParams.add(predictionParam);
@@ -311,25 +310,23 @@ public class AppMain {
         return successIdentifiers;
     }
 
-    private static List<CoreLearner> generateModelForOneIdentifier(PredictionParam predictionParam) {
+        private static List<CoreLearner> generateModelForOneIdentifier(PredictionParam predictionParam) {
         List<CoreLearner> coreLearnersList = new LinkedList<>();
 
-        long OptimizationRuleId = predictionParam.getAutoOptimizationId();
+        Long optimizationRuleId = predictionParam.getAutoOptimizationId();
         String identifier = predictionParam.getIdentifier();
-        ArrayList<ArrayList<String>> segmentFieldGroups = predictionParam.generateMultipleSegmentFieldGroups();
+        List<List<String>> segmentFieldGroups = predictionParam.generateMultipleSegmentFieldGroups();
 
-
-        long length = segmentFieldGroups.size();
-        for (int i = 0; i < length; i++) {
-            Arrays segmentFields = segmentFieldGroups.get(i);
-            List<CoreLearner> coreLearners = generateModelForOneIdentifierAndOneSegmentFieldGroup(autoOptimizationId, $identifier, segmentFields);
+        for (List<String> segmentFieldGroup: segmentFieldGroups) {
+            SegmentFieldGroup segmentFieldGroupObject = new SegmentFieldGroup(optimizationRuleId, identifier, segmentFieldGroup);
+            List<CoreLearner> coreLearners = generateModelForOneIdentifierAndOneSegmentFieldGroup(segmentFieldGroupObject);
             coreLearnersList.addAll(coreLearners);
         }
 
         return coreLearnersList;
     }
 
-    private static List<CoreLearner> generateModelForOneIdentifierAndOneSegmentFieldGroup(long autoOptimizationId, String $identifier, Arrays segmentFields) {
+    private static List<CoreLearner> generateModelForOneIdentifierAndOneSegmentFieldGroup(SegmentFieldGroup segmentFieldGroup) {
 
         return null;
     }
@@ -338,9 +335,8 @@ public class AppMain {
      * @param segmentFields
      * @return
      */
-    private static List<Arrays> createSegmentFieldGroups(List<String> segmentFields) {
-
-        return new LinkedList<>();
+    private static  List<List<String>> createSegmentFieldGroups(List<String> segmentFields) {
+        return ConvertUtil.generateSubsets(segmentFields);
     }
 
     /**

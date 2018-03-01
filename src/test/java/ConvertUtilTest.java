@@ -1,15 +1,14 @@
+import com.jsoniter.JsonIterator;
+import com.jsoniter.any.Any;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDao;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDaoInterface;
 import com.pubvantage.utils.AppResource;
 import com.pubvantage.utils.ConvertUtil;
-import com.pubvantage.utils.HibernateUtil;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.hibernate.Session;
 import org.junit.Test;
 
-import javax.persistence.Convert;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -122,7 +121,22 @@ public class ConvertUtilTest {
         set.add("a");
         set.add("b");
         set.add("c");
-        Map<Integer, List<String>> map = ConvertUtil.generateSubsets(set);
+        List<List<String>> map = ConvertUtil.generateSubsets(set);
         return;
     }
+    @Test
+    public void jsonArrayStringToArray() {
+//        String input = "[\"text2_2\",\"text_3\"]";
+        String input = "[\"text2_2\",\"http://text_3\"]";
+//        ArrayList<String> arrayList = JsonUtil.jsonArrayStringToJavaList(input);
+
+        Any obj = JsonIterator.deserialize(input);
+        List<String> array = JsonIterator.deserialize(input, ArrayList.class);
+
+        String listObjectInput = "[{\"field\":\"largetext2_2\",\"goal\":\"Min\",\"weight\":0.2}]";
+        List<HashMap<String, String>> anyList = JsonIterator.deserialize(listObjectInput, ArrayList.class);
+        HashMap<String, String> any = anyList.get(0);
+        return;
+    }
+
 }

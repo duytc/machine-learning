@@ -120,8 +120,8 @@ public class ConvertUtil {
         return string2;
     }
 
-    public static Map<Integer, List<String>> generateSubsets(List<String> set) {
-        Map<Integer, List<String>> result = new LinkedHashMap<>();
+    public static List<List<String>> generateSubsets(List<String> set) {
+        List<List<String>> result = new ArrayList<>();
         int size = set.size();
         for (int i = 1; i < (1 << size); i++) {
             List<String> subSet = new ArrayList<>();
@@ -140,7 +140,7 @@ public class ConvertUtil {
                 }
             }
             System.out.println("}");
-            result.put(i, subSet);
+            result.add(subSet);
         }
         return result;
     }

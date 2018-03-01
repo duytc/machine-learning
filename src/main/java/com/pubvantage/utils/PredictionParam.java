@@ -6,12 +6,15 @@ import java.util.List;
 public class PredictionParam {
     private long autoOptimizationId;
     private String identifier;
-    private List<String> segmentField;
+    private List<String> segmentFields;
 
-    public PredictionParam(long autoOptimizationId, String identifier, List<String> segmentField) {
+    public PredictionParam() {
+    }
+
+    public PredictionParam(long autoOptimizationId, String identifier, List<String> segmentFields) {
         this.autoOptimizationId = autoOptimizationId;
         this.identifier = identifier;
-        this.segmentField = segmentField;
+        this.segmentFields = segmentFields;
     }
 
     public String getIdentifier() {
@@ -32,19 +35,19 @@ public class PredictionParam {
 
 
 
-    public List<String> getSegmentField() {
-        return segmentField;
+    public List<String> getSegmentFields() {
+        return segmentFields;
     }
 
-    public void setSegmentField(ArrayList<String> segmentField) {
-        this.segmentField = segmentField;
+    public void setSegmentFields(ArrayList<String> segmentFields) {
+        this.segmentFields = segmentFields;
     }
 
     /**
      * Return segment field groups
      * @return
      */
-    public ArrayList<ArrayList<String>> generateMultipleSegmentFieldGroups() {
+    public List<List<String>> generateMultipleSegmentFieldGroups() {
 
         return null;
     }
