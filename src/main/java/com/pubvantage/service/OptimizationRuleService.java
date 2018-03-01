@@ -23,8 +23,8 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     @Override
-    public String[] getOptimizeFields(long optimizationRuleId) {
-        return new String[0];
+    public List<String> getOptimizeFields(long optimizationRuleId) {
+        return null;
     }
 
     @Override

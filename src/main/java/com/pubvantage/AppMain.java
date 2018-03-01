@@ -350,9 +350,9 @@ public class AppMain {
         List<String> oneSegmentGroup = segmentFieldGroup.getOneSegmentFieldGroup();
 
         DataTrainingService dataTrainingService = new DataTrainingService(optimizationRuleId, identifier, oneSegmentGroup);
-        List<JsonObject> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
+        List<Object> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
 
-        for (JsonObject uniqueValue: uniqueValuesOfOneSegmentFieldGroup) {
+        for (Object uniqueValue: uniqueValuesOfOneSegmentFieldGroup) {
             LearnerParams learnerParams =  new LearnerParams(optimizationRuleId, identifier, oneSegmentGroup, uniqueValue, optimizeField);
             List<CoreLearner> learners = generateModelForOneValueOfSegmentFieldGroups(learnerParams);
             coreLearners.addAll(learners);

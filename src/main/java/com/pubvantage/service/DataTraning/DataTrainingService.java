@@ -1,15 +1,14 @@
 package com.pubvantage.service.DataTraning;
 
-import com.google.gson.JsonObject;
-import com.pubvantage.learner.Params.SegmentFieldGroup;
+import com.pubvantage.dao.SparkDataTrainingDao;
 
 import java.util.List;
 
-public class DataTrainingService {
+public class DataTrainingService implements DataTrainingServiceInterface {
     private Long optimizationRuleId;
     private String identifier;
     private List<String> oneSegmentFieldGroup;
-
+    SparkDataTrainingDao sparkDataTrainingDao = new SparkDataTrainingDao();
     public DataTrainingService() {
     }
 
@@ -19,32 +18,40 @@ public class DataTrainingService {
         this.oneSegmentFieldGroup = oneSegmentFieldGroup;
     }
 
+
+    @Override
     public Long getOptimizationRuleId() {
-        return optimizationRuleId;
+        return null;
     }
 
+    @Override
     public void setOptimizationRuleId(Long optimizationRuleId) {
-        this.optimizationRuleId = optimizationRuleId;
+
     }
 
+    @Override
     public String getIdentifier() {
-        return identifier;
+        return null;
     }
 
+    @Override
     public void setIdentifier(String identifier) {
-        this.identifier = identifier;
+
     }
 
+    @Override
     public List<String> getOneSegmentFieldGroup() {
-        return oneSegmentFieldGroup;
+        return null;
     }
 
+    @Override
     public void setOneSegmentFieldGroup(List<String> oneSegmentFieldGroup) {
-        this.oneSegmentFieldGroup = oneSegmentFieldGroup;
+
     }
 
-    public List<JsonObject> getAllUniqueValuesForOneSegmentFieldGroup() {
-        // Select distinct values of one segment field groups
-        return  null;
+    @Override
+    public List<Object> getAllUniqueValuesForOneSegmentFieldGroup() {
+        List<Object> objects =  sparkDataTrainingDao.getAllUniqueValuesForOneSegmentFieldGroup(optimizationRuleId, identifier, oneSegmentFieldGroup);
+        return objects;
     }
 }

@@ -8,10 +8,10 @@ public class LearnerParams {
     private Long optimizationRuleId;
     private String identifier;
     private List<String> oneSegmentGroup;
-    private  JsonObject uniqueValue;
+    private Object uniqueValue;
     private String optimizeField;
 
-    public LearnerParams(Long optimizationRuleId, String identifier, List<String> oneSegmentGroup, JsonObject uniqueValue, String optimizeField) {
+    public LearnerParams(Long optimizationRuleId, String identifier, List<String> oneSegmentGroup, Object uniqueValue, String optimizeField) {
         this.optimizationRuleId = optimizationRuleId;
         this.identifier = identifier;
         this.oneSegmentGroup = oneSegmentGroup;
