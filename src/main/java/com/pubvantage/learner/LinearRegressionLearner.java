@@ -1,6 +1,7 @@
 package com.pubvantage.learner;
 
 import com.pubvantage.entity.ConvertedDataWrapper;
+import com.pubvantage.learner.Params.LinearRegressionDataProcess;
 import com.pubvantage.utils.FilePathUtil;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.ml.linalg.Vector;
@@ -27,33 +28,36 @@ public class LinearRegressionLearner implements LearnerInterface {
     private static final double REG_PARAM = 0.3;
     private static final double ELASTIC_NET_PARAM = 0.8;
     private static final int MAX_ITER = 10;
-    private long optimizationRuleId;
-    private String identifier;
-    private LinearRegressionModel lrModel;
-    private ConvertedDataWrapper convertedDataWrapper;
+
+    private  SparkSession sparkSession;
+   private LinearRegressionDataProcess linearRegressionDataProcess;
 
 
-    public LinearRegressionLearner(long optimizationRuleId, String identifier, SparkSession sparkSession, ConvertedDataWrapper convertedDataWrapper) {
-        this.optimizationRuleId = optimizationRuleId;
-        this.identifier = identifier;
-        this.convertedDataWrapper = convertedDataWrapper;
-        this.lrModel = generateModel(sparkSession);
+    public LinearRegressionLearner(SparkSession sparkSession, LinearRegressionDataProcess linearRegressionDataProcess) {
+        this.sparkSession = sparkSession;
+        this.linearRegressionDataProcess = linearRegressionDataProcess;
     }
 
-    public long getOptimizationRuleId() {
-        return optimizationRuleId;
+    public SparkSession getSparkSession() {
+        return sparkSession;
     }
 
-    public String getIdentifier() {
-        return identifier;
+    public void setSparkSession(SparkSession sparkSession) {
+        this.sparkSession = sparkSession;
     }
 
-    public LinearRegressionModel getLrModel() {
-        return lrModel;
+    @Override
+    public LinearRegressionDataProcess getLinearRegressionDataProcess() {
+        return linearRegressionDataProcess;
     }
 
+    public void setLinearRegressionDataProcess(LinearRegressionDataProcess linearRegressionDataProcess) {
+        this.linearRegressionDataProcess = linearRegressionDataProcess;
+    }
+
+    @Override
     public LinearRegressionModel generateModel(SparkSession sparkSession) {
-        Dataset<Row> training = extractDataToLearn(convertedDataWrapper.getDataSet());
+        Dataset<Row> training = linearRegressionDataProcess.getTrainingDataForLinearRegression();
 
         LinearRegression lr = new LinearRegression()
                 .setMaxIter(MAX_ITER)
@@ -66,58 +70,14 @@ public class LinearRegressionLearner implements LearnerInterface {
         System.out.println("Coefficients: " + lrModel.coefficients().toString() + " Intercept: " + lrModel.intercept());
 
         try {
-            String savePath = FilePathUtil.getLearnerModelPath(optimizationRuleId, identifier);
+            String savePath = FilePathUtil.getLearnerModelPath( linearRegressionDataProcess.getOptimizationRuleId(),
+                                                                linearRegressionDataProcess.getIdentifier(),
+                                                                linearRegressionDataProcess.getOneSegmentGroup(),
+                                                                linearRegressionDataProcess.getUniqueValue());
             lrModel.write().overwrite().save(savePath);
         } catch (IOException e) {
             e.printStackTrace();
         }
         return lrModel;
-    }
-
-    /**
-     * @return object contain converted data, forecast, category weight, factors and objective
-     */
-    @Override
-    public ConvertedDataWrapper getConvertedDataWrapper() {
-        return this.convertedDataWrapper;
-    }
-
-    /**
-     * @param convertedData converted data (text -> number)
-     * @return Data to learn
-     */
-    private Dataset<Row> extractDataToLearn(Dataset<Row> convertedData) {
-        StructType schema = new StructType(new StructField[]{
-                new StructField("label", DataTypes.DoubleType, false, Metadata.empty()),
-                new StructField("features", new VectorUDT(), false, Metadata.empty()),
-        });
-
-        ExpressionEncoder<Row> encoder = RowEncoder.apply(schema);
-        Dataset<Row> output = convertedData.flatMap((FlatMapFunction<Row, Row>) rowData -> {
-            Double label = Double.parseDouble(rowData.get(0).toString());
-
-            double[] features = new double[rowData.size() - 1];
-            for (int i = 0; i < features.length; i++) {
-                int factorIndex = i + 1;
-                features[i] = Double.parseDouble(rowData.get(factorIndex).toString());
-            }
-
-            Vector featuresVector = Vectors.dense(features);
-            Row rowOutput = RowFactory.create(label, featuresVector);
-
-            ArrayList<Row> list = new ArrayList<>();
-            list.add(rowOutput);
-            return list.iterator();
-        }, encoder);
-
-        List<Row> result = output.collectAsList();
-        for (Row row : result) {
-            for (int i = 0; i < row.length(); i++) {
-                System.out.print(" " + row.get(i).toString());
-            }
-            System.out.println();
-        }
-
-        return output;
     }
 }

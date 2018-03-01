@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Properties;
 
 public class FilePathUtil {
@@ -23,9 +24,9 @@ public class FilePathUtil {
      * @param identifier identifier
      * @return string path of created folder
      */
-    public static String createLearnedModeldFolder(Long autoOptimizationConfigId, String identifier) {
+    public static String createLearnedModeldFolder(Long autoOptimizationConfigId, String identifier, List<String> oneSegmentGroup, Object uniqueValue) {
         try {
-            String filePath = getLearnerModelPath(autoOptimizationConfigId, identifier);
+            String filePath = getLearnerModelPath(autoOptimizationConfigId,identifier, oneSegmentGroup, uniqueValue);
             Path path = Paths.get(filePath);
             Files.deleteIfExists(path);
             Files.createDirectories(path.getParent());
@@ -45,7 +46,7 @@ public class FilePathUtil {
      * @param identifier identifier
      * @return string path of folder
      */
-    public static String getLearnerModelPath(Long autoOptimizationConfigId, String identifier) {
+    public static String getLearnerModelPath(Long autoOptimizationConfigId, String identifier, List<String> oneSegmentGroup, Object uniqueValue) {
         String baseFolder = properties.getProperty("path.learner.model");
         if (baseFolder == null || baseFolder.isEmpty()) {
             baseFolder = BASE_FOLDER;

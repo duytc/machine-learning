@@ -11,7 +11,8 @@ import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreLearningModel;
 import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.learner.LearnerInterface;
-import com.pubvantage.learner.Params.LearnerParams;
+import com.pubvantage.learner.LinearRegressionLearner;
+import com.pubvantage.learner.Params.LinearRegressionDataProcess;
 import com.pubvantage.learner.Params.SegmentFieldGroup;
 import com.pubvantage.service.*;
 import com.pubvantage.service.DataTraning.DataTrainingService;
@@ -22,6 +23,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.regression.LinearRegressionModel;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import spark.Request;
 import spark.Response;
@@ -353,18 +355,19 @@ public class AppMain {
         List<Object> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
 
         for (Object uniqueValue: uniqueValuesOfOneSegmentFieldGroup) {
-            LearnerParams learnerParams =  new LearnerParams(optimizationRuleId, identifier, oneSegmentGroup, uniqueValue, optimizeField);
-            List<CoreLearner> learners = generateModelForOneValueOfSegmentFieldGroups(learnerParams);
-            coreLearners.addAll(learners);
+            LinearRegressionDataProcess linearRegressionDataProcess =  new LinearRegressionDataProcess(optimizationRuleId, identifier, oneSegmentGroup, uniqueValue, optimizeField);
+            CoreLearner learners = generateModelForOneValueOfSegmentFieldGroups(linearRegressionDataProcess);
+            coreLearners.add(learners);
         }
 
         return  coreLearners;
     }
 
-    private static List<CoreLearner> generateModelForOneValueOfSegmentFieldGroups(LearnerParams learnerParams)
+    private static CoreLearner generateModelForOneValueOfSegmentFieldGroups(LinearRegressionDataProcess linearRegressionDataProcess)
     {
+        LinearRegressionLearner linearRegressionLearner = new LinearRegressionLearner(sparkSession, linearRegressionDataProcess);
 
-        return null;
+        return null ;
     }
 
     /**
@@ -382,15 +385,7 @@ public class AppMain {
      */
     private static CoreLearningModel generateModel(LearnerInterface learner) {
         CoreLearningModel model = new CoreLearningModel();
-        model.setId(0L);
-        model.setAutoOptimizationConfigId(learner.getOptimizationRuleId());
-        model.setType(LINEAR_REGRESSION_TYPE);
-        model.setUpdatedDate(new Date());
-        model.setCategoricalFieldWeights(learner.getConvertedDataWrapper().getCategoryWeight().toString());
-        model.setForecastFactorValues(learner.getConvertedDataWrapper().getForecast().toString());
-        model.setModel(getModelStringData(learner));
-        model.setIdentifier(learner.getIdentifier());
-        model.setModePath(FilePathUtil.getLearnerModelPath(learner.getOptimizationRuleId(), learner.getIdentifier()));
+
 
         return model;
     }
@@ -409,37 +404,8 @@ public class AppMain {
      * @return json data of model
      */
     private static String getModelStringData(LearnerInterface learner) {
-        List<String> objectiveAndFactor = learner.getConvertedDataWrapper().getObjectiveAndFactors();
 
-        JsonObject jsonObject = new JsonObject();
-        LinearRegressionModel model = learner.getLrModel();
-
-        //coefficient
-        Vector vec = model.coefficients();
-        double[] coefficientsArray = vec.toArray();
-
-        JsonObject coefficient = new JsonObject();
-
-        for (int i = 0; i < coefficientsArray.length; i++) {
-            int factorIndex = i + 1;// index 0 is objective
-            if (Double.isNaN(coefficientsArray[i])) {
-                coefficient.addProperty(objectiveAndFactor.get(factorIndex), "null");
-            } else {
-                double value = ConvertUtil.convertObjectToDecimal(coefficientsArray[i]).doubleValue();
-                coefficient.addProperty(objectiveAndFactor.get(factorIndex), value);
-            }
-        }
-
-        jsonObject.add("coefficient", coefficient);
-
-        if (Double.isNaN(model.intercept())) {
-            jsonObject.addProperty("intercept", "null");
-        } else {
-            double value = ConvertUtil.convertObjectToDecimal(model.intercept()).doubleValue();
-            jsonObject.addProperty("intercept", value);
-        }
-
-        return jsonObject.toString();
+       return  null;
     }
 
     /**

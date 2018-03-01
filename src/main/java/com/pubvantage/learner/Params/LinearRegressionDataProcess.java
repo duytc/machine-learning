@@ -1,17 +1,19 @@
 package com.pubvantage.learner.Params;
 
 import com.google.gson.JsonObject;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
 
 import java.util.List;
 
-public class LearnerParams {
+public class LinearRegressionDataProcess {
     private Long optimizationRuleId;
     private String identifier;
     private List<String> oneSegmentGroup;
     private Object uniqueValue;
     private String optimizeField;
 
-    public LearnerParams(Long optimizationRuleId, String identifier, List<String> oneSegmentGroup, Object uniqueValue, String optimizeField) {
+    public LinearRegressionDataProcess(Long optimizationRuleId, String identifier, List<String> oneSegmentGroup, Object uniqueValue, String optimizeField) {
         this.optimizationRuleId = optimizationRuleId;
         this.identifier = identifier;
         this.oneSegmentGroup = oneSegmentGroup;
@@ -43,7 +45,7 @@ public class LearnerParams {
         this.oneSegmentGroup = oneSegmentGroup;
     }
 
-    public JsonObject getUniqueValue() {
+    public Object getUniqueValue() {
         return uniqueValue;
     }
 
@@ -58,4 +60,10 @@ public class LearnerParams {
     public void setOptimizeField(String optimizeField) {
         this.optimizeField = optimizeField;
     }
+
+    public Dataset<Row> getTrainingDataForLinearRegression()
+    {
+        return  null;
+    }
+
 }
