@@ -4,9 +4,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
+import com.jsoniter.JsonIterator;
 import spark.ResponseTransformer;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class JsonUtil {
     public static String toJson(Object object) {
@@ -26,16 +28,21 @@ public class JsonUtil {
         JsonParser jsonParser = new JsonParser();
         return jsonParser.parse(daysJson).getAsJsonArray();
     }
+//
+//    /**
+//     * convert string json to array list.NOTE: error occur when string has special characters
+//     * @param jsonArrayString
+//     * @return
+//     */
+//    public static ArrayList<String> jsonArrayStringToJavaList(String jsonArrayString) {
+//        JsonParser jsonParser = new JsonParser();
+//        JsonArray arrayFromString = jsonParser.parse(jsonArrayString).getAsJsonArray();
+//        ArrayList<String> arrayList = new Gson().fromJson(arrayFromString, ArrayList.class);
+//        return arrayList;
+//    }
 
-    /**
-     * convert string json to array list.NOTE: error occur when string has special characters
-     * @param jsonArrayString
-     * @return
-     */
-    public static ArrayList<String> jsonArrayStringToJavaList(String jsonArrayString) {
-        JsonParser jsonParser = new JsonParser();
-        JsonArray arrayFromString = jsonParser.parse(jsonArrayString).getAsJsonArray();
-        ArrayList<String> arrayList = new Gson().fromJson(arrayFromString, ArrayList.class);
-        return arrayList;
+    public static List<String> jsonArrayStringToJavaList(String jsonArrayString) {
+        return JsonIterator.deserialize(jsonArrayString, ArrayList.class);
     }
+
 }

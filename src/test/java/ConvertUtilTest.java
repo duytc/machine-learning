@@ -1,18 +1,14 @@
-import com.google.gson.JsonArray;
+import com.jsoniter.JsonIterator;
+import com.jsoniter.any.Any;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDao;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDaoInterface;
 import com.pubvantage.utils.AppResource;
 import com.pubvantage.utils.ConvertUtil;
-import com.pubvantage.utils.HibernateUtil;
-import com.pubvantage.utils.JsonUtil;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.hibernate.Session;
 import org.junit.Test;
 
-import javax.persistence.Convert;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -130,8 +126,12 @@ public class ConvertUtilTest {
     }
     @Test
     public void jsonArrayStringToArray() {
-        String input = "[\"text2_2\",\"text_3\"]";
-        ArrayList<String> arrayList = JsonUtil.jsonArrayStringToJavaList(input);
+//        String input = "[\"text2_2\",\"text_3\"]";
+        String input = "[\"text2_2\",\"http://text_3\"]";
+//        ArrayList<String> arrayList = JsonUtil.jsonArrayStringToJavaList(input);
+
+        Any obj = JsonIterator.deserialize(input);
+        List<String> array = JsonIterator.deserialize(input, ArrayList.class);
         return;
     }
 
