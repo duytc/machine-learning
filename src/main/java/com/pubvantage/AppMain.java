@@ -284,12 +284,11 @@ public class AppMain {
 
 
     private static List<String> generateAndSaveModel(CoreOptimizationRule optimizationRule) {
-
         List<String> successIdentifiers = new ArrayList<>();
         List<CoreLearner> modelList = new ArrayList<>();
 
         OptimizationRuleService coreOptimizationRuleService = new OptimizationRuleService();
-        List<String> identifiers = coreOptimizationRuleService.getIdentifiers(optimizationRule);
+        List<String> identifiers = JsonUtil.jsonArrayStringToJavaList(optimizationRule.getIdentifierFields());
         List<String> segmentFields = coreOptimizationRuleService.getSegmentFields(optimizationRule);
         List<Arrays> segmentFieldGroups = createSegmentFieldGroups(segmentFields);
 

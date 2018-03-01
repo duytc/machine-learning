@@ -1,8 +1,10 @@
+import com.google.gson.JsonArray;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDao;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDaoInterface;
 import com.pubvantage.utils.AppResource;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.HibernateUtil;
+import com.pubvantage.utils.JsonUtil;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -125,4 +127,11 @@ public class ConvertUtilTest {
         Map<Integer, List<String>> map = ConvertUtil.generateSubsets(set);
         return;
     }
+    @Test
+    public void jsonArrayStringToArray() {
+        String input = "[\"text2_2\",\"text_3\"]";
+        ArrayList<String> arrayList = JsonUtil.jsonArrayStringToJavaList(input);
+        return;
+    }
+
 }

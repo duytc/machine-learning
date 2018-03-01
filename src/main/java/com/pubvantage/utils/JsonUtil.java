@@ -6,6 +6,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import spark.ResponseTransformer;
 
+import java.util.ArrayList;
+
 public class JsonUtil {
     public static String toJson(Object object) {
         return new Gson().toJson(object);
@@ -23,5 +25,12 @@ public class JsonUtil {
         String daysJson = gson.toJson(array);
         JsonParser jsonParser = new JsonParser();
         return jsonParser.parse(daysJson).getAsJsonArray();
+    }
+
+    public static ArrayList<String> jsonArrayStringToJavaList(String jsonArrayString) {
+        JsonParser jsonParser = new JsonParser();
+        JsonArray arrayFromString = jsonParser.parse(jsonArrayString).getAsJsonArray();
+        ArrayList<String> arrayList = new Gson().fromJson(arrayFromString, ArrayList.class);
+        return arrayList;
     }
 }
