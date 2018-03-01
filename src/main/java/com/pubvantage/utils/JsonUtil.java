@@ -27,6 +27,11 @@ public class JsonUtil {
         return jsonParser.parse(daysJson).getAsJsonArray();
     }
 
+    /**
+     * convert string json to array list.NOTE: error occur when string has special characters
+     * @param jsonArrayString
+     * @return
+     */
     public static ArrayList<String> jsonArrayStringToJavaList(String jsonArrayString) {
         JsonParser jsonParser = new JsonParser();
         JsonArray arrayFromString = jsonParser.parse(jsonArrayString).getAsJsonArray();
