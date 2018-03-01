@@ -3,15 +3,23 @@ package com.pubvantage.utils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SegmentFieldGroup {
+public class PredictionParam {
     private long autoOptimizationId;
     private String identifier;
-    private List<String> segmentFieldGroup;
+    private List<String> segmentField;
 
-    public SegmentFieldGroup(long autoOptimizationId, String identifier, List<String> segmentFieldGroup) {
+    public PredictionParam(long autoOptimizationId, String identifier, List<String> segmentField) {
         this.autoOptimizationId = autoOptimizationId;
         this.identifier = identifier;
-        this.segmentFieldGroup = segmentFieldGroup;
+        this.segmentField = segmentField;
+    }
+
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
     }
 
     public long getAutoOptimizationId() {
@@ -24,19 +32,19 @@ public class SegmentFieldGroup {
 
 
 
-    public List<String> getSegmentFieldGroup() {
-        return segmentFieldGroup;
+    public List<String> getSegmentField() {
+        return segmentField;
     }
 
-    public void setSegmentFieldGroup(ArrayList<String> segmentFieldGroup) {
-        this.segmentFieldGroup = segmentFieldGroup;
+    public void setSegmentField(ArrayList<String> segmentField) {
+        this.segmentField = segmentField;
     }
 
     /**
      * Return segment field groups
      * @return
      */
-    public ArrayList<ArrayList<String>> getSegmentFieldGroups() {
+    public ArrayList<ArrayList<String>> generateMultipleSegmentFieldGroups() {
 
         return null;
     }
