@@ -100,7 +100,8 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         List<Object> listData = new ArrayList<>();
         for (Row row : resultList) {
             Object data = row.get(0);
-            listData.add(data);
+            if (data != null)
+                listData.add(data);
         }
         return listData;
     }

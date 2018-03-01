@@ -139,4 +139,12 @@ public class ConvertUtilTest {
         HashMap<String, String> any = anyList.get(0);
         return;
     }
+    @Test
+    public void getUniquire(){
+        List<String> oneSegmentGroup = new ArrayList<>();
+        oneSegmentGroup.add("datatime_dimension_4_4_4");
+        DataTrainingService dataTrainingService = new DataTrainingService(19L, "allenwestrepublic.com", oneSegmentGroup);
+        List<Object> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
+
+    }
 }
