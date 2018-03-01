@@ -13,6 +13,7 @@ import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.learner.LearnerInterface;
 import com.pubvantage.learner.Params.SegmentFieldGroup;
 import com.pubvantage.service.*;
+import com.pubvantage.service.DataTraning.DataTrainingService;
 import com.pubvantage.utils.*;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
@@ -263,7 +264,7 @@ public class AppMain {
 
             HibernateUtil.startSession();
 
-            dataTrainingService = new DataTrainingService();
+            dataTrainingService = new DataTrainingServiceOld();
             coreLearnerService = new CoreLearningModelService();
             return true;
         } catch (Exception e) {
@@ -310,33 +311,34 @@ public class AppMain {
         return successIdentifiers;
     }
 
-        private static List<CoreLearner> generateModelForOneIdentifier(PredictionParam predictionParam) {
+    private static List<CoreLearner> generateModelForOneIdentifier(PredictionParam predictionParam) {
         List<CoreLearner> coreLearnersList = new LinkedList<>();
 
         Long optimizationRuleId = predictionParam.getAutoOptimizationId();
         String identifier = predictionParam.getIdentifier();
         List<List<String>> segmentFieldGroups = predictionParam.generateMultipleSegmentFieldGroups();
 
-        for (List<String> segmentFieldGroup: segmentFieldGroups) {
+        for (List<String> segmentFieldGroup : segmentFieldGroups) {
             SegmentFieldGroup segmentFieldGroupObject = new SegmentFieldGroup(optimizationRuleId, identifier, segmentFieldGroup);
-            List<CoreLearner> coreLearners = generateModelForOneIdentifierAndOneSegmentFieldGroup(segmentFieldGroupObject);
+            List<CoreLearner> coreLearners = generateModelForSegmentFieldGroup(segmentFieldGroupObject);
             coreLearnersList.addAll(coreLearners);
         }
 
         return coreLearnersList;
     }
 
-    private static List<CoreLearner> generateModelForOneIdentifierAndOneSegmentFieldGroup(SegmentFieldGroup segmentFieldGroup) {
+    private static List<CoreLearner> generateModelForSegmentFieldGroup(SegmentFieldGroup segmentFieldGroup) {
+        Long optimizationRuleId = segmentFieldGroup.getOptimizationRuleId();
+        String identifier = segmentFieldGroup.getIdentifier();
+        List<String> oneSegmentGroup = segmentFieldGroup.getOneSegmentFieldGroup();
+
+        DataTrainingService dataTrainingService = new DataTrainingService(optimizationRuleId, identifier, oneSegmentGroup);
+        List<Object> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
+        OptimizationRuleServiceInterface optimizationRuleService =  new OptimizationRuleService();
+        List<String>  optimizeFields =  optimizationRuleService.getOptimizeFields(segmentFieldGroup.getOptimizationRuleId());
+
 
         return null;
-    }
-
-    /**
-     * @param segmentFields
-     * @return
-     */
-    private static  List<List<String>> createSegmentFieldGroups(List<String> segmentFields) {
-        return ConvertUtil.generateSubsets(segmentFields);
     }
 
     /**
@@ -347,14 +349,14 @@ public class AppMain {
     private static CoreLearningModel generateModel(LearnerInterface learner) {
         CoreLearningModel model = new CoreLearningModel();
         model.setId(0L);
-        model.setAutoOptimizationConfigId(learner.getAutoOptimizationConfigId());
+        model.setAutoOptimizationConfigId(learner.getOptimizationRuleId());
         model.setType(LINEAR_REGRESSION_TYPE);
         model.setUpdatedDate(new Date());
         model.setCategoricalFieldWeights(learner.getConvertedDataWrapper().getCategoryWeight().toString());
         model.setForecastFactorValues(learner.getConvertedDataWrapper().getForecast().toString());
         model.setModel(getModelStringData(learner));
         model.setIdentifier(learner.getIdentifier());
-        model.setModePath(FilePathUtil.getLearnerModelPath(learner.getAutoOptimizationConfigId(), learner.getIdentifier()));
+        model.setModePath(FilePathUtil.getLearnerModelPath(learner.getOptimizationRuleId(), learner.getIdentifier()));
 
         return model;
     }

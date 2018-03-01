@@ -27,21 +27,21 @@ public class LinearRegressionLearner implements LearnerInterface {
     private static final double REG_PARAM = 0.3;
     private static final double ELASTIC_NET_PARAM = 0.8;
     private static final int MAX_ITER = 10;
-    private long autoOptimizationConfigId;
+    private long optimizationRuleId;
     private String identifier;
     private LinearRegressionModel lrModel;
     private ConvertedDataWrapper convertedDataWrapper;
 
 
-    public LinearRegressionLearner(long autoOptimizationConfigId, String identifier, SparkSession sparkSession, ConvertedDataWrapper convertedDataWrapper) {
-        this.autoOptimizationConfigId = autoOptimizationConfigId;
+    public LinearRegressionLearner(long optimizationRuleId, String identifier, SparkSession sparkSession, ConvertedDataWrapper convertedDataWrapper) {
+        this.optimizationRuleId = optimizationRuleId;
         this.identifier = identifier;
         this.convertedDataWrapper = convertedDataWrapper;
         this.lrModel = generateModel(sparkSession);
     }
 
-    public long getAutoOptimizationConfigId() {
-        return autoOptimizationConfigId;
+    public long getOptimizationRuleId() {
+        return optimizationRuleId;
     }
 
     public String getIdentifier() {
@@ -66,7 +66,7 @@ public class LinearRegressionLearner implements LearnerInterface {
         System.out.println("Coefficients: " + lrModel.coefficients().toString() + " Intercept: " + lrModel.intercept());
 
         try {
-            String savePath = FilePathUtil.getLearnerModelPath(autoOptimizationConfigId, identifier);
+            String savePath = FilePathUtil.getLearnerModelPath(optimizationRuleId, identifier);
             lrModel.write().overwrite().save(savePath);
         } catch (IOException e) {
             e.printStackTrace();
@@ -93,7 +93,6 @@ public class LinearRegressionLearner implements LearnerInterface {
         });
 
         ExpressionEncoder<Row> encoder = RowEncoder.apply(schema);
-
         Dataset<Row> output = convertedData.flatMap((FlatMapFunction<Row, Row>) rowData -> {
             Double label = Double.parseDouble(rowData.get(0).toString());
 

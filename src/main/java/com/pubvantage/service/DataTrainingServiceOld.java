@@ -11,7 +11,7 @@ import org.apache.spark.sql.Row;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public class DataTrainingService implements DataTrainingServiceInterface {
+public class DataTrainingServiceOld implements DataTrainingServiceInterface {
     private SparkDataTrainingDaoInterface sparkDataTrainingDaoInterface = new SparkDataTrainingDao();
 
     /**

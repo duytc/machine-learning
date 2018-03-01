@@ -6,7 +6,7 @@ import com.pubvantage.entity.ConvertedDataWrapper;
 import com.pubvantage.entity.FactorDataType;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
-import com.pubvantage.service.DataTrainingService;
+import com.pubvantage.service.DataTrainingServiceOld;
 import com.pubvantage.service.DataTrainingServiceInterface;
 import com.pubvantage.utils.ConvertUtil;
 import org.apache.commons.lang3.ArrayUtils;
@@ -37,7 +37,7 @@ public class LinearRegressionConverter implements DataConverterInterface {
 
     public LinearRegressionConverter() {
         autoOptimizationConfigService = new OptimizationRuleService();
-        dataTrainingService = new DataTrainingService();
+        dataTrainingService = new DataTrainingServiceOld();
     }
 
     /**

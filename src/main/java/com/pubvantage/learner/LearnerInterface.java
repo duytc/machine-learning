@@ -7,7 +7,7 @@ import org.apache.spark.sql.SparkSession;
 
 public interface LearnerInterface {
 
-    long getAutoOptimizationConfigId();
+    long getOptimizationRuleId();
 
     String getIdentifier() ;
 

@@ -1,6 +1,6 @@
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
-import com.pubvantage.service.DataTrainingService;
+import com.pubvantage.service.DataTrainingServiceOld;
 import com.pubvantage.utils.AppResource;
 import com.pubvantage.utils.HibernateUtil;
 import org.apache.spark.SparkConf;
@@ -37,7 +37,7 @@ public class DBTest {
     @Test
     public void getIdentifiers() {
         Long id = 1l;
-        DataTrainingService service = new DataTrainingService();
+        DataTrainingServiceOld service = new DataTrainingServiceOld();
         String[] identifiers = service.getIdentifiers(1l);
 
         return;
