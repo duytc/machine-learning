@@ -342,6 +342,14 @@ public class AppMain {
     }
 
     /**
+     * @param segmentFields
+     * @return
+     */
+    private static  List<List<String>> createSegmentFieldGroups(List<String> segmentFields) {
+        return ConvertUtil.generateSubsets(segmentFields);
+    }
+
+    /**
      * Generate model from learned data
      *
      * @param learner learned data
