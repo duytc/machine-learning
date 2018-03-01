@@ -121,7 +121,7 @@ public class ConvertUtilTest {
         set.add("a");
         set.add("b");
         set.add("c");
-        Map<Integer, List<String>> map = ConvertUtil.generateSubsets(set);
+        List<List<String>> map = ConvertUtil.generateSubsets(set);
         return;
     }
     @Test

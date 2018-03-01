@@ -289,21 +289,21 @@ public class AppMain {
 
         List<String> identifiers = JsonUtil.jsonArrayStringToJavaList(optimizationRule.getIdentifierFields());
         List<String> segmentFields = JsonUtil.jsonArrayStringToJavaList(optimizationRule.getSegmentFields());
-        List<Arrays> segmentFieldGroups = createSegmentFieldGroups(segmentFields);
+        List<List<String>> segmentFieldGroups = createSegmentFieldGroups(segmentFields);
 
         if (identifiers.size() == 0) {
             return null;
         }
 
-        for (int i = 0; i < identifiers.size(); i++) {
-            modelList = generateModelForOneIdentifier(optimizationRule.getId(), identifiers.get(i), segmentFieldGroups);
+        for (String identifier : identifiers) {
+            modelList = generateModelForOneIdentifier(optimizationRule.getId(), identifier, segmentFieldGroups);
         }
         saveModelToDatabase(modelList);
 
         return successIdentifiers;
     }
 
-    private static List<CoreLearner> generateModelForOneIdentifier(long autoOptimizationId, String $identifier, List<Arrays> segmentFieldGroups) {
+    private static List<CoreLearner> generateModelForOneIdentifier(long autoOptimizationId, String $identifier,  List<List<String>> segmentFieldGroups) {
         List<CoreLearner> coreLearnersList = new LinkedList<>();
 
         if (segmentFieldGroups.isEmpty()) {
@@ -312,9 +312,9 @@ public class AppMain {
 
         long length = segmentFieldGroups.size();
         for (int i = 0; i < length; i++) {
-            Arrays segmentFields = segmentFieldGroups.get(i);
-            List<CoreLearner> coreLearners = generateModelForOneIdentifierAndOneSegmentFieldGroup(autoOptimizationId, $identifier, segmentFields);
-            coreLearnersList.addAll(coreLearners);
+//            Arrays segmentFields = segmentFieldGroups.get(i);
+//            List<CoreLearner> coreLearners = generateModelForOneIdentifierAndOneSegmentFieldGroup(autoOptimizationId, $identifier, segmentFields);
+//            coreLearnersList.addAll(coreLearners);
         }
 
         return coreLearnersList;
@@ -330,9 +330,8 @@ public class AppMain {
      * @param segmentFields
      * @return
      */
-    private static List<Arrays> createSegmentFieldGroups(List<String> segmentFields) {
-
-        return new LinkedList<>();
+    private static  List<List<String>> createSegmentFieldGroups(List<String> segmentFields) {
+        return ConvertUtil.generateSubsets(segmentFields);
     }
 
     /**
