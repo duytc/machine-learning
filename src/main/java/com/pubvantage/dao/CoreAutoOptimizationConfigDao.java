@@ -11,7 +11,7 @@ public class CoreAutoOptimizationConfigDao extends AbstractGenericDao<CoreAutoOp
 
     @Override
     public boolean checkToken(Session session, Long autoOptimizationId, String token) {
-        Query query = session.createQuery("FROM CoreAutoOptimizationConfig WHERE id = :autoOptimizationId AND token = :token");
+        Query query = session.createQuery("FROM CoreOptimizationRule WHERE id = :autoOptimizationId AND token = :token");
         query.setParameter("autoOptimizationId", autoOptimizationId);
         query.setParameter("token", token);
         List<CoreAutoOptimizationConfig> configList = query.list();

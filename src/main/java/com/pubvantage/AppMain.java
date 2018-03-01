@@ -160,7 +160,7 @@ public class AppMain {
         String jsonParams = request.body();
 
         LearningProcessParams learningProcessParams = new LearningProcessParams(jsonParams);
-        boolean isValidParams = learningProcessParams.validateToken() && learningProcessParams.validateOptimizationRules();
+        boolean isValidParams = learningProcessParams.validateOptimizationRules();
         if (!isValidParams) {
             LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, "Parameter is invalid", null);
             response.status(HttpStatus.SC_BAD_REQUEST);
@@ -168,8 +168,7 @@ public class AppMain {
         }
 
         //verify token
-        Authentication authentication = new Authentication(learningProcessParams.getOptimizationRuleId(), learningProcessParams.getToken());
-        boolean isPassAuthentication = authentication.authenticate();
+        boolean isPassAuthentication = learningProcessParams.validateToken();
         if (!isPassAuthentication) {
             response.status(HttpStatus.SC_UNAUTHORIZED);
             LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, "Fail authentication", null);

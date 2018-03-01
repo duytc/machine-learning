@@ -36,27 +36,21 @@ public class LearningProcessParams {
         return requestParam.getToken();
     }
 
-
+    /**
+     * @return true if parameters is valid. Otherwise, return false
+     */
     public boolean validateOptimizationRules()
     {
-        return  true;
+        return null != requestParam
+                && null != requestParam.getOptimizationRuleId()
+                && 0 != requestParam.getOptimizationRuleId()
+                && null != requestParam.getToken()
+                && !requestParam.getToken().isEmpty();
     }
 
     public boolean validateToken()
     {
         CoreOptimizationRuleServiceInterface sqlService = new CoreOptimizationRuleService();
         return sqlService.checkToken(requestParam.getOptimizationRuleId(), requestParam.getToken());
-    }
-
-    /**
-     * @return true if parameters is valid. Otherwise, return false
-     */
-    public boolean validateParams() {
-        return null != requestParam
-                && null != requestParam.getOptimizationRuleId()
-                && 0 != requestParam.getOptimizationRuleId()
-                && null != requestParam.getToken()
-                && !requestParam.getToken().isEmpty();
-
     }
 }
