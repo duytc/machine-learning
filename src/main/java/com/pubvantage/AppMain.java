@@ -303,24 +303,20 @@ public class AppMain {
         return successIdentifiers;
     }
 
-    private static List<CoreLearner> generateModelForOneIdentifier(long autoOptimizationId, String $identifier,  List<List<String>> segmentFieldGroups) {
-        List<CoreLearner> coreLearnersList = new LinkedList<>();
-
+    private static List<CoreLearner> generateModelForOneIdentifier(Long autoOptimizationId, String $identifier,  List<List<String>> segmentFieldGroups) {
+        List<CoreLearner> coreLearnersList = new ArrayList<>();
         if (segmentFieldGroups.isEmpty()) {
             return null;
         }
-
-        long length = segmentFieldGroups.size();
-        for (int i = 0; i < length; i++) {
-//            Arrays segmentFields = segmentFieldGroups.get(i);
-//            List<CoreLearner> coreLearners = generateModelForOneIdentifierAndOneSegmentFieldGroup(autoOptimizationId, $identifier, segmentFields);
-//            coreLearnersList.addAll(coreLearners);
+        for (List<String> segmentFields : segmentFieldGroups) {
+            List<CoreLearner> coreLearners = generateModelForOneIdentifierAndOneSegmentFieldGroup(autoOptimizationId, $identifier, segmentFields);
+            coreLearnersList.addAll(coreLearners);
         }
 
         return coreLearnersList;
     }
 
-    private static List<CoreLearner> generateModelForOneIdentifierAndOneSegmentFieldGroup(long autoOptimizationId, String $identifier, Arrays segmentFields) {
+    private static List<CoreLearner> generateModelForOneIdentifierAndOneSegmentFieldGroup(long autoOptimizationId, String $identifier, List<String> segmentFields) {
 
 
         return null;
