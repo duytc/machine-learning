@@ -11,4 +11,6 @@ public interface SparkDataTrainingDaoInterface {
     List<Row> getIdentifiers(Long autoOptimizationConfigId);
 
     List<Object> getDistinctByFactor(String factorName, Long autoOptimizationConfigId);
+
+    List<Object> getAllUniqueValuesForOneSegmentFieldGroup(Long optimizationRuleId, String identifier, List<String> oneSegmentFieldGroup);
 }

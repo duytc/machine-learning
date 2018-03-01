@@ -1,6 +1,6 @@
 package com.pubvantage.service.DataTraning;
 
-import com.pubvantage.learner.Params.SegmentFieldGroup;
+import com.pubvantage.dao.SparkDataTrainingDao;
 
 import java.util.List;
 
@@ -8,7 +8,7 @@ public class DataTrainingService implements DataTrainingServiceInterface {
     private Long optimizationRuleId;
     private String identifier;
     private List<String> oneSegmentFieldGroup;
-
+    SparkDataTrainingDao sparkDataTrainingDao = new SparkDataTrainingDao();
     public DataTrainingService() {
     }
 
@@ -51,6 +51,7 @@ public class DataTrainingService implements DataTrainingServiceInterface {
 
     @Override
     public List<Object> getAllUniqueValuesForOneSegmentFieldGroup() {
-        return null;
+        List<Object> objects =  sparkDataTrainingDao.getAllUniqueValuesForOneSegmentFieldGroup(optimizationRuleId, identifier, oneSegmentFieldGroup);
+        return objects;
     }
 }

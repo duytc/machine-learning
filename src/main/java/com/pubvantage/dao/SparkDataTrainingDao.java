@@ -86,4 +86,22 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         }
         return listData;
     }
+
+    @Override
+    public List<Object> getAllUniqueValuesForOneSegmentFieldGroup(Long optimizationRuleId, String identifier, List<String> oneSegmentFieldGroup) {
+        String segments = String.join(",", oneSegmentFieldGroup);
+        String tableName = TABLE_NAME_PREFIX + optimizationRuleId;
+        Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
+        jdbcDF.createOrReplaceTempView(tableName);
+
+        String stringQuery = "SELECT DISTINCT " + segments + " FROM " + tableName + " WHERE identifier = " + identifier;
+        Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringQuery);
+        List<Row> resultList = sqlDF.collectAsList();
+        List<Object> listData = new ArrayList<>();
+        for (Row row : resultList) {
+            Object data = row.get(0);
+            listData.add(data);
+        }
+        return listData;
+    }
 }
