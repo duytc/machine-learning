@@ -315,7 +315,7 @@ public class AppMain {
     }
 
     private static List<CoreLearner> generateModelForOneIdentifier(PredictionParam predictionParam) {
-        List<CoreLearner> coreLearnersList = new LinkedList<>();
+        List<CoreLearner> coreLearnersList = new ArrayList<>();
 
         Long optimizationRuleId = predictionParam.getAutoOptimizationId();
         String identifier = predictionParam.getIdentifier();
@@ -333,18 +333,17 @@ public class AppMain {
     private static List<CoreLearner> generateModelForSegmentFieldGroup(SegmentFieldGroup segmentFieldGroup) {
         List<CoreLearner> coreLearners = new LinkedList<>();
 
-        OptimizationRuleServiceInterface optimizationRuleService =  new OptimizationRuleService();
-        List<String>  optimizeFields =  optimizationRuleService.getOptimizeFields(segmentFieldGroup.getOptimizationRuleId());
+        OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
+        List<String> optimizeFields = optimizationRuleService.getOptimizeFields(segmentFieldGroup.getOptimizationRuleId());
 
-        for (String optimizeField: optimizeFields) {
+        for (String optimizeField : optimizeFields) {
             coreLearners.addAll(generateModelForOneOptimizeField(segmentFieldGroup, optimizeField));
         }
 
-        return  coreLearners;
+        return coreLearners;
     }
 
-    private static List<CoreLearner> generateModelForOneOptimizeField(SegmentFieldGroup segmentFieldGroup, String optimizeField )
-    {
+    private static List<CoreLearner> generateModelForOneOptimizeField(SegmentFieldGroup segmentFieldGroup, String optimizeField) {
         List<CoreLearner> coreLearners = new LinkedList<>();
 
         Long optimizationRuleId = segmentFieldGroup.getOptimizationRuleId();
@@ -354,27 +353,26 @@ public class AppMain {
         DataTrainingService dataTrainingService = new DataTrainingService(optimizationRuleId, identifier, oneSegmentGroup);
         List<Object> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
 
-        for (Object uniqueValue: uniqueValuesOfOneSegmentFieldGroup) {
-            LinearRegressionDataProcess linearRegressionDataProcess =  new LinearRegressionDataProcess(optimizationRuleId, identifier, oneSegmentGroup, uniqueValue, optimizeField);
+        for (Object uniqueValue : uniqueValuesOfOneSegmentFieldGroup) {
+            LinearRegressionDataProcess linearRegressionDataProcess = new LinearRegressionDataProcess(optimizationRuleId, identifier, oneSegmentGroup, uniqueValue, optimizeField);
             CoreLearner learners = generateModelForOneValueOfSegmentFieldGroups(linearRegressionDataProcess);
             coreLearners.add(learners);
         }
 
-        return  coreLearners;
+        return coreLearners;
     }
 
-    private static CoreLearner generateModelForOneValueOfSegmentFieldGroups(LinearRegressionDataProcess linearRegressionDataProcess)
-    {
+    private static CoreLearner generateModelForOneValueOfSegmentFieldGroups(LinearRegressionDataProcess linearRegressionDataProcess) {
         LinearRegressionLearner linearRegressionLearner = new LinearRegressionLearner(sparkSession, linearRegressionDataProcess);
 
-        return null ;
+        return null;
     }
 
     /**
      * @param segmentFields
      * @return
      */
-    private static  List<List<String>> createSegmentFieldGroups(List<String> segmentFields) {
+    private static List<List<String>> createSegmentFieldGroups(List<String> segmentFields) {
         return ConvertUtil.generateSubsets(segmentFields);
     }
 
@@ -405,7 +403,7 @@ public class AppMain {
      */
     private static String getModelStringData(LearnerInterface learner) {
 
-       return  null;
+        return null;
     }
 
     /**

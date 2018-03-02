@@ -5,8 +5,6 @@ import com.google.gson.JsonObject;
 import com.pubvantage.constant.DataBaseConstant;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDao;
 import com.pubvantage.dao.OptimizationRuleDao;
-import com.pubvantage.dao.ReportViewDao;
-import com.pubvantage.dao.ReportViewDaoInterface;
 import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.entity.CoreReportView;
 import com.pubvantage.service.Learner.ReportViewService;
