@@ -27,7 +27,7 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
             session.beginTransaction();
             for (CoreLearner aModelList : modelList) {
 
-                CoreLearner foundModel = coreLearnerDao.findOne(session, aModelList.getOptimizationRuleId(), aModelList.getIdentifier());
+                CoreLearner foundModel = coreLearnerDao.findOne(session, aModelList.getOptimizationRuleId(), aModelList.getIdentifier(), aModelList.getSegmentValues());
                 if (null == foundModel) {
                     //add new
                     aModelList.setCreatedDate(new Date());

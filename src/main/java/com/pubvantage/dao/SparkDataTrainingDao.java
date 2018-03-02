@@ -91,8 +91,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
             }
             stringBuilder.append(" 1 = 1");
         }
-        Dataset<Row> rowDataset = AppMain.sparkSession.sql(stringBuilder.toString());
-        return rowDataset;
+        return AppMain.sparkSession.sql(stringBuilder.toString());
     }
 
     /**
@@ -104,10 +103,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         String tableName = TABLE_NAME_PREFIX + autoOptimizationConfigId;
         Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
         jdbcDF.createOrReplaceTempView(tableName);
-        String stringQuery = "SELECT DISTINCT " +
-                userConfig.getProperty("column.identifier") +
-                " FROM " +
-                tableName;
+        String stringQuery = "SELECT DISTINCT identifier" + " FROM " + tableName;
 
         Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringQuery);
 
@@ -146,7 +142,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
         jdbcDF.createOrReplaceTempView(tableName);
 
-        String stringQuery = "SELECT DISTINCT " + segments + " FROM " + tableName + " WHERE identifier = " + identifier;
+        String stringQuery = "SELECT DISTINCT " + segments + " FROM " + tableName + " WHERE identifier = '" + identifier +"'";
         Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringQuery);
         List<Row> resultList = sqlDF.collectAsList();
         List<Map<String, Object>> listData = new ArrayList<>();

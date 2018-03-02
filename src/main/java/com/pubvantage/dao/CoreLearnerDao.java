@@ -11,14 +11,15 @@ public class CoreLearnerDao extends AbstractGenericDao<CoreLearner> implements C
     private static Logger logger = Logger.getLogger(CoreLearningModelDao.class.getName());
 
     @Override
-    public CoreLearner findOne(Session session, Long optimizationRuleId, String identifier) {
+    public CoreLearner findOne(Session session, Long optimizationRuleId, String identifier, String segmentValues) {
         StringBuilder stringBuilder = new StringBuilder();
         try {
-            stringBuilder.append("FROM CoreLearner WHERE optimizationRuleId = :optimizationRuleId AND identifier = :identifier");
+            stringBuilder.append("FROM CoreLearner WHERE optimizationRuleId = :optimizationRuleId AND identifier = :identifier AND segmentValues = :segmentValues");
 
             Query query = session.createQuery(stringBuilder.toString());
             query.setParameter("optimizationRuleId", optimizationRuleId);
             query.setParameter("identifier", identifier);
+            query.setParameter("segmentValues", segmentValues);
 
             List<CoreLearner> list = query.list();
             if (list != null && !list.isEmpty()) {
