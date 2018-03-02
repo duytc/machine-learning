@@ -309,7 +309,7 @@ public class AppMain {
         }
 
         for (PredictionParam predictionParam : predictionParams) {
-            modelList = generateModelForOneIdentifier(predictionParam);
+            modelList.addAll(generateModelForOneIdentifier(predictionParam));
         }
 
         saveModelToDatabase(modelList);
@@ -434,6 +434,8 @@ public class AppMain {
         JsonObject coefficient = new JsonObject();
 
         for (int i = 0; i < coefficientsArray.length; i++) {
+            logger.error(coefficientsArray[i]);
+
             int factorIndex = i + 1;// index 0 is objective
             if (Double.isNaN(coefficientsArray[i])) {
                 coefficient.addProperty(objectiveAndFields.get(factorIndex), "null");

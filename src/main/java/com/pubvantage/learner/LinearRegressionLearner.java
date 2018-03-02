@@ -22,27 +22,16 @@ public class LinearRegressionLearner implements LearnerInterface {
         this.linearRegressionDataProcess = linearRegressionDataProcess;
     }
 
-    public SparkSession getSparkSession() {
-        return sparkSession;
-    }
-
-    public void setSparkSession(SparkSession sparkSession) {
-        this.sparkSession = sparkSession;
-    }
-
     @Override
     public LinearRegressionDataProcess getLinearRegressionDataProcess() {
         return linearRegressionDataProcess;
     }
 
-    public void setLinearRegressionDataProcess(LinearRegressionDataProcess linearRegressionDataProcess) {
-        this.linearRegressionDataProcess = linearRegressionDataProcess;
-    }
 
     @Override
     public LinearRegressionModel generateModel(SparkSession sparkSession) {
         Dataset<Row> training = linearRegressionDataProcess.getTrainingDataForLinearRegression();
-
+        training.show();
         LinearRegression lr = new LinearRegression()
                 .setMaxIter(MAX_ITER)
                 .setRegParam(REG_PARAM)
