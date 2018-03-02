@@ -33,9 +33,7 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
             CoreOptimizationRule optimizationRule = optimizationRuleDao.findById(optimizationRuleId, session);
             List<HashMap<String, String>> map = JsonUtil.jsonArrayObjectsToListMap(optimizationRule.getOptimizeFields());
             List<String> optimizeFieldList = new ArrayList<>();
-            map.forEach(optimizeField -> {
-                optimizeFieldList.add(optimizeField.get("field"));
-            });
+            map.forEach(optimizeField -> optimizeFieldList.add(optimizeField.get("field")));
             return optimizeFieldList;
         } catch (Exception e) {
             if (null != session && null != session.getTransaction()) {
