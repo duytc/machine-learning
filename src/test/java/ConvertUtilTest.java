@@ -2,6 +2,7 @@ import com.jsoniter.JsonIterator;
 import com.jsoniter.any.Any;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDao;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDaoInterface;
+import com.pubvantage.learner.Params.LinearRegressionDataProcess;
 import com.pubvantage.service.DataTraning.DataTrainingService;
 import com.pubvantage.utils.AppResource;
 import com.pubvantage.utils.ConvertUtil;
@@ -10,6 +11,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.junit.Test;
 
+import javax.persistence.Convert;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -125,6 +127,7 @@ public class ConvertUtilTest {
         List<List<String>> map = ConvertUtil.generateSubsets(set);
         return;
     }
+
     @Test
     public void jsonArrayStringToArray() {
 //        String input = "[\"text2_2\",\"text_3\"]";
@@ -139,12 +142,49 @@ public class ConvertUtilTest {
         HashMap<String, String> any = anyList.get(0);
         return;
     }
+
     @Test
-    public void getUniquire(){
+    public void getUniquire() {
         List<String> oneSegmentGroup = new ArrayList<>();
         oneSegmentGroup.add("datatime_dimension_4_4_4");
         DataTrainingService dataTrainingService = new DataTrainingService(19L, "allenwestrepublic.com", oneSegmentGroup);
-        List<Object> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
+        List<Map<String, Object>> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
+        return;
+    }
 
+    @Test
+    public void createObjectiveAndFields() {
+        String optimizeField = "objective";
+        List<String> metrics = new ArrayList<>();
+        metrics.add("metric 1");
+        metrics.add("metric 2");
+        metrics.add("metric 3");
+        metrics.add("objective");
+//        metrics = null;
+        if (metrics != null) {
+            int indexOfOptimizeField = metrics.indexOf(optimizeField);
+            if (indexOfOptimizeField > 0) {
+                metrics.remove(indexOfOptimizeField);
+            }
+        }
+        List<String> objectiveAndFields = new ArrayList<>();
+        objectiveAndFields.add(optimizeField);
+        if (metrics != null) {
+            objectiveAndFields.addAll(metrics);
+        }
+        return;
+    }
+
+
+    @Test
+    public void joinListString() {
+        List<String> metrics = new ArrayList<>();
+        metrics.add("metric 1");
+        metrics.add("metric 2");
+        metrics.add("metric 3");
+        metrics.add("objective");
+
+        String s = ConvertUtil.joinListString(metrics);
+        return;
     }
 }

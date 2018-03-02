@@ -38,6 +38,11 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
         return optimizeFieldList;
     }
 
+    /**
+     * get only number metrics (not implement yet)
+     * @param optimizationRuleId
+     * @return
+     */
     @Override
     public List<String> getMetrics(Long optimizationRuleId) {
         CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);

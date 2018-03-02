@@ -5,6 +5,7 @@ import com.pubvantage.entity.FactorDataType;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ConvertUtil {
     private static Properties properties;
@@ -143,5 +144,11 @@ public class ConvertUtil {
             result.add(subSet);
         }
         return result;
+    }
+
+    public static String joinListString(List<String> list) {
+        return list.stream()
+                .map(i -> i.toString())
+                .collect(Collectors.joining(", "));
     }
 }

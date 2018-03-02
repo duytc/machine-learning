@@ -351,9 +351,9 @@ public class AppMain {
         List<String> oneSegmentGroup = segmentFieldGroup.getOneSegmentFieldGroup();
 
         DataTrainingService dataTrainingService = new DataTrainingService(optimizationRuleId, identifier, oneSegmentGroup);
-        List<Object> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
+        List<Map<String, Object>> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
 
-        for (Object uniqueValue : uniqueValuesOfOneSegmentFieldGroup) {
+        for (Map<String, Object> uniqueValue : uniqueValuesOfOneSegmentFieldGroup) {
             LinearRegressionDataProcess linearRegressionDataProcess = new LinearRegressionDataProcess(optimizationRuleId, identifier, oneSegmentGroup, uniqueValue, optimizeField);
             CoreLearner learners = generateModelForOneValueOfSegmentFieldGroups(linearRegressionDataProcess);
             coreLearners.add(learners);
@@ -364,6 +364,7 @@ public class AppMain {
 
     private static CoreLearner generateModelForOneValueOfSegmentFieldGroups(LinearRegressionDataProcess linearRegressionDataProcess) {
         LinearRegressionLearner linearRegressionLearner = new LinearRegressionLearner(sparkSession, linearRegressionDataProcess);
+        linearRegressionLearner.generateModel(sparkSession);
 
         return null;
     }

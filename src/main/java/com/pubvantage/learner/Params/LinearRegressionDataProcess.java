@@ -1,7 +1,9 @@
 package com.pubvantage.learner.Params;
 
-import com.google.gson.JsonObject;
-import com.pubvantage.entity.ConvertedDataWrapper;
+import com.pubvantage.dao.SparkDataTrainingDao;
+import com.pubvantage.dao.SparkDataTrainingDaoInterface;
+import com.pubvantage.service.OptimizationRuleService;
+import com.pubvantage.service.OptimizationRuleServiceInterface;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.VectorUDT;
@@ -18,15 +20,21 @@ import org.apache.spark.sql.types.StructType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class LinearRegressionDataProcess {
+    private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
+    SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
     private Long optimizationRuleId;
     private String identifier;
     private List<String> oneSegmentGroup;
-    private Object uniqueValue;
+    private Map<String, Object> uniqueValue;
     private String optimizeField;
 
-    public LinearRegressionDataProcess(Long optimizationRuleId, String identifier, List<String> oneSegmentGroup, Object uniqueValue, String optimizeField) {
+    public LinearRegressionDataProcess() {
+    }
+
+    public LinearRegressionDataProcess(Long optimizationRuleId, String identifier, List<String> oneSegmentGroup, Map<String, Object> uniqueValue, String optimizeField) {
         this.optimizationRuleId = optimizationRuleId;
         this.identifier = identifier;
         this.oneSegmentGroup = oneSegmentGroup;
@@ -34,52 +42,35 @@ public class LinearRegressionDataProcess {
         this.optimizeField = optimizeField;
     }
 
-    public Long getOptimizationRuleId() {
-        return optimizationRuleId;
-    }
-
-    public void setOptimizationRuleId(Long optimizationRuleId) {
-        this.optimizationRuleId = optimizationRuleId;
-    }
-
-    public String getIdentifier() {
-        return identifier;
-    }
-
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
-    }
-
-    public List<String> getOneSegmentGroup() {
-        return oneSegmentGroup;
-    }
-
-    public void setOneSegmentGroup(List<String> oneSegmentGroup) {
-        this.oneSegmentGroup = oneSegmentGroup;
-    }
-
-    public Object getUniqueValue() {
-        return uniqueValue;
-    }
-
-    public void setUniqueValue(JsonObject uniqueValue) {
-        this.uniqueValue = uniqueValue;
-    }
-
-    public String getOptimizeField() {
-        return optimizeField;
-    }
-
-    public void setOptimizeField(String optimizeField) {
-        this.optimizeField = optimizeField;
-    }
 
     public Dataset<Row> getTrainingDataForLinearRegression() {
-        return null;
+        List<String> objectiveAndFields = this.createObjectiveAndFields(this.optimizeField);
+        Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRuleId, identifier, objectiveAndFields, uniqueValue, oneSegmentGroup);
+        Dataset<Row> vectorDataSet = null;
+        if (dataSet != null) {
+            vectorDataSet = this.extractDataToLearn(dataSet);
+        }
+        return vectorDataSet;
+    }
+
+    private List<String> createObjectiveAndFields(String optimizeField) {
+        List<String> metrics = optimizationRuleService.getMetrics(this.optimizationRuleId);
+        if (metrics != null) {
+            int indexOfOptimizeField = metrics.indexOf(optimizeField);
+            if (indexOfOptimizeField >= 0) {
+                metrics.remove(indexOfOptimizeField);
+            }
+        }
+        List<String> objectiveAndFields = new ArrayList<>();
+        objectiveAndFields.add(optimizeField);
+        if (metrics != null) {
+            objectiveAndFields.addAll(metrics);
+        }
+        return objectiveAndFields;
     }
 
     /**
-     * @param convertedData converted data (text -> number)
+     * @param convertedData
      * @return Data to learn
      */
     private Dataset<Row> extractDataToLearn(Dataset<Row> convertedData) {
@@ -116,5 +107,46 @@ public class LinearRegressionDataProcess {
         }
 
         return output;
+    }
+
+
+    public Long getOptimizationRuleId() {
+        return optimizationRuleId;
+    }
+
+    public void setOptimizationRuleId(Long optimizationRuleId) {
+        this.optimizationRuleId = optimizationRuleId;
+    }
+
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
+
+    public List<String> getOneSegmentGroup() {
+        return oneSegmentGroup;
+    }
+
+    public void setOneSegmentGroup(List<String> oneSegmentGroup) {
+        this.oneSegmentGroup = oneSegmentGroup;
+    }
+
+    public Map<String, Object> getUniqueValue() {
+        return uniqueValue;
+    }
+
+    public void setUniqueValue(Map<String, Object> uniqueValue) {
+        this.uniqueValue = uniqueValue;
+    }
+
+    public String getOptimizeField() {
+        return optimizeField;
+    }
+
+    public void setOptimizeField(String optimizeField) {
+        this.optimizeField = optimizeField;
     }
 }

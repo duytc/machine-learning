@@ -5,4 +5,5 @@ package com.pubvantage.constant;
  */
 public class DataBaseConstant {
     public static String FIELD = "field";
+    public static String INDENTIFIER_COLUMN = "identifier";
 }

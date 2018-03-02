@@ -3,12 +3,14 @@ package com.pubvantage.service.DataTraning;
 import com.pubvantage.dao.SparkDataTrainingDao;
 
 import java.util.List;
+import java.util.Map;
 
 public class DataTrainingService implements DataTrainingServiceInterface {
     private Long optimizationRuleId;
     private String identifier;
     private List<String> oneSegmentFieldGroup;
     SparkDataTrainingDao sparkDataTrainingDao = new SparkDataTrainingDao();
+
     public DataTrainingService() {
     }
 
@@ -50,8 +52,8 @@ public class DataTrainingService implements DataTrainingServiceInterface {
     }
 
     @Override
-    public List<Object> getAllUniqueValuesForOneSegmentFieldGroup() {
-        List<Object> objects =  sparkDataTrainingDao.getAllUniqueValuesForOneSegmentFieldGroup(optimizationRuleId, identifier, oneSegmentFieldGroup);
+    public List<Map<String, Object>> getAllUniqueValuesForOneSegmentFieldGroup() {
+        List<Map<String, Object>> objects = sparkDataTrainingDao.getAllUniqueValuesForOneSegmentFieldGroup(optimizationRuleId, identifier, oneSegmentFieldGroup);
         return objects;
     }
 }

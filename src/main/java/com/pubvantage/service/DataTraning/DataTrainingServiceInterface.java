@@ -1,6 +1,7 @@
 package com.pubvantage.service.DataTraning;
 
 import java.util.List;
+import java.util.Map;
 
 public interface DataTrainingServiceInterface {
     Long getOptimizationRuleId();
@@ -15,5 +16,5 @@ public interface DataTrainingServiceInterface {
 
     void setOneSegmentFieldGroup(List<String> oneSegmentFieldGroup);
 
-    List<Object> getAllUniqueValuesForOneSegmentFieldGroup();
+    List<Map<String, Object>> getAllUniqueValuesForOneSegmentFieldGroup();
 }
