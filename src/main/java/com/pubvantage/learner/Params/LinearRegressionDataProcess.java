@@ -44,7 +44,7 @@ public class LinearRegressionDataProcess {
 
 
     public Dataset<Row> getTrainingDataForLinearRegression() {
-        List<String> objectiveAndFields = this.createObjectiveAndFields(this.optimizeField);
+        List<String> objectiveAndFields = this.createObjectiveAndFields();
         Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRuleId, identifier, objectiveAndFields, uniqueValue, oneSegmentGroup);
         Dataset<Row> vectorDataSet = null;
         if (dataSet != null) {
@@ -53,10 +53,10 @@ public class LinearRegressionDataProcess {
         return vectorDataSet;
     }
 
-    private List<String> createObjectiveAndFields(String optimizeField) {
+    public List<String> createObjectiveAndFields() {
         List<String> metrics = optimizationRuleService.getMetrics(this.optimizationRuleId);
         if (metrics != null) {
-            int indexOfOptimizeField = metrics.indexOf(optimizeField);
+            int indexOfOptimizeField = metrics.indexOf(this.optimizeField);
             if (indexOfOptimizeField >= 0) {
                 metrics.remove(indexOfOptimizeField);
             }

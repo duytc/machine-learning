@@ -6,6 +6,7 @@ import com.pubvantage.learner.Params.LinearRegressionDataProcess;
 import com.pubvantage.service.DataTraning.DataTrainingService;
 import com.pubvantage.utils.AppResource;
 import com.pubvantage.utils.ConvertUtil;
+import com.pubvantage.utils.JsonUtil;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -140,6 +141,7 @@ public class ConvertUtilTest {
         String listObjectInput = "[{\"field\":\"largetext2_2\",\"goal\":\"Min\",\"weight\":0.2}]";
         List<HashMap<String, String>> anyList = JsonIterator.deserialize(listObjectInput, ArrayList.class);
         HashMap<String, String> any = anyList.get(0);
+
         return;
     }
 
@@ -184,7 +186,19 @@ public class ConvertUtilTest {
         metrics.add("metric 3");
         metrics.add("objective");
 
-        String s = ConvertUtil.joinListString(metrics);
+        String s = ConvertUtil.joinListString(metrics, ", ");
+        return;
+    }
+
+    @Test
+    public void mapToJson() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("key 1", "value 1");
+        map.put("key 2", "value 2");
+        map.put("key 3", "value 3");
+        map.put("key 4", "value 4");
+
+        String s = JsonUtil.mapToJson(map);
         return;
     }
 }

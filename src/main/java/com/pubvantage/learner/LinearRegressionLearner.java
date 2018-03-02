@@ -8,8 +8,6 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
-import java.io.IOException;
-
 public class LinearRegressionLearner implements LearnerInterface {
     private static final double REG_PARAM = 0.3;
     private static final double ELASTIC_NET_PARAM = 0.8;

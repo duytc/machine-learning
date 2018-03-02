@@ -2,7 +2,7 @@ package com.pubvantage.service;
 
 
 import com.google.gson.JsonObject;
-import com.pubvantage.constant.DataBaseConstant;
+import com.pubvantage.constant.MyConstant;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDao;
 import com.pubvantage.dao.OptimizationRuleDao;
 import com.pubvantage.entity.CoreOptimizationRule;
@@ -34,7 +34,7 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
         CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
         List<HashMap<String, String>> map = JsonUtil.jsonArrayObjectsToListMap(optimizationRule.getOptimizeFields());
         List<String> optimizeFieldList = new ArrayList<>();
-        map.forEach(optimizeField -> optimizeFieldList.add(optimizeField.get(DataBaseConstant.FIELD)));
+        map.forEach(optimizeField -> optimizeFieldList.add(optimizeField.get(MyConstant.FIELD)));
         return optimizeFieldList;
     }
 

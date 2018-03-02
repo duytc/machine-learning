@@ -146,9 +146,15 @@ public class ConvertUtil {
         return result;
     }
 
-    public static String joinListString(List<String> list) {
+    public static String joinListString(List<String> list, String separate) {
         return list.stream()
                 .map(i -> i.toString())
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.joining(separate));
+    }
+
+    public static String mapValueToString(Map<String, Object> map) {
+        List<String> list = new ArrayList<>();
+        map.forEach((key, value) -> list.add(value.toString()));
+        return joinListString(list, "-");
     }
 }

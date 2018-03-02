@@ -7,6 +7,7 @@ import com.pubvantage.Authentication.Authentication;
 import com.pubvantage.RestParams.LearnerResponse;
 import com.pubvantage.RestParams.LearningProcessParams;
 import com.pubvantage.RestParams.PredictionProcessParams;
+import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreLearningModel;
 import com.pubvantage.entity.CoreOptimizationRule;
@@ -23,12 +24,14 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.regression.LinearRegressionModel;
-import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import spark.Request;
 import spark.Response;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import static spark.Spark.*;
 
@@ -365,10 +368,27 @@ public class AppMain {
     private static CoreLearner generateModelForOneValueOfSegmentFieldGroups(LinearRegressionDataProcess linearRegressionDataProcess) {
         LinearRegressionLearner linearRegressionLearner = new LinearRegressionLearner(sparkSession, linearRegressionDataProcess);
         LinearRegressionModel linearRegressionModel = linearRegressionLearner.generateModel(sparkSession);
-        if (linearRegressionModel != null) {
 
+        CoreLearner coreLearner = new CoreLearner();
+        coreLearner.setId(0L);
+        coreLearner.setIdentifier(linearRegressionDataProcess.getIdentifier());
+        coreLearner.setOptimizationRuleId(linearRegressionDataProcess.getOptimizationRuleId());
+        coreLearner.setSegmentValues(JsonUtil.mapToJson(linearRegressionDataProcess.getUniqueValue()));
+
+        if (linearRegressionModel == null) {
+            coreLearner.setModelPath(null);
+            coreLearner.setMathModel(null);
+            coreLearner.setMetricsPredictiveValues(null);
+        } else {
+            coreLearner.setModelPath(FilePathUtil.getLearnerModelPath(
+                    linearRegressionDataProcess.getOptimizationRuleId(),
+                    linearRegressionDataProcess.getIdentifier(),
+                    linearRegressionDataProcess.getOneSegmentGroup(),
+                    linearRegressionDataProcess.getUniqueValue()));
+            coreLearner.setMathModel(getModelStringData(linearRegressionDataProcess, linearRegressionModel));
         }
-        return null;
+
+        return coreLearner;
     }
 
     /**
@@ -397,35 +417,42 @@ public class AppMain {
      * @param modelList list of model
      */
     private static void saveModelToDatabase(List<CoreLearner> modelList) {
-//        coreLearnerService.saveListModel(modelList);
+        coreLearnerService.saveListLearnerModel(modelList);
     }
 
-    /**
-     * @param learner learned data
-     * @return json data of model
-     */
-    private static String getModelStringData(LearnerInterface learner) {
 
-        return null;
-    }
+    private static String getModelStringData(LinearRegressionDataProcess linearRegressionDataProcess, LinearRegressionModel linearRegressionModel) {
+        List<String> objectiveAndFields = linearRegressionDataProcess.createObjectiveAndFields();
 
-    /**
-     * Create test data sample
-     *
-     * @return data test
-     */
-    private static String[] createTestData() {
-        String[] args;
-        args = new String[6];
-        int index = 0;
-        args[index++] = "--autoOptimizationId";
-        args[index++] = "=";
-        args[index++] = "1";
-        args[index++] = "--identifier";
-        args[index++] = "=";
-//        args[index++] = "all";
-        args[index++] = "allenwestrepublic.com";
-        return args;
+        JsonObject jsonObject = new JsonObject();
+        LinearRegressionModel model = linearRegressionModel;
+
+        //coefficient
+        Vector vec = model.coefficients();
+        double[] coefficientsArray = vec.toArray();
+
+        JsonObject coefficient = new JsonObject();
+
+        for (int i = 0; i < coefficientsArray.length; i++) {
+            int factorIndex = i + 1;// index 0 is objective
+            if (Double.isNaN(coefficientsArray[i])) {
+                coefficient.addProperty(objectiveAndFields.get(factorIndex), "null");
+            } else {
+                double value = ConvertUtil.convertObjectToDecimal(coefficientsArray[i]).doubleValue();
+                coefficient.addProperty(objectiveAndFields.get(factorIndex), value);
+            }
+        }
+
+        jsonObject.add(MyConstant.COEFFICIENT, coefficient);
+
+        if (Double.isNaN(model.intercept())) {
+            jsonObject.addProperty(MyConstant.INTERCEPT, "null");
+        } else {
+            double value = ConvertUtil.convertObjectToDecimal(model.intercept()).doubleValue();
+            jsonObject.addProperty(MyConstant.INTERCEPT, value);
+        }
+
+        return jsonObject.toString();
     }
 
 }
