@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.pubvantage.RestParams.FactorConditionData;
 import com.pubvantage.entity.CoreAutoOptimizationConfig;
+import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.DataTrainingServiceOld;
 import com.pubvantage.service.DataTrainingServiceInterface;
@@ -19,12 +20,11 @@ public class ConditionGenerator {
 
     private OptimizationRuleService optimizationConfigService = new OptimizationRuleService();
     private DataTrainingServiceInterface trainingService = new DataTrainingServiceOld();
-    private CoreAutoOptimizationConfig coreAutoOptimizationConfig;
+    private CoreOptimizationRule coreOptimizationRule;
     private JsonArray conditions;
 
-
-    public ConditionGenerator(CoreAutoOptimizationConfig coreAutoOptimizationConfig, JsonArray conditions) {
-        this.coreAutoOptimizationConfig = coreAutoOptimizationConfig;
+    public ConditionGenerator(CoreOptimizationRule coreOptimizationRule, JsonArray conditions) {
+        this.coreOptimizationRule = coreOptimizationRule;
         this.conditions = conditions;
     }
 
@@ -32,61 +32,21 @@ public class ConditionGenerator {
      * @return list filtered factor condition data. exclude factor that is not in database
      */
     private List<FactorConditionData> validateConditions() {
-        List<String> factorsFromDB = optimizationConfigService.getFactors(coreAutoOptimizationConfig.getId());
-
-        if (factorsFromDB == null || factorsFromDB.isEmpty()) {
-            return new ArrayList<>();
-        }
-        return filterFactors(conditions, factorsFromDB);
-    }
-
-    /**
-     * @param conditions    condition data
-     * @param factorsFromDB list factors from database
-     * @return list filtered factor condition data. exclude factor that is not in database
-     */
-    private List<FactorConditionData> filterFactors(JsonArray conditions, List<String> factorsFromDB) {
-        List<FactorConditionData> factorConditionDataList = new ArrayList<>();
-
-        for (JsonElement factorData : conditions) {
-            JsonObject factorDataJsonObject = factorData.getAsJsonObject();
-            FactorConditionData factorConditionData = new Gson().fromJson(factorDataJsonObject, FactorConditionData.class);
-            if (factorConditionData == null)
-                continue;
-
-            String factorName = factorConditionData.getFactor();
-            if (null == factorName || factorName.isEmpty())
-                continue;
-
-            if (factorsFromDB.contains(factorName)) {
-                factorConditionDataList.add(factorConditionData);
-            }
-        }
-        return factorConditionDataList;
+        return null;
     }
 
     /**
      * @return multiple condition data
      */
     public List<Map<String, Object>> generateMultipleConditions() {
-        List<FactorConditionData> factorConditionDataList = validateConditions();
-        LinkedHashMap<String, List<Object>> filteredConditionsDataMap = trainingService.getFilteredConditions(coreAutoOptimizationConfig.getId(), factorConditionDataList);
-        List<List<Object>> filteredConditionsDataList = new ArrayList<>(filteredConditionsDataMap.values());
 
-        List<List<Object>> multipleConditionList = generateListConditions(filteredConditionsDataList);
+        return null;
+    }
 
-        List<String> listFactorName = new ArrayList<>();
-        filteredConditionsDataMap.forEach((factorName, value) -> listFactorName.add(factorName));
-        List<Map<String, Object>> multipleConditionMap = new ArrayList<>();
-        for (List<Object> conditionList : multipleConditionList) {
-            Map<String, Object> conditionMap = new LinkedHashMap<>();
-            for (int i = 0; i < conditionList.size(); i++) {
-                conditionMap.put(listFactorName.get(i), conditionList.get(i));
-            }
-            multipleConditionMap.add(conditionMap);
-        }
+    public List<String> getInputSegmentFields()
+    {
 
-        return multipleConditionMap;
+      return  null;
     }
 
     /**

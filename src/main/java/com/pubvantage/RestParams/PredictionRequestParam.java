@@ -5,13 +5,13 @@ import com.google.gson.JsonArray;
 import java.util.List;
 
 public class PredictionRequestParam {
-    private Long autoOptimizationConfigId;
+    private Long optimizationRuleId;
     private List<String> identifiers;
     private JsonArray conditions;
     private String token;
 
-    public PredictionRequestParam(Long autoOptimizationConfigId, List<String> identifiers, JsonArray conditions, String token) {
-        this.autoOptimizationConfigId = autoOptimizationConfigId;
+    public PredictionRequestParam(Long optimizationRuleId, List<String> identifiers, JsonArray conditions, String token) {
+        this.optimizationRuleId = optimizationRuleId;
         this.identifiers = identifiers;
         this.conditions = conditions;
         this.token = token;
@@ -20,12 +20,12 @@ public class PredictionRequestParam {
     public PredictionRequestParam() {
     }
 
-    public Long getAutoOptimizationConfigId() {
-        return autoOptimizationConfigId;
+    public Long getOptimizationRuleId() {
+        return optimizationRuleId;
     }
 
-    public void setAutoOptimizationConfigId(Long autoOptimizationConfigId) {
-        this.autoOptimizationConfigId = autoOptimizationConfigId;
+    public void setOptimizationRuleId(Long optimizationRuleId) {
+        this.optimizationRuleId = optimizationRuleId;
     }
 
     public List<String> getIdentifiers() {

@@ -12,19 +12,19 @@ public class PredictionProcessParams {
     private static Logger logger = Logger.getLogger(AppMain.class.getName());
     private PredictionRequestParam requestParam;
 
-    public PredictionProcessParams(Request request) {
+    public PredictionProcessParams(String params) {
         try {
-            requestParam = new Gson().fromJson(request.body(), PredictionRequestParam.class);
+            requestParam = new Gson().fromJson(params, PredictionRequestParam.class);
         } catch (Exception e) {
             logger.error("Request is invalid");
         }
     }
 
-    public Long getAutoOptimizationConfigId() {
+    public Long getOptimizationRuleId() {
         if (requestParam == null)
             return null;
 
-        return requestParam.getAutoOptimizationConfigId();
+        return requestParam.getOptimizationRuleId();
     }
 
     public List<String> getIdentifiers() {
@@ -50,7 +50,7 @@ public class PredictionProcessParams {
 
     public boolean validates() {
         return null != requestParam
-                && null != requestParam.getAutoOptimizationConfigId()
+                && null != requestParam.getOptimizationRuleId()
                 && null != requestParam.getIdentifiers()
                 && null != requestParam.getConditions()
                 && null != requestParam.getToken();

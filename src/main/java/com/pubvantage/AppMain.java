@@ -16,14 +16,13 @@ import com.pubvantage.learner.Params.LinearRegressionDataProcess;
 import com.pubvantage.learner.Params.SegmentFieldGroup;
 import com.pubvantage.service.*;
 import com.pubvantage.service.DataTraning.DataTrainingService;
+import com.pubvantage.service.Learner.LinearRegressionScoring;
 import com.pubvantage.utils.*;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.regression.LinearRegressionModel;
-import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import spark.Request;
 import spark.Response;
@@ -207,7 +206,8 @@ public class AppMain {
      */
     private static String predictScores(Request request, Response response) {
         response.type("application/json");
-        PredictionProcessParams predictionProcessParams = new PredictionProcessParams(request);
+        String predictPrams = request.body();
+        PredictionProcessParams predictionProcessParams = new PredictionProcessParams(predictPrams);
         boolean isValidParams = predictionProcessParams.validates();
         if (!isValidParams) {
             LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, "Parameter is invalid", null);
@@ -215,13 +215,13 @@ public class AppMain {
             return new Gson().toJson(learnerResponse);
         }
 
-        Long autoOptimizationConfigId = predictionProcessParams.getAutoOptimizationConfigId();
+        Long optimizationRuleId = predictionProcessParams.getOptimizationRuleId();
 
         List<String> identifiers = predictionProcessParams.getIdentifiers();
         JsonArray conditions = predictionProcessParams.getConditions();
         String token = predictionProcessParams.getToken();
 
-        Authentication authentication = new Authentication(autoOptimizationConfigId, token);
+        Authentication authentication = new Authentication(optimizationRuleId, token);
         boolean isValid = authentication.authenticate();
         if (!isValid) {
             LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, "The request is unauthenticated", null);
@@ -230,11 +230,11 @@ public class AppMain {
         }
 
         OptimizationRuleService coreOptimizationRuleService = new OptimizationRuleService();
-        CoreOptimizationRule optimizationRule = coreOptimizationRuleService.findById(autoOptimizationConfigId);
+        CoreOptimizationRule optimizationRule = coreOptimizationRuleService.findById(optimizationRuleId);
 
-//        LinearRegressionScoring linearRegressionScoring = new LinearRegressionScoring(optimizationRule, identifiers, conditions);
-//        Map<String, Map<String, Double>> predictions = linearRegressionScoring.predict();
-        String predictions = "";
+        LinearRegressionScoring linearRegressionScoring = new LinearRegressionScoring(optimizationRule, identifiers, conditions);
+        Map<String, Map<String, Double>> predictions = linearRegressionScoring.predict();
+
         return new Gson().toJson(predictions);
     }
 

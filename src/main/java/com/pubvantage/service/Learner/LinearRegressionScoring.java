@@ -3,7 +3,7 @@ package com.pubvantage.service.Learner;
 import com.google.gson.JsonArray;
 import com.pubvantage.ConditionProcessor.ConditionConverter;
 import com.pubvantage.ConditionProcessor.ConditionGenerator;
-import com.pubvantage.entity.CoreAutoOptimizationConfig;
+import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.service.LoadingLearnerModel;
 import com.pubvantage.utils.ConvertUtil;
 import org.apache.spark.ml.linalg.Vector;
@@ -14,12 +14,12 @@ import java.util.*;
 public class LinearRegressionScoring implements ScoringServiceInterface {
 
     private static final double PREDICTION_DEFAULT_VALUE = 0d;
-    private final CoreAutoOptimizationConfig coreAutoOptimizationConfig;
+    private final CoreOptimizationRule coreOptimizationRule;
     private final List<String> identifiers;
     private final JsonArray conditions;
 
-    public LinearRegressionScoring(CoreAutoOptimizationConfig coreAutoOptimizationConfig, List<String> identifiers, JsonArray conditions) {
-        this.coreAutoOptimizationConfig = coreAutoOptimizationConfig;
+    public LinearRegressionScoring(CoreOptimizationRule coreAutoOptimizationRule, List<String> identifiers, JsonArray conditions) {
+        this.coreOptimizationRule = coreAutoOptimizationRule;
         this.identifiers = identifiers;
         this.conditions = conditions;
     }
@@ -29,12 +29,12 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
      */
     public Map<String, Map<String, Double>> predict() {
         Map<String, Map<String, Double>> predictions = new LinkedHashMap<>();
-        ConditionGenerator conditionGenerator = new ConditionGenerator(coreAutoOptimizationConfig, conditions);
+        ConditionGenerator conditionGenerator = new ConditionGenerator(coreOptimizationRule, conditions);
         List<Map<String, Object>> multipleConditions = conditionGenerator.generateMultipleConditions();
 
         for (Map<String, Object> conditions : multipleConditions) {
-            String key = buildKey(conditions);
-            Map<String, Double> predictionsOfOneCondition = makeMultiplePredictionsWithOneCondition(coreAutoOptimizationConfig, identifiers, conditions);
+            String key = buildSegmentInfo(conditions);
+            Map<String, Double> predictionsOfOneCondition = makeMultiplePredictionsWithOneCondition(coreOptimizationRule, identifiers, conditions);
             predictions.put(key, predictionsOfOneCondition);
         }
 
@@ -42,52 +42,34 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
     }
 
     /**
-     * make one prediction with one condition of one learner model.
      *
-     * @param coreAutoOptimizationConfig id of auto optimization config
-     * @param identifier                 identifier
-     * @param condition                  one condition
+     * @param coreOptimizationRule
+     * @param identifier
+     * @param condition
      * @return
      */
-    private Double makeOnePrediction(CoreAutoOptimizationConfig coreAutoOptimizationConfig, String identifier, Map<String, Object> condition) {
-        ConditionConverter conditionConverter = new ConditionConverter(coreAutoOptimizationConfig, identifier, condition);
-        Vector conditionVector = conditionConverter.buildVector();
+    private Double makeOnePrediction(CoreOptimizationRule coreOptimizationRule, String identifier, Map<String, Object> condition) {
 
-        if (conditionVector == null) {
-            return PREDICTION_DEFAULT_VALUE;
-        }
-
-        LoadingLearnerModel loadingLearnerModel = new LoadingLearnerModel(coreAutoOptimizationConfig, identifier);
-        LinearRegressionModel linearRegressionModel = loadingLearnerModel.loadLearnerModel();
-
-        double predict = linearRegressionModel.predict(conditionVector);
-        if (Double.isNaN(predict)) {
-            return PREDICTION_DEFAULT_VALUE;
-        }
-
-        return predict;
+        return  null;
     }
 
     /**
-     * Make many predictions for many identifiers
      *
-     * @param coreAutoOptimizationConfig coreAutoOptimizationConfig
-     * @param identifiers                identifiers
-     * @param condition                  condition
+     * @param coreOptimizationRule
+     * @param identifiers
+     * @param condition
      * @return
      */
-    private Map<String, Double> makeMultiplePredictionsWithOneCondition(CoreAutoOptimizationConfig coreAutoOptimizationConfig, List<String> identifiers, Map<String, Object> condition) {
+    private Map<String, Double> makeMultiplePredictionsWithOneCondition(CoreOptimizationRule coreOptimizationRule, List<String> identifiers, Map<String, Object> condition) {
         Map<String, Double> predictions = new LinkedHashMap<>();
 
         identifiers.forEach(identifier -> {
-            Double prediction = makeOnePrediction(coreAutoOptimizationConfig, identifier, condition);
+            Double prediction = makeOnePrediction(coreOptimizationRule, identifier, condition);
             predictions.put(identifier, prediction);
 
         });
 
-        String expectedObjective = coreAutoOptimizationConfig.getExpectedObjective();
-
-        return sortPredictionsByExpectedObjective(expectedObjective, predictions);
+        return predictions;
     }
 
     /**
@@ -96,7 +78,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
      * @param condition condition
      * @return key
      */
-    private String buildKey(Map<String, Object> condition) {
+    private String buildSegmentInfo(Map<String, Object> condition) {
         List<String> conditionArray = new ArrayList<>();
         condition.forEach((factorName, value) -> conditionArray.add(String.valueOf(value)));
 
