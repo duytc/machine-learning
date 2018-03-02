@@ -15,8 +15,8 @@ public class LinearRegressionLearner implements LearnerInterface {
     private static final double ELASTIC_NET_PARAM = 0.8;
     private static final int MAX_ITER = 10;
 
-    private  SparkSession sparkSession;
-   private LinearRegressionDataProcess linearRegressionDataProcess;
+    private SparkSession sparkSession;
+    private LinearRegressionDataProcess linearRegressionDataProcess;
 
 
     public LinearRegressionLearner(SparkSession sparkSession, LinearRegressionDataProcess linearRegressionDataProcess) {
@@ -50,20 +50,22 @@ public class LinearRegressionLearner implements LearnerInterface {
                 .setRegParam(REG_PARAM)
                 .setElasticNetParam(ELASTIC_NET_PARAM);
 
-        // Fit the model.
-        LinearRegressionModel lrModel = lr.fit(training);
-        // Print the coefficients and intercept for linear regression.
-        System.out.println("Coefficients: " + lrModel.coefficients().toString() + " Intercept: " + lrModel.intercept());
-
         try {
-            String savePath = FilePathUtil.getLearnerModelPath( linearRegressionDataProcess.getOptimizationRuleId(),
-                                                                linearRegressionDataProcess.getIdentifier(),
-                                                                linearRegressionDataProcess.getOneSegmentGroup(),
-                                                                linearRegressionDataProcess.getUniqueValue());
+            // Fit the model.
+            LinearRegressionModel lrModel = lr.fit(training);
+            // Print the coefficients and intercept for linear regression.
+            System.out.println("Coefficients: " + lrModel.coefficients().toString() + " Intercept: " + lrModel.intercept());
+            String savePath = FilePathUtil.getLearnerModelPath(
+                    linearRegressionDataProcess.getOptimizationRuleId(),
+                    linearRegressionDataProcess.getIdentifier(),
+                    linearRegressionDataProcess.getOneSegmentGroup(),
+                    linearRegressionDataProcess.getUniqueValue());
             lrModel.write().overwrite().save(savePath);
-        } catch (IOException e) {
+
+            return lrModel;
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return lrModel;
+        return null;
     }
 }

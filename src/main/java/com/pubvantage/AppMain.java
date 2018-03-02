@@ -364,8 +364,10 @@ public class AppMain {
 
     private static CoreLearner generateModelForOneValueOfSegmentFieldGroups(LinearRegressionDataProcess linearRegressionDataProcess) {
         LinearRegressionLearner linearRegressionLearner = new LinearRegressionLearner(sparkSession, linearRegressionDataProcess);
-        linearRegressionLearner.generateModel(sparkSession);
+        LinearRegressionModel linearRegressionModel = linearRegressionLearner.generateModel(sparkSession);
+        if (linearRegressionModel != null) {
 
+        }
         return null;
     }
 

@@ -25,7 +25,7 @@ public class CoreLearner {
     @Column(name = "model_path")
     private String modelPath;
 
-    @Column(name = "metric_predictive_values")
+    @Column(name = "metrics_predictive_values")
     private String metricsPredictiveValues;
 
     @Column(name = "created_date")
