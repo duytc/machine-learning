@@ -1,9 +1,13 @@
 package com.pubvantage.learner.Params;
 
+import com.google.gson.JsonObject;
 import com.pubvantage.dao.SparkDataTrainingDao;
 import com.pubvantage.dao.SparkDataTrainingDaoInterface;
+import com.pubvantage.entity.FactorDataType;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
+import com.pubvantage.utils.ConvertUtil;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.VectorUDT;
@@ -17,8 +21,10 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import org.json4s.jackson.Json;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +36,8 @@ public class LinearRegressionDataProcess {
     private List<String> oneSegmentGroup;
     private Map<String, Object> uniqueValue;
     private String optimizeField;
+    private List<String> objectiveAndFields;
+    private JsonObject metricsPredictiveValues;
 
     public LinearRegressionDataProcess() {
     }
@@ -46,6 +54,7 @@ public class LinearRegressionDataProcess {
     public Dataset<Row> getTrainingDataForLinearRegression() {
         List<String> objectiveAndFields = this.createObjectiveAndFields();
         Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRuleId, identifier, objectiveAndFields, uniqueValue, oneSegmentGroup);
+        this.metricsPredictiveValues = createMetricsPredictiveValues(dataSet);
         Dataset<Row> vectorDataSet = null;
         if (dataSet != null) {
             vectorDataSet = this.extractDataToLearn(dataSet);
@@ -66,6 +75,7 @@ public class LinearRegressionDataProcess {
         if (metrics != null) {
             objectiveAndFields.addAll(metrics);
         }
+        this.objectiveAndFields = objectiveAndFields;
         return objectiveAndFields;
     }
 
@@ -109,6 +119,46 @@ public class LinearRegressionDataProcess {
         return output;
     }
 
+    private JsonObject createMetricsPredictiveValues(Dataset<Row> trainingDataSet) {
+
+        double[] forecastFactorValues = new double[this.objectiveAndFields.size()];
+        //forecast  number value factor. (avg)
+        Dataset<Row> avgDataSet = avgNumberedData(trainingDataSet, this.objectiveAndFields);
+        List<String> objectiveAndFields = this.objectiveAndFields;
+
+        List<Row> data = avgDataSet.collectAsList();
+        for (Row row : data) {
+            int numberTypeFactorIndex = -1;
+            for (int col = 0; col < objectiveAndFields.size(); col++) {
+                numberTypeFactorIndex++;
+                if (row.get(numberTypeFactorIndex) instanceof Number) {
+                    forecastFactorValues[col] = ConvertUtil.convertObjectToDouble(row.get(numberTypeFactorIndex).toString());
+                }
+            }
+        }
+
+        JsonObject forecast = new JsonObject();
+        //skip objective index 0
+        for (int col = 1; col < objectiveAndFields.size(); col++) {
+            forecast.addProperty(objectiveAndFields.get(col), ConvertUtil.convertObjectToDecimal(forecastFactorValues[col]));
+        }
+        return forecast;
+    }
+
+    /**
+     * @param trainingDataSet training data
+     * @return average value of each factor and objective
+     */
+    private Dataset<Row> avgNumberedData(Dataset<Row> trainingDataSet, List<String> objectiveAndFields) {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (String objectiveAndField : objectiveAndFields) {
+            map.put(objectiveAndField, "avg");
+        }
+
+        Dataset<Row> avgData = trainingDataSet.agg(map);
+        avgData.show();
+        return avgData;
+    }
 
     public Long getOptimizationRuleId() {
         return optimizationRuleId;
@@ -148,5 +198,13 @@ public class LinearRegressionDataProcess {
 
     public void setOptimizeField(String optimizeField) {
         this.optimizeField = optimizeField;
+    }
+
+    public List<String> getObjectiveAndFields() {
+        return objectiveAndFields;
+    }
+
+    public JsonObject getMetricsPredictiveValues() {
+        return metricsPredictiveValues;
     }
 }

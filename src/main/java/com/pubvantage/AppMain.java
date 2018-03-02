@@ -386,6 +386,7 @@ public class AppMain {
                     linearRegressionDataProcess.getOneSegmentGroup(),
                     linearRegressionDataProcess.getUniqueValue()));
             coreLearner.setMathModel(getModelStringData(linearRegressionDataProcess, linearRegressionModel));
+            coreLearner.setMetricsPredictiveValues(linearRegressionDataProcess.getMetricsPredictiveValues().toString());
         }
 
         return coreLearner;
@@ -422,7 +423,7 @@ public class AppMain {
 
 
     private static String getModelStringData(LinearRegressionDataProcess linearRegressionDataProcess, LinearRegressionModel linearRegressionModel) {
-        List<String> objectiveAndFields = linearRegressionDataProcess.createObjectiveAndFields();
+        List<String> objectiveAndFields = linearRegressionDataProcess.getObjectiveAndFields();
 
         JsonObject jsonObject = new JsonObject();
         LinearRegressionModel model = linearRegressionModel;
