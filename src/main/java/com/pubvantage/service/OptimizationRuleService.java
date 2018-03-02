@@ -5,7 +5,11 @@ import com.google.gson.JsonObject;
 import com.pubvantage.constant.DataBaseConstant;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDao;
 import com.pubvantage.dao.OptimizationRuleDao;
+import com.pubvantage.dao.ReportViewDao;
+import com.pubvantage.dao.ReportViewDaoInterface;
 import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.CoreReportView;
+import com.pubvantage.service.Learner.ReportViewService;
 import com.pubvantage.utils.HibernateUtil;
 import com.pubvantage.utils.JsonUtil;
 import org.apache.log4j.Logger;
@@ -19,6 +23,7 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     private CoreAutoOptimizationConfigDao coreAutoOptimizationConfigDao = new CoreAutoOptimizationConfigDao();
     private static Logger logger = Logger.getLogger(OptimizationRuleService.class.getName());
     private OptimizationRuleDao optimizationRuleDao = new OptimizationRuleDao();
+    private ReportViewServiceInterface viewService = new ReportViewService();
 
     @Override
     public List<String> getSegmentFields(Long optimizationRuleId) {
@@ -38,9 +43,8 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     @Override
     public List<String> getMetrics(Long optimizationRuleId) {
         CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
-
-        return JsonUtil.jsonArrayStringToJavaList(optimizationRule.getSegmentFields());
-
+        CoreReportView reportView = viewService.findById(optimizationRule.getReportViewId());
+        return JsonUtil.jsonArrayStringToJavaList(reportView.getMetrics());
     }
 
     @Override
