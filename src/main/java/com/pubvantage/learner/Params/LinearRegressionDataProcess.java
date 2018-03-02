@@ -1,9 +1,22 @@
 package com.pubvantage.learner.Params;
 
 import com.google.gson.JsonObject;
+import com.pubvantage.entity.ConvertedDataWrapper;
+import org.apache.spark.api.java.function.FlatMapFunction;
+import org.apache.spark.ml.linalg.Vector;
+import org.apache.spark.ml.linalg.VectorUDT;
+import org.apache.spark.ml.linalg.Vectors;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.Metadata;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LinearRegressionDataProcess {
@@ -61,9 +74,47 @@ public class LinearRegressionDataProcess {
         this.optimizeField = optimizeField;
     }
 
-    public Dataset<Row> getTrainingDataForLinearRegression()
-    {
-        return  null;
+    public Dataset<Row> getTrainingDataForLinearRegression() {
+        return null;
     }
 
+    /**
+     * @param convertedData converted data (text -> number)
+     * @return Data to learn
+     */
+    private Dataset<Row> extractDataToLearn(Dataset<Row> convertedData) {
+        StructType schema = new StructType(new StructField[]{
+                new StructField("label", DataTypes.DoubleType, false, Metadata.empty()),
+                new StructField("features", new VectorUDT(), false, Metadata.empty()),
+        });
+
+        ExpressionEncoder<Row> encoder = RowEncoder.apply(schema);
+
+        Dataset<Row> output = convertedData.flatMap((FlatMapFunction<Row, Row>) rowData -> {
+            Double label = Double.parseDouble(rowData.get(0).toString());
+
+            double[] features = new double[rowData.size() - 1];
+            for (int i = 0; i < features.length; i++) {
+                int factorIndex = i + 1;
+                features[i] = Double.parseDouble(rowData.get(factorIndex).toString());
+            }
+
+            Vector featuresVector = Vectors.dense(features);
+            Row rowOutput = RowFactory.create(label, featuresVector);
+
+            ArrayList<Row> list = new ArrayList<>();
+            list.add(rowOutput);
+            return list.iterator();
+        }, encoder);
+
+        List<Row> result = output.collectAsList();
+        for (Row row : result) {
+            for (int i = 0; i < row.length(); i++) {
+                System.out.print(" " + row.get(i).toString());
+            }
+            System.out.println();
+        }
+
+        return output;
+    }
 }
