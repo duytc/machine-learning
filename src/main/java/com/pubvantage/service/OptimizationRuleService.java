@@ -21,8 +21,9 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     private OptimizationRuleDao optimizationRuleDao = new OptimizationRuleDao();
 
     @Override
-    public List<String> getSegmentFields(CoreOptimizationRule optimizationRule) {
-        return new ArrayList<>();
+    public List<String> getSegmentFields(Long optimizationRuleId) {
+        CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
+        return JsonUtil.jsonArrayStringToJavaList(optimizationRule.getSegmentFields());
     }
 
     @Override
@@ -35,7 +36,7 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     @Override
-    public String[] getMetrics(long optimizationRuleId) {
+    public String[] getMetrics(Long optimizationRuleId) {
         return new String[0];
     }
 
@@ -45,7 +46,7 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     @Override
-    public boolean checkToken(long autoOptimizationConfigId, String token) {
+    public boolean checkToken(Long autoOptimizationConfigId, String token) {
         Session session = null;
         boolean isValid = false;
         try {
@@ -101,17 +102,17 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     @Override
-    public String[] getObjectiveAndFactors(long autoOptimizationId) {
+    public String[] getObjectiveAndFactors(Long autoOptimizationId) {
         return new String[0];
     }
 
     @Override
-    public List<String> getPositiveFactors(long autoOptimizationId) {
+    public List<String> getPositiveFactors(Long autoOptimizationId) {
         return null;
     }
 
     @Override
-    public List<String> getNegativeFactors(long autoOptimizationId) {
+    public List<String> getNegativeFactors(Long autoOptimizationId) {
         return null;
     }
 

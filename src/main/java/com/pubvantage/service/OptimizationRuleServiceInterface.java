@@ -6,25 +6,25 @@ import com.pubvantage.entity.CoreOptimizationRule;
 import java.util.List;
 
 public interface OptimizationRuleServiceInterface {
-    List<String> getSegmentFields(CoreOptimizationRule optimizationRule);
+    List<String> getSegmentFields(Long optimizationRuleId);
 
     List<String> getOptimizeFields(Long optimizationRuleId);
 
-    String[] getMetrics(long optimizationRuleId);
+    String[] getMetrics(Long optimizationRuleId);
 
     List<String> getIdentifiers(CoreOptimizationRule optimizationRule);
 
-    boolean checkToken(long autoOptimizationConfigId, String token);
+    boolean checkToken(Long autoOptimizationConfigId, String token);
 
-    List<String> getFactors(Long id);
+    List<String> getFactors(Long optimizationRuleId);
 
-    JsonObject getFieldType(Long id);
+    JsonObject getFieldType(Long optimizationRuleId);
 
-    CoreOptimizationRule findById(Long autoOptimizationConfigId);
+    CoreOptimizationRule findById(Long optimizationRuleId);
 
-    String[] getObjectiveAndFactors(long autoOptimizationId);
+    String[] getObjectiveAndFactors(Long autoOptimizationId);
 
-    List<String> getPositiveFactors(long autoOptimizationId);
+    List<String> getPositiveFactors(Long autoOptimizationId);
 
-    List<String> getNegativeFactors(long autoOptimizationId);
+    List<String> getNegativeFactors(Long autoOptimizationId);
 }
