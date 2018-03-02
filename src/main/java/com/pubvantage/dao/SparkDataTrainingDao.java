@@ -87,6 +87,13 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         return listData;
     }
 
+    /**
+     * consider avoid use collectAsList() if data is big. it cause out of memory.
+     * @param optimizationRuleId
+     * @param identifier
+     * @param oneSegmentFieldGroup
+     * @return
+     */
     @Override
     public List<Object> getAllUniqueValuesForOneSegmentFieldGroup(Long optimizationRuleId, String identifier, List<String> oneSegmentFieldGroup) {
         String segments = String.join(",", oneSegmentFieldGroup);
