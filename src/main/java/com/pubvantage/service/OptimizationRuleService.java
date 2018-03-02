@@ -6,10 +6,12 @@ import com.pubvantage.dao.CoreAutoOptimizationConfigDao;
 import com.pubvantage.dao.OptimizationRuleDao;
 import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.utils.HibernateUtil;
+import com.pubvantage.utils.JsonUtil;
 import org.apache.log4j.Logger;
 import org.hibernate.Session;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class OptimizationRuleService implements OptimizationRuleServiceInterface {
@@ -23,7 +25,29 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     @Override
-    public List<String> getOptimizeFields(long optimizationRuleId) {
+    public List<String> getOptimizeFields(Long optimizationRuleId) {
+        Session session = null;
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
+            session.beginTransaction();
+            CoreOptimizationRule optimizationRule = optimizationRuleDao.findById(optimizationRuleId, session);
+            List<HashMap<String, String>> map = JsonUtil.jsonArrayObjectsToListMap(optimizationRule.getOptimizeFields());
+            List<String> optimizeFieldList = new ArrayList<>();
+            map.forEach(optimizeField -> {
+                optimizeFieldList.add(optimizeField.get("field"));
+            });
+            return optimizeFieldList;
+        } catch (Exception e) {
+            if (null != session && null != session.getTransaction()) {
+                session.getTransaction().rollback();
+            }
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+
         return null;
     }
 

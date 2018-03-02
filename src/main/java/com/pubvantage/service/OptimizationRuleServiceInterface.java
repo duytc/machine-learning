@@ -8,7 +8,7 @@ import java.util.List;
 public interface OptimizationRuleServiceInterface {
     List<String> getSegmentFields(CoreOptimizationRule optimizationRule);
 
-    List<String> getOptimizeFields(long optimizationRuleId);
+    List<String> getOptimizeFields(Long optimizationRuleId);
 
     String[] getMetrics(long optimizationRuleId);
 
