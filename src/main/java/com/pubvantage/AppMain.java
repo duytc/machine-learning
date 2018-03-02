@@ -331,7 +331,7 @@ public class AppMain {
     }
 
     private static List<CoreLearner> generateModelForSegmentFieldGroup(SegmentFieldGroup segmentFieldGroup) {
-        List<CoreLearner> coreLearners = new LinkedList<>();
+        List<CoreLearner> coreLearners = new ArrayList<>();
 
         OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
         List<String> optimizeFields = optimizationRuleService.getOptimizeFields(segmentFieldGroup.getOptimizationRuleId());
@@ -344,7 +344,7 @@ public class AppMain {
     }
 
     private static List<CoreLearner> generateModelForOneOptimizeField(SegmentFieldGroup segmentFieldGroup, String optimizeField) {
-        List<CoreLearner> coreLearners = new LinkedList<>();
+        List<CoreLearner> coreLearners = new ArrayList<>();
 
         Long optimizationRuleId = segmentFieldGroup.getOptimizationRuleId();
         String identifier = segmentFieldGroup.getIdentifier();
