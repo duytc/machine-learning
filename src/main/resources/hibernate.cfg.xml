@@ -20,6 +20,7 @@
         <mapping class="com.pubvantage.entity.CoreLearningModel"/>
         <mapping class="com.pubvantage.entity.CoreLearner"/>
         <mapping class="com.pubvantage.entity.CoreOptimizationRule"/>
+        <mapping class="com.pubvantage.entity.CoreReportView"/>
         <mapping class="com.pubvantage.entity.CoreAutoOptimizationConfig"/>
     </session-factory>
 </hibernate-configuration>

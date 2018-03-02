@@ -10,7 +10,7 @@ public interface OptimizationRuleServiceInterface {
 
     List<String> getOptimizeFields(Long optimizationRuleId);
 
-    String[] getMetrics(Long optimizationRuleId);
+    List<String> getMetrics(Long optimizationRuleId);
 
     List<String> getIdentifiers(CoreOptimizationRule optimizationRule);
 

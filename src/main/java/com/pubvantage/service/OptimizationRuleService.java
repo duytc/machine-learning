@@ -36,8 +36,11 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     @Override
-    public String[] getMetrics(Long optimizationRuleId) {
-        return new String[0];
+    public List<String> getMetrics(Long optimizationRuleId) {
+        CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
+
+        return JsonUtil.jsonArrayStringToJavaList(optimizationRule.getSegmentFields());
+
     }
 
     @Override
