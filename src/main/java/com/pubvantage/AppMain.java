@@ -223,7 +223,7 @@ public class AppMain {
         Long optimizationRuleId = predictionProcessParams.getOptimizationRuleId();
 
         List<String> identifiers = predictionProcessParams.getIdentifiers();
-        List<SegmentField> conditions = predictionProcessParams.getConditions();
+        Condition conditions = predictionProcessParams.getConditions();
 
         String token = predictionProcessParams.getToken();
 

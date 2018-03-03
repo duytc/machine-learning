@@ -1,7 +1,9 @@
 package com.pubvantage.ConditionProcessor;
 
 import com.pubvantage.RestParams.FactorConditionData;
+import com.pubvantage.entity.Condition;
 import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.FactorValues;
 import com.pubvantage.entity.SegmentField;
 import com.pubvantage.service.DataTrainingServiceInterface;
 import com.pubvantage.service.DataTrainingServiceOld;
@@ -16,9 +18,9 @@ public class ConditionGenerator {
     private OptimizationRuleService optimizationConfigService = new OptimizationRuleService();
     private DataTrainingServiceInterface trainingService = new DataTrainingServiceOld();
     private CoreOptimizationRule coreOptimizationRule;
-    private List<SegmentField> conditions;
+    private Condition conditions;
 
-    public ConditionGenerator(CoreOptimizationRule coreOptimizationRule, List<SegmentField> conditions) {
+    public ConditionGenerator(CoreOptimizationRule coreOptimizationRule, Condition conditions) {
         this.coreOptimizationRule = coreOptimizationRule;
         this.conditions = conditions;
     }
@@ -33,20 +35,18 @@ public class ConditionGenerator {
     /**
      * @return multiple condition data
      */
-    public List<Map<String, Object>> generateMultipleSegmentGroupValues() {
+    public List<SegmentField> generateMultipleSegmentGroupValues() {
 
-        return null;
+        return this.conditions.getSegmentFields();
     }
 
-    public Map<String, Object> getFactorValues()
-    {
-        return null;
+    public FactorValues getFactorValues() {
+        return this.conditions.getFactorValues();
     }
 
-    public List<String> getInputSegmentFields()
-    {
+    public List<String> getInputSegmentFields() {
 
-      return  null;
+        return null;
     }
 
     /**

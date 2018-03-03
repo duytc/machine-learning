@@ -1,5 +1,6 @@
 package com.pubvantage.RestParams;
 
+import com.pubvantage.entity.Condition;
 import com.pubvantage.entity.FactorValues;
 import com.pubvantage.entity.SegmentField;
 
@@ -8,11 +9,10 @@ import java.util.List;
 public class PredictionRequestParam {
     private Long optimizationRuleId;
     private List<String> identifiers;
-    private List<SegmentField> conditions;
+    private Condition conditions;
     private String token;
-    private FactorValues factorValues;
 
-    public PredictionRequestParam(Long optimizationRuleId, List<String> identifiers, List<SegmentField> conditions, String token) {
+    public PredictionRequestParam(Long optimizationRuleId, List<String> identifiers, Condition conditions, String token) {
         this.optimizationRuleId = optimizationRuleId;
         this.identifiers = identifiers;
         this.conditions = conditions;
@@ -38,11 +38,11 @@ public class PredictionRequestParam {
         this.identifiers = identifiers;
     }
 
-    public List<SegmentField> getConditions() {
+    public Condition getConditions() {
         return conditions;
     }
 
-    public void setConditions(List<SegmentField> conditions) {
+    public void setConditions(Condition conditions) {
         this.conditions = conditions;
     }
 
@@ -54,11 +54,4 @@ public class PredictionRequestParam {
         this.token = token;
     }
 
-    public FactorValues getFactorValues() {
-        return factorValues;
-    }
-
-    public void setFactorValues(FactorValues factorValues) {
-        this.factorValues = factorValues;
-    }
 }
