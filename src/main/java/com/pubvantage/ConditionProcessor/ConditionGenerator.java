@@ -35,9 +35,9 @@ public class ConditionGenerator {
     /**
      * @return multiple condition data
      */
-    public List<SegmentField> generateMultipleSegmentGroupValues() {
+    public List<Map<String, Object>> generateMultipleSegmentGroupValues() {
 
-        return this.conditions.getSegmentFields();
+        return null;
     }
 
     public FactorValues getFactorValues() {

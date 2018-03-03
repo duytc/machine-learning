@@ -33,12 +33,12 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
     public Map<String, Map<String, Double>> predict() {
         Map<String, Map<String, Double>> predictions = new LinkedHashMap<>();
         ConditionGenerator conditionGenerator = new ConditionGenerator(coreOptimizationRule, conditions);
-        List<SegmentField> multipleSegmentGroupValues = conditionGenerator.generateMultipleSegmentGroupValues();
+        List<Map<String, Object>> multipleSegmentGroupValues = conditionGenerator.generateMultipleSegmentGroupValues();
         FactorValues factorValues = conditionGenerator.getFactorValues();
 
-        for (SegmentField segmentGroupValue : multipleSegmentGroupValues) {
+        for (Map<String, Object> segmentGroupValue : multipleSegmentGroupValues) {
 //            String key = buildSegmentInfo(segmentGroupValue);
-//            Map<String, Double> predictionsOfOneCondition = makeMultiplePredictionsWithOneSegmentGroupValue(coreOptimizationRule, identifiers, segmentGroupValue, factorValues);
+            Map<String, Double> predictionsOfOneCondition = makeMultiplePredictionsWithOneSegmentGroupValue(coreOptimizationRule, identifiers, segmentGroupValue, factorValues);
 //            predictions.put(key, predictionsOfOneCondition);
         }
 
@@ -62,7 +62,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
      * @param condition
      * @return
      */
-    private Map<String, Double> makeMultiplePredictionsWithOneSegmentGroupValue(CoreOptimizationRule coreOptimizationRule, List<String> identifiers, Map<String, Object> condition, Map<String, Object> factorValues) {
+    private Map<String, Double> makeMultiplePredictionsWithOneSegmentGroupValue(CoreOptimizationRule coreOptimizationRule, List<String> identifiers, Map<String, Object> condition, FactorValues factorValues) {
         Map<String, Double> predictions = new LinkedHashMap<>();
 
         identifiers.forEach(identifier -> {
