@@ -1,22 +1,19 @@
 package com.pubvantage.service;
 
+import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreOptimizationRule;
 import org.apache.spark.ml.regression.LinearRegressionModel;
 
 public class LoadingLearnerModel implements LoadingLearnerModelInterface {
 
-    private CoreOptimizationRule optimizationRule;
-    private String identifier;
+    private CoreLearner coreLearner;
 
-    public LoadingLearnerModel(CoreOptimizationRule optimizationRule, String identifier) {
-        this.optimizationRule = optimizationRule;
-        this.identifier = identifier;
+    public LoadingLearnerModel(CoreLearner coreLearner) {
+        this.coreLearner = coreLearner;
     }
 
     private String getModelPath() {
-        CoreLearningModelService coreLearningModelService = new CoreLearningModelService();
-
-        return coreLearningModelService.getModelPath(optimizationRule, identifier);
+        return coreLearner.getModelPath();
     }
 
     @Override
@@ -25,4 +22,6 @@ public class LoadingLearnerModel implements LoadingLearnerModelInterface {
 
         return LinearRegressionModel.load(modelPath);
     }
+
+
 }

@@ -71,9 +71,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
         if (conditionVector == null) {
             return PREDICTION_DEFAULT_VALUE;
         }
-        LoadingLearnerModel loadingLearnerModel = new LoadingLearnerModel(coreOptimizationRule, identifier);
-        LinearRegressionModel linearRegressionModel = loadingLearnerModel.loadLearnerModel();
-
+        LinearRegressionModel linearRegressionModel = LinearRegressionModel.load(coreLearner.getModelPath());
         double predict = linearRegressionModel.predict(conditionVector);
         if (Double.isNaN(predict)) {
             return PREDICTION_DEFAULT_VALUE;
