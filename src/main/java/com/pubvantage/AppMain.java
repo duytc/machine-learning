@@ -284,17 +284,6 @@ public class AppMain {
         }
     }
 
-    /**
-     * get list identifiers
-     *
-     * @param autoOptimizationConfigId auto optomization config id
-     * @return list of identifiers
-     */
-    private static String[] getIdentifiers(Long autoOptimizationConfigId) {
-        return dataTrainingService.getIdentifiers(autoOptimizationConfigId);
-
-    }
-
     private static List<String> generateAndSaveModel(CoreOptimizationRule optimizationRule) {
         List<String> successIdentifiers = new ArrayList<>();
         List<CoreLearner> modelList = new ArrayList<>();
@@ -398,26 +387,6 @@ public class AppMain {
     }
 
     /**
-     * @param segmentFields
-     * @return
-     */
-    private static List<List<String>> createSegmentFieldGroups(List<String> segmentFields) {
-        return ConvertUtil.generateSubsets(segmentFields);
-    }
-
-    /**
-     * Generate model from learned data
-     *
-     * @param learner learned data
-     */
-    private static CoreLearningModel generateModel(LearnerInterface learner) {
-        CoreLearningModel model = new CoreLearningModel();
-
-
-        return model;
-    }
-
-    /**
      * save list of model to database
      *
      * @param modelList list of model
@@ -431,10 +400,9 @@ public class AppMain {
         List<String> objectiveAndFields = linearRegressionDataProcess.getObjectiveAndFields();
 
         JsonObject jsonObject = new JsonObject();
-        LinearRegressionModel model = linearRegressionModel;
 
         //coefficient
-        Vector vec = model.coefficients();
+        Vector vec = linearRegressionModel.coefficients();
         double[] coefficientsArray = vec.toArray();
 
         JsonObject coefficient = new JsonObject();
@@ -453,10 +421,10 @@ public class AppMain {
 
         jsonObject.add(MyConstant.COEFFICIENT, coefficient);
 
-        if (Double.isNaN(model.intercept())) {
+        if (Double.isNaN(linearRegressionModel.intercept())) {
             jsonObject.addProperty(MyConstant.INTERCEPT, "null");
         } else {
-            double value = ConvertUtil.convertObjectToDecimal(model.intercept()).doubleValue();
+            double value = ConvertUtil.convertObjectToDecimal(linearRegressionModel.intercept()).doubleValue();
             jsonObject.addProperty(MyConstant.INTERCEPT, value);
         }
 
