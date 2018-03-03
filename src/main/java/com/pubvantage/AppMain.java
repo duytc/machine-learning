@@ -192,8 +192,9 @@ public class AppMain {
         List<String> successIdentifiers = generateAndSaveModel(optimizationRule);
 
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("autoOptimizationConfigId", optimizationRuleId);
-        jsonObject.add("identifiers", JsonUtil.toJsonArray(successIdentifiers.toArray(new String[0])));
+        jsonObject.addProperty(MyConstant.OPTIMIZE_RULE_ID, optimizationRuleId);
+        jsonObject.add(MyConstant.IDENTIFIER, JsonUtil.toJsonArray(
+                successIdentifiers != null ? successIdentifiers.toArray(new String[0]) : new String[0]));
         dataResponseArray.add(jsonObject);
         //return response
         LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.LEARN_SUCCESS, dataResponseArray);
@@ -436,7 +437,7 @@ public class AppMain {
         JsonObject coefficient = new JsonObject();
 
         for (int i = 0; i < coefficientsArray.length; i++) {
-            logger.error(coefficientsArray[i]);
+            logger.info(coefficientsArray[i]);
 
             int factorIndex = i + 1;// index 0 is objective
             if (Double.isNaN(coefficientsArray[i])) {

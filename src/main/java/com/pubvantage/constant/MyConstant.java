@@ -8,5 +8,7 @@ public class MyConstant {
     public static String IDENTIFIER_COLUMN = "identifier";
     public static String COEFFICIENT = "Coefficients";
     public static String INTERCEPT = "Intercept";
+    public static String OPTIMIZE_RULE_ID = "optimizationRuleId";
+    public static String IDENTIFIER = "identifiers";
     public static String DATE_FORMAT = "%Y-%m-%d";
 }
