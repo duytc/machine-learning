@@ -193,7 +193,7 @@ public class ConvertUtilTest {
     @Test
     public void mapToJson() {
         Map<String, Object> map = new HashMap<>();
-        map.put("key 1", "value 1");
+        map.put("key http:// & 1", "value http:// & 1");
         map.put("key 2", "value 2");
         map.put("key 3", "value 3");
         map.put("key 4", "value 4");

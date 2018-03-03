@@ -7,6 +7,7 @@ import com.google.gson.JsonParser;
 import com.jsoniter.JsonIterator;
 import spark.ResponseTransformer;
 
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +53,7 @@ public class JsonUtil {
     }
 
     public static String mapToJson(Map map) {
-        Gson gsonBuilder = new GsonBuilder().create();
-        return gsonBuilder.toJson(map);
+        Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+        return gson.toJson(map);
     }
 }
