@@ -1,17 +1,9 @@
 package com.pubvantage.ConditionProcessor;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.pubvantage.RestParams.FactorConditionData;
 import com.pubvantage.entity.Condition;
 import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.entity.FactorValues;
 import com.pubvantage.entity.SegmentField;
-import com.pubvantage.service.DataTrainingServiceInterface;
-import com.pubvantage.service.DataTrainingServiceOld;
-import com.pubvantage.service.OptimizationRuleService;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -20,8 +12,6 @@ import java.util.Map;
 
 public class ConditionGenerator {
 
-    private OptimizationRuleService optimizationConfigService = new OptimizationRuleService();
-    private DataTrainingServiceInterface trainingService = new DataTrainingServiceOld();
     private CoreOptimizationRule coreOptimizationRule;
     private Condition conditions;
 
