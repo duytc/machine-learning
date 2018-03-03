@@ -38,8 +38,13 @@ public class ConditionGenerator {
     /**
      * @return multiple condition data
      */
-    public List<Map<String, Object>> generateMultipleConditions() {
+    public List<Map<String, Object>> generateMultipleSegmentGroupValues() {
 
+        return null;
+    }
+
+    public Map<String, Object> getFactorValues()
+    {
         return null;
     }
 

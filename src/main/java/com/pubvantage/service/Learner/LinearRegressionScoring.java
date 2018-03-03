@@ -1,13 +1,9 @@
 package com.pubvantage.service.Learner;
 
 import com.google.gson.JsonArray;
-import com.pubvantage.ConditionProcessor.ConditionConverter;
 import com.pubvantage.ConditionProcessor.ConditionGenerator;
 import com.pubvantage.entity.CoreOptimizationRule;
-import com.pubvantage.service.LoadingLearnerModel;
 import com.pubvantage.utils.ConvertUtil;
-import org.apache.spark.ml.linalg.Vector;
-import org.apache.spark.ml.regression.LinearRegressionModel;
 
 import java.util.*;
 
@@ -30,11 +26,12 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
     public Map<String, Map<String, Double>> predict() {
         Map<String, Map<String, Double>> predictions = new LinkedHashMap<>();
         ConditionGenerator conditionGenerator = new ConditionGenerator(coreOptimizationRule, conditions);
-        List<Map<String, Object>> multipleConditions = conditionGenerator.generateMultipleConditions();
+        List<Map<String, Object>> multipleSegmentGroupValues = conditionGenerator.generateMultipleSegmentGroupValues();
+        Map<String,Object> factorValues = conditionGenerator.getFactorValues();
 
-        for (Map<String, Object> conditions : multipleConditions) {
+        for (Map<String, Object> conditions : multipleSegmentGroupValues) {
             String key = buildSegmentInfo(conditions);
-            Map<String, Double> predictionsOfOneCondition = makeMultiplePredictionsWithOneCondition(coreOptimizationRule, identifiers, conditions);
+            Map<String, Double> predictionsOfOneCondition = makeMultiplePredictionsWithOneCondition(coreOptimizationRule, identifiers, conditions, factorValues);
             predictions.put(key, predictionsOfOneCondition);
         }
 
@@ -60,7 +57,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
      * @param condition
      * @return
      */
-    private Map<String, Double> makeMultiplePredictionsWithOneCondition(CoreOptimizationRule coreOptimizationRule, List<String> identifiers, Map<String, Object> condition) {
+    private Map<String, Double> makeMultiplePredictionsWithOneCondition(CoreOptimizationRule coreOptimizationRule, List<String> identifiers, Map<String, Object> condition, Map<String, Object> factorValues) {
         Map<String, Double> predictions = new LinkedHashMap<>();
 
         identifiers.forEach(identifier -> {

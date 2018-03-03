@@ -227,6 +227,7 @@ public class AppMain {
 
         List<String> identifiers = predictionProcessParams.getIdentifiers();
         JsonArray conditions = predictionProcessParams.getConditions();
+
         String token = predictionProcessParams.getToken();
 
         Authentication authentication = new Authentication(optimizationRuleId, token);
