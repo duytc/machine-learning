@@ -42,14 +42,14 @@ public class ConditionGenerator {
 
         List<List<Object>> multipleConditionList = generateListConditions(filteredConditionsDataList);
 
-        List<String> listFactorName = new ArrayList<>();
-        segmentFieldList.forEach(segmentField ->  listFactorName.add(segmentField.getSegmentField()));
+        List<String> listSegmentField = new ArrayList<>();
+        segmentFieldList.forEach(segmentField ->  listSegmentField.add(segmentField.getSegmentField()));
 
         List<Map<String, Object>> multipleConditionMap = new ArrayList<>();
         for (List<Object> conditionList : multipleConditionList) {
             Map<String, Object> conditionMap = new LinkedHashMap<>();
             for (int i = 0; i < conditionList.size(); i++) {
-                conditionMap.put(listFactorName.get(i), conditionList.get(i));
+                conditionMap.put(listSegmentField.get(i), conditionList.get(i));
             }
             multipleConditionMap.add(conditionMap);
         }
