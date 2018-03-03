@@ -4,12 +4,10 @@ import com.pubvantage.ConditionProcessor.ConditionConverter;
 import com.pubvantage.ConditionProcessor.ConditionGenerator;
 import com.pubvantage.RestParams.FactorConditionData;
 import com.pubvantage.entity.*;
-import com.pubvantage.service.CoreLearningModelService;
-import com.pubvantage.service.CoreLearningModelServiceInterface;
-import com.pubvantage.service.OptimizationRuleService;
-import com.pubvantage.service.OptimizationRuleServiceInterface;
+import com.pubvantage.service.*;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.JsonUtil;
+import org.apache.spark.ml.regression.LinearRegressionModel;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -62,20 +60,26 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
                                      OptimizeField optimizeField,
                                      FactorValues factorValues) {
 
-        List<OptimizeField> optimizeFieldList = optimizationRuleService.getOptimizeFields(coreOptimizationRule);
         CoreLearner coreLearner = coreLearningModelService.getOneCoreLeaner(
                 coreOptimizationRule.getId(),
                 identifier,
                 optimizeField,
                 segmentValues);
         ConditionConverter conditionConverter = new ConditionConverter(identifier, factorValues, coreLearner, optimizeField);
-        org.apache.spark.ml.linalg.Vector vector = conditionConverter.buildVector();
-        int x = 0;
-        // Step 3: Get learner model from data base
-        // Step 4: build vector for learn model from factor values +  learner model
-        // step 5: call predict function of spark
+        org.apache.spark.ml.linalg.Vector conditionVector = conditionConverter.buildVector();
 
-        return null;
+        if (conditionVector == null) {
+            return PREDICTION_DEFAULT_VALUE;
+        }
+        LoadingLearnerModel loadingLearnerModel = new LoadingLearnerModel(coreOptimizationRule, identifier);
+        LinearRegressionModel linearRegressionModel = loadingLearnerModel.loadLearnerModel();
+
+        double predict = linearRegressionModel.predict(conditionVector);
+        if (Double.isNaN(predict)) {
+            return PREDICTION_DEFAULT_VALUE;
+        }
+
+        return predict;
     }
 
     /**
