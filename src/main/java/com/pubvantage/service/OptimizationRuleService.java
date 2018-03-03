@@ -70,13 +70,10 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     @Override
-    public List<String> getMetricsExceptObjective(Long optimizationRuleId) {
-        CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
-        CoreReportView reportView = viewService.findById(optimizationRule.getReportViewId());
-        List<String> metrics = JsonUtil.jsonArrayStringToJavaList(reportView.getMetrics());
-
-        return metrics;
+    public List<String> getVectorFields(Long optimizationRuleId) {
+        return null;
     }
+
 
     @Override
     public List<String> getIdentifiers(CoreOptimizationRule optimizationRule) {

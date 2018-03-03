@@ -15,7 +15,7 @@ public interface OptimizationRuleServiceInterface {
 
     List<String> getMetrics(Long optimizationRuleId);
 
-    List<String> getMetricsExceptObjective(Long optimizationRuleId);
+    List<String> getVectorFields(Long optimizationRuleId);
 
     List<String> getIdentifiers(CoreOptimizationRule optimizationRule);
 

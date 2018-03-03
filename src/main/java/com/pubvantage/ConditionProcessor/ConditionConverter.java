@@ -1,5 +1,6 @@
 package com.pubvantage.ConditionProcessor;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreOptimizationRule;
@@ -10,6 +11,7 @@ import com.pubvantage.service.OptimizationRuleServiceInterface;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.Vectors;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ConditionConverter {
@@ -32,7 +34,7 @@ public class ConditionConverter {
      * @return input vector for linear regression model
      */
     public Vector buildVector() {
-        List<String> metrics = optimizationRuleService.getMetrics(coreLearner.getOptimizationRuleId());
+        List<String> metrics = getMetrics(coreLearner);
         // prepare array of double value for vector
         JsonObject metricsPredictiveValues = new JsonObject();
         double[] doubleValue = new double[metrics.size() - 1]; //skip optimize field
@@ -48,11 +50,11 @@ public class ConditionConverter {
                 } else {
                     JsonObject values = factorValues.getValues();
                     if (values != null) {
-                        Double value = values.get(fieldName).getAsDouble();
+                        JsonElement value = values.get(fieldName);
                         if (value == null) {
                             doubleValue[index] = metricsPredictiveValues.get(fieldName).getAsDouble();
                         } else {
-                            doubleValue[index] = value;
+                            doubleValue[index] = value.getAsDouble();
                         }
 
                     }
@@ -60,6 +62,10 @@ public class ConditionConverter {
             }
         }
         return Vectors.dense(doubleValue);
+    }
+
+    private List<String> getMetrics(CoreLearner coreLearner) {
+        return new ArrayList<>();
     }
 
 }

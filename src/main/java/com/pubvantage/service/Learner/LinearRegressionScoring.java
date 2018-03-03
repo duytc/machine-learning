@@ -65,6 +65,10 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
                 identifier,
                 optimizeField,
                 segmentValues);
+        if (coreLearner == null || coreLearner.getId() == null || coreLearner.getOptimizationRuleId() == null) {
+            return 0D;
+        }
+
         ConditionConverter conditionConverter = new ConditionConverter(identifier, factorValues, coreLearner, optimizeField);
         org.apache.spark.ml.linalg.Vector conditionVector = conditionConverter.buildVector();
 
