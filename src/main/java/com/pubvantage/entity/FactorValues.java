@@ -17,11 +17,11 @@ public class FactorValues {
         this.values = values;
     }
 
-    public boolean isPredictive() {
+    public boolean getIsPredictive() {
         return isPredictive;
     }
 
-    public void setPredictive(boolean predictive) {
+    public void setIsPredictive(boolean predictive) {
         isPredictive = predictive;
     }
 

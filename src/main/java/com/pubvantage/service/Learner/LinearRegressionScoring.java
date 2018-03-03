@@ -1,5 +1,6 @@
 package com.pubvantage.service.Learner;
 
+import com.pubvantage.ConditionProcessor.ConditionConverter;
 import com.pubvantage.ConditionProcessor.ConditionGenerator;
 import com.pubvantage.RestParams.FactorConditionData;
 import com.pubvantage.entity.*;
@@ -67,6 +68,8 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
                 identifier,
                 optimizeField,
                 segmentValues);
+        ConditionConverter conditionConverter = new ConditionConverter(identifier, factorValues, coreLearner, optimizeField);
+        org.apache.spark.ml.linalg.Vector vector = conditionConverter.buildVector();
         int x = 0;
         // Step 3: Get learner model from data base
         // Step 4: build vector for learn model from factor values +  learner model

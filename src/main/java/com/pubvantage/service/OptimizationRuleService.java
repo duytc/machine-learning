@@ -70,6 +70,15 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     @Override
+    public List<String> getMetricsExceptObjective(Long optimizationRuleId) {
+        CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
+        CoreReportView reportView = viewService.findById(optimizationRule.getReportViewId());
+        List<String> metrics = JsonUtil.jsonArrayStringToJavaList(reportView.getMetrics());
+
+        return metrics;
+    }
+
+    @Override
     public List<String> getIdentifiers(CoreOptimizationRule optimizationRule) {
         List<Row> resultList = sparkDataTrainingDao.getIdentifiers(optimizationRule.getId());
         List<String> identifiers = new ArrayList<>();

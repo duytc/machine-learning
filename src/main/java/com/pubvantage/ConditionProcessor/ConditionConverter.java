@@ -3,25 +3,33 @@ package com.pubvantage.ConditionProcessor;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.pubvantage.entity.CoreAutoOptimizationConfig;
-import com.pubvantage.entity.CoreLearningModel;
-import com.pubvantage.service.OptimizationRuleService;
-import com.pubvantage.service.OptimizationRuleServiceInterface;
+import com.pubvantage.entity.CoreLearner;
+import com.pubvantage.entity.FactorValues;
+import com.pubvantage.entity.OptimizeField;
 import com.pubvantage.service.CoreLearningModelService;
 import com.pubvantage.service.CoreLearningModelServiceInterface;
+import com.pubvantage.service.OptimizationRuleService;
+import com.pubvantage.service.OptimizationRuleServiceInterface;
 import com.pubvantage.utils.ConvertUtil;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.Vectors;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ConditionConverter {
-    private final CoreAutoOptimizationConfig coreAutoOptimizationConfig;
-    private final String identifier;
-    private final Map<String, Object> condition;
+    private CoreAutoOptimizationConfig coreAutoOptimizationConfig;
+    private String identifier;
+    private Map<String, Object> condition = new LinkedHashMap<>();
     private CoreLearningModelServiceInterface coreLearningModelService = new CoreLearningModelService();
+
+
+    private FactorValues factorValues;
+    private CoreLearner coreLearner;
+    private OptimizeField optimizeField;
+    private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
 
     public ConditionConverter(CoreAutoOptimizationConfig coreAutoOptimizationConfig, String identifier, Map<String, Object> condition) {
         this.coreAutoOptimizationConfig = coreAutoOptimizationConfig;
@@ -29,44 +37,57 @@ public class ConditionConverter {
         this.condition = condition;
     }
 
+    public ConditionConverter(String identifier, FactorValues factorValues, CoreLearner coreLearner, OptimizeField optimizeField) {
+        this.identifier = identifier;
+        this.factorValues = factorValues;
+        this.coreLearner = coreLearner;
+        this.optimizeField = optimizeField;
+    }
+
     /**
-     *  Build vector that is the input of linear regression model
+     * Build vector that is the input of linear regression model
+     *
      * @return input vector for linear regression model
      */
     public Vector buildVector() {
-        CoreLearningModel coreLearningModel = coreLearningModelService.findOne(coreAutoOptimizationConfig.getId(), identifier);
-        if (coreLearningModel == null) {
-            return null;
-        }
-        JsonParser parser = new JsonParser();
-        //get category field weigh
-        String categoryFieldWeighString = coreLearningModel.getCategoricalFieldWeights();
-        if (categoryFieldWeighString == null) {
-            return null;
-        }
-        JsonObject categoryFieldWeighs = parser.parse(categoryFieldWeighString).getAsJsonObject();
-        //get forecast
-        String forecastString = coreLearningModel.getForecastFactorValues();
-        if (forecastString == null) {
-            return null;
-        }
-        JsonObject forecast = parser.parse(forecastString).getAsJsonObject();
-        //get list of factors and fields type
-        OptimizationRuleServiceInterface coreAutoOptimizationConfigService = new OptimizationRuleService();
-        List<String> factors = coreAutoOptimizationConfigService.getFactors(coreAutoOptimizationConfig.getId());
-        JsonObject fieldType = coreAutoOptimizationConfigService.getFieldType(coreAutoOptimizationConfig.getId());
-
+        List<String> metrics = optimizationRuleService.getMetrics(coreLearner.getOptimizationRuleId());
         // prepare array of double value for vector
-        double[] doubleValue = new double[factors.size()];
-        for (int factorIndex = 0; factorIndex < factors.size(); factorIndex++) {
-            String factorName = factors.get(factorIndex);
-            Double value = getValueForFactor(factorName, forecast, categoryFieldWeighs, condition, fieldType);
-            if (value == null) {
-                value = 0d;
+        JsonObject metricsPredictiveValues = new JsonObject();
+        double[] doubleValue = new double[metrics.size() - 1]; //skip optimize fieldatus
+        if (factorValues != null) {
+            for (int index = 0; index < metrics.size(); index++) {
+                String fieldName = metrics.get(index);
+                if (fieldName.equals(optimizeField.getField())) {
+                    //skip optimizeField
+                    continue;
+                }
+                if (factorValues.getIsPredictive()) {
+                    doubleValue[index] = metricsPredictiveValues.get(fieldName).getAsDouble();
+                } else {
+                    JsonObject values = factorValues.getValues();
+                    if (values != null) {
+                        Double value = values.get(fieldName).getAsDouble();
+                        if (value == null) {
+                            doubleValue[index] = metricsPredictiveValues.get(fieldName).getAsDouble();
+                        } else {
+                            doubleValue[index] = value;
+                        }
+
+                    }
+                }
             }
-            doubleValue[factorIndex] = value;
         }
         return Vectors.dense(doubleValue);
+    }
+
+
+    private Double getValue(FactorValues factorValues, CoreLearner coreLearner, String fieldName) {
+
+        Object value = factorValues.getValues().get(fieldName);
+        if (value != null) {
+
+        }
+        return 0D;
     }
 
     /**

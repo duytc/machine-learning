@@ -15,6 +15,8 @@ public interface OptimizationRuleServiceInterface {
 
     List<String> getMetrics(Long optimizationRuleId);
 
+    List<String> getMetricsExceptObjective(Long optimizationRuleId);
+
     List<String> getIdentifiers(CoreOptimizationRule optimizationRule);
 
     boolean checkToken(Long autoOptimizationConfigId, String token);
