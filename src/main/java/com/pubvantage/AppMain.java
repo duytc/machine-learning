@@ -7,6 +7,7 @@ import com.pubvantage.Authentication.Authentication;
 import com.pubvantage.RestParams.LearnerResponse;
 import com.pubvantage.RestParams.LearningProcessParams;
 import com.pubvantage.RestParams.PredictionProcessParams;
+import com.pubvantage.constant.MessageConstant;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreLearningModel;
@@ -169,7 +170,7 @@ public class AppMain {
         LearningProcessParams learningProcessParams = new LearningProcessParams(jsonParams);
         boolean isValidParams = learningProcessParams.validateOptimizationRules();
         if (!isValidParams) {
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, "Parameter is invalid", null);
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
             response.status(HttpStatus.SC_BAD_REQUEST);
             return new Gson().toJson(learnerResponse);
         }
@@ -178,7 +179,7 @@ public class AppMain {
         boolean isPassAuthentication = learningProcessParams.validateToken();
         if (!isPassAuthentication) {
             response.status(HttpStatus.SC_UNAUTHORIZED);
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, "Fail authentication", null);
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, MessageConstant.INVALID_PERMISSION, null);
             return new Gson().toJson(learnerResponse);
         }
 
@@ -195,7 +196,7 @@ public class AppMain {
         jsonObject.add("identifiers", JsonUtil.toJsonArray(successIdentifiers.toArray(new String[0])));
         dataResponseArray.add(jsonObject);
         //return response
-        LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, "Learn successfully", dataResponseArray);
+        LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.LEARN_SUCCESS, dataResponseArray);
         response.status(HttpStatus.SC_OK);
 
         return new Gson().toJson(learnerResponse);
@@ -213,7 +214,7 @@ public class AppMain {
         PredictionProcessParams predictionProcessParams = new PredictionProcessParams(request);
         boolean isValidParams = predictionProcessParams.validates();
         if (!isValidParams) {
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, "Parameter is invalid", null);
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
             response.status(HttpStatus.SC_BAD_REQUEST);
             return new Gson().toJson(learnerResponse);
         }
@@ -227,7 +228,7 @@ public class AppMain {
         Authentication authentication = new Authentication(autoOptimizationConfigId, token);
         boolean isValid = authentication.authenticate();
         if (!isValid) {
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, "The request is unauthenticated", null);
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, MessageConstant.INVALID_PERMISSION, null);
             response.status(HttpStatus.SC_UNAUTHORIZED);
             return new Gson().toJson(learnerResponse);
         }
