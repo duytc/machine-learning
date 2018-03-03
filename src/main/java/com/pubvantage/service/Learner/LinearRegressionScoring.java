@@ -51,7 +51,14 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
      * @param condition
      * @return
      */
-    private Double makeOnePrediction(CoreOptimizationRule coreOptimizationRule, String identifier, Map<String, Object> condition) {
+    private Double makeOnePrediction(CoreOptimizationRule coreOptimizationRule, String identifier, Map<String, Object> condition, FactorValues factorValues) {
+
+        // Step 0: buid vector for learn model tu factor values +  leanner model
+        // Step 1: Get all optimize fields
+        // Step 2: Loop optimize field.
+        // Step 3: Get learner model from data base
+        // step 4: call predict function of spark
+
 
         return null;
     }
@@ -66,7 +73,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
         Map<String, Double> predictions = new LinkedHashMap<>();
 
         identifiers.forEach(identifier -> {
-            Double prediction = makeOnePrediction(coreOptimizationRule, identifier, condition);
+            Double prediction = makeOnePrediction(coreOptimizationRule, identifier, condition, factorValues);
             predictions.put(identifier, prediction);
 
         });
