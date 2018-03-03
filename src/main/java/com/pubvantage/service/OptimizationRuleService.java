@@ -38,6 +38,11 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     @Override
     public List<OptimizeField> getOptimizeFields(Long optimizationRuleId) {
         CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
+        return getOptimizeFields(optimizationRule);
+    }
+
+    @Override
+    public List<OptimizeField> getOptimizeFields(CoreOptimizationRule optimizationRule) {
         List<HashMap<String, String>> map = JsonUtil.jsonArrayObjectsToListMap(optimizationRule.getOptimizeFields());
         List<OptimizeField> optimizeFieldList = new ArrayList<>();
         map.forEach(optimizeField -> {
@@ -49,12 +54,6 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
 
         });
         return optimizeFieldList;
-    }
-
-    @Override
-    public List<OptimizeField> getOptimizeFields(CoreOptimizationRule optimizationRule) {
-
-        return null;
     }
 
     /**

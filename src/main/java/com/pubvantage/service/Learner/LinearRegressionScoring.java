@@ -2,11 +2,13 @@ package com.pubvantage.service.Learner;
 
 import com.pubvantage.ConditionProcessor.ConditionGenerator;
 import com.pubvantage.RestParams.FactorConditionData;
-import com.pubvantage.entity.Condition;
-import com.pubvantage.entity.CoreOptimizationRule;
-import com.pubvantage.entity.FactorValues;
-import com.pubvantage.entity.SegmentField;
+import com.pubvantage.entity.*;
+import com.pubvantage.service.CoreLearningModelService;
+import com.pubvantage.service.CoreLearningModelServiceInterface;
+import com.pubvantage.service.OptimizationRuleService;
+import com.pubvantage.service.OptimizationRuleServiceInterface;
 import com.pubvantage.utils.ConvertUtil;
+import com.pubvantage.utils.JsonUtil;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -15,6 +17,8 @@ import java.util.Map;
 
 public class LinearRegressionScoring implements ScoringServiceInterface {
 
+    private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
+    private CoreLearningModelServiceInterface coreLearningModelService = new CoreLearningModelService();
     private static final double PREDICTION_DEFAULT_VALUE = 0d;
     private CoreOptimizationRule coreOptimizationRule;
     private List<String> identifiers;
@@ -48,13 +52,22 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
     /**
      * @param coreOptimizationRule
      * @param identifier
-     * @param condition
+     * @param segmentValues
      * @return
      */
-    private Double makeOnePrediction(CoreOptimizationRule coreOptimizationRule, String identifier, Map<String, Object> condition, FactorValues factorValues) {
+    private Double makeOnePrediction(CoreOptimizationRule coreOptimizationRule,
+                                     String identifier,
+                                     Map<String, Object> segmentValues,
+                                     OptimizeField optimizeField,
+                                     FactorValues factorValues) {
 
-        // Step 1: Get all optimize fields
-        // Step 2: Loop optimize field.
+        List<OptimizeField> optimizeFieldList = optimizationRuleService.getOptimizeFields(coreOptimizationRule);
+        CoreLearner coreLearner = coreLearningModelService.getOneCoreLeaner(
+                coreOptimizationRule.getId(),
+                identifier,
+                optimizeField,
+                segmentValues);
+        int x = 0;
         // Step 3: Get learner model from data base
         // Step 4: build vector for learn model from factor values +  learner model
         // step 5: call predict function of spark
@@ -70,12 +83,16 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
      */
     private Map<String, Double> makeMultiplePredictionsWithOneSegmentGroupValue(CoreOptimizationRule coreOptimizationRule, List<String> identifiers, Map<String, Object> condition, FactorValues factorValues) {
         Map<String, Double> predictions = new LinkedHashMap<>();
+        List<OptimizeField> optimizeFieldList = optimizationRuleService.getOptimizeFields(coreOptimizationRule);
+        for (OptimizeField optimizeField : optimizeFieldList) {
+            identifiers.forEach(identifier -> {
+                Double prediction = makeOnePrediction(coreOptimizationRule, identifier, condition, optimizeField, factorValues);
+                predictions.put(identifier, prediction);
 
-        identifiers.forEach(identifier -> {
-            Double prediction = makeOnePrediction(coreOptimizationRule, identifier, condition, factorValues);
-            predictions.put(identifier, prediction);
+            });
 
-        });
+        }
+
 
         return predictions;
     }

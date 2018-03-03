@@ -40,4 +40,6 @@ public class OptimizeField {
     public void setGoal(String goal) {
         this.goal = goal;
     }
+
+
 }

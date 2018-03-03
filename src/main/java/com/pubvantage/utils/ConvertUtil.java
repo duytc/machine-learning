@@ -157,4 +157,12 @@ public class ConvertUtil {
         map.forEach((key, value) -> list.add(value.toString()));
         return joinListString(list, "-");
     }
+
+    public static <V extends Comparable<V>> boolean valuesEquals(Map<?, V> map1, Map<?, V> map2) {
+        List<V> values1 = new ArrayList<>(map1.values());
+        List<V> values2 = new ArrayList<>(map2.values());
+        Collections.sort(values1);
+        Collections.sort(values2);
+        return values1.equals(values2);
+    }
 }

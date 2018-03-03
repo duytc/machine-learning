@@ -13,6 +13,7 @@ import com.pubvantage.utils.JsonUtil;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.json4s.jackson.Json;
 import org.junit.Test;
 
 import javax.persistence.Convert;
@@ -148,7 +149,11 @@ public class ConvertUtilTest {
         OptimizeField optimizeField = new OptimizeField("field", 0.3, "Min");
         Gson gsonBuilder = new GsonBuilder().create();
         String jsonFromPojo = gsonBuilder.toJson(optimizeField);
-         return;
+
+        String opt = "{\"field\":\"largetext2_2\",\"goal\":\"Min\",\"weight\":0.2}";
+        OptimizeField optimizeField1 = JsonUtil.jsonToObject(opt, OptimizeField.class);
+
+        return;
     }
 
     @Test
@@ -205,6 +210,22 @@ public class ConvertUtilTest {
         map.put("key 4", "value 4");
 
         String s = JsonUtil.mapToJson(map);
+        return;
+    }
+
+    @Test
+    public void compare2Map() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("key 3", "value 3");
+        map.put("key 2", "value 2");
+        map.put("key 4", "value 4");
+
+        Map<String, Object> map2 = new HashMap<>();
+        map2.put("key 2", "value 2");
+        map2.put("key 3", "value 3");
+        map2.put("key 4", "value 4");
+
+        boolean s = map.equals(map2);
         return;
     }
 }

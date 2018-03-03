@@ -56,4 +56,12 @@ public class JsonUtil {
         Gson gson = new GsonBuilder().disableHtmlEscaping().create();
         return gson.toJson(map);
     }
+
+    public static <K, V> Map<K, V> jsonToMap(String json) {
+        return JsonIterator.deserialize(json, Map.class);
+    }
+
+    public static <T> T jsonToObject(String json, Class<T> type) {
+        return JsonIterator.deserialize(json, type);
+    }
 }

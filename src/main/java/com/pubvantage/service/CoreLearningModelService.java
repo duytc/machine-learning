@@ -7,12 +7,15 @@ import com.pubvantage.dao.CoreLearningModelDaoInterface;
 import com.pubvantage.entity.CoreAutoOptimizationConfig;
 import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreLearningModel;
+import com.pubvantage.entity.OptimizeField;
 import com.pubvantage.utils.HibernateUtil;
+import com.pubvantage.utils.JsonUtil;
 import org.apache.log4j.Logger;
 import org.hibernate.Session;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 public class CoreLearningModelService implements CoreLearningModelServiceInterface {
     private static Logger logger = Logger.getLogger(CoreLearningModelService.class.getName());
@@ -59,6 +62,46 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
                 session.close();
             }
         }
+    }
+
+    @Override
+    public CoreLearner getOneCoreLeaner(Long optimizationRuleId, String identifier, OptimizeField optimizeField, Map<String, Object> segmentValues) {
+        Session session = null;
+        CoreLearner coreLearner = new CoreLearner();
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
+            session.beginTransaction();
+            List<CoreLearner> coreLearners = coreLearnerDao.findList(session, optimizationRuleId, identifier);
+            for (CoreLearner coreLearnerFromDB : coreLearners) {
+                OptimizeField optimizeFieldFromDB = JsonUtil.jsonToObject(coreLearnerFromDB.getOptimizeFields(), OptimizeField.class);
+                if (!(optimizeFieldFromDB.getField().equals(optimizeField.getField())
+                        && optimizeFieldFromDB.getGoal().equals(optimizeField.getGoal())
+                        && optimizeFieldFromDB.getWeight() != null
+                        && optimizeFieldFromDB.getWeight().doubleValue() == optimizeField.getWeight().doubleValue())) {
+                    continue;
+                }
+
+                Map<String, Object> segmentValuesFromDB = JsonUtil.jsonToMap(coreLearnerFromDB.getSegmentValues());
+                if (segmentValuesFromDB != null && !segmentValuesFromDB.isEmpty()) {
+                    if (segmentValuesFromDB.equals(segmentValues)) {
+                        return coreLearnerFromDB;
+                    }
+                }
+            }
+
+            session.clear();
+            session.getTransaction().commit();
+        } catch (Exception e) {
+            if (null != session && null != session.getTransaction()) {
+                session.getTransaction().rollback();
+            }
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+        return coreLearner;
     }
 
     /**
