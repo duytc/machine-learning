@@ -25,6 +25,7 @@ import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.regression.LinearRegressionModel;
 import org.apache.spark.sql.SparkSession;
 import spark.Request;
