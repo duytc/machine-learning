@@ -2,13 +2,14 @@ package com.pubvantage.service;
 
 import com.google.gson.JsonObject;
 import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.OptimizeField;
 
 import java.util.List;
 
 public interface OptimizationRuleServiceInterface {
     List<String> getSegmentFields(Long optimizationRuleId);
 
-    List<String> getOptimizeFields(Long optimizationRuleId);
+    List<OptimizeField> getOptimizeFields(Long optimizationRuleId);
 
     List<String> getMetrics(Long optimizationRuleId);
 

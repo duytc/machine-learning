@@ -12,6 +12,7 @@ import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreLearningModel;
 import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.OptimizeField;
 import com.pubvantage.learner.LearnerInterface;
 import com.pubvantage.learner.LinearRegressionLearner;
 import com.pubvantage.learner.Params.LinearRegressionDataProcess;
@@ -339,16 +340,16 @@ public class AppMain {
         List<CoreLearner> coreLearners = new ArrayList<>();
 
         OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
-        List<String> optimizeFields = optimizationRuleService.getOptimizeFields(segmentFieldGroup.getOptimizationRuleId());
+        List<OptimizeField> optimizeFields = optimizationRuleService.getOptimizeFields(segmentFieldGroup.getOptimizationRuleId());
 
-        for (String optimizeField : optimizeFields) {
+        for (OptimizeField optimizeField : optimizeFields) {
             coreLearners.addAll(generateModelForOneOptimizeField(segmentFieldGroup, optimizeField));
         }
 
         return coreLearners;
     }
 
-    private static List<CoreLearner> generateModelForOneOptimizeField(SegmentFieldGroup segmentFieldGroup, String optimizeField) {
+    private static List<CoreLearner> generateModelForOneOptimizeField(SegmentFieldGroup segmentFieldGroup, OptimizeField optimizeField) {
         List<CoreLearner> coreLearners = new ArrayList<>();
 
         Long optimizationRuleId = segmentFieldGroup.getOptimizationRuleId();
@@ -376,7 +377,7 @@ public class AppMain {
         coreLearner.setIdentifier(linearRegressionDataProcess.getIdentifier());
         coreLearner.setOptimizationRuleId(linearRegressionDataProcess.getOptimizationRuleId());
         coreLearner.setSegmentValues(JsonUtil.mapToJson(linearRegressionDataProcess.getUniqueValue()));
-
+        coreLearner.setOptimizeFields(JsonUtil.toJson(linearRegressionDataProcess.getOptimizeField()));
         if (linearRegressionModel == null) {
             coreLearner.setModelPath(null);
             coreLearner.setMathModel(null);

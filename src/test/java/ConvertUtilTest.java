@@ -1,7 +1,10 @@
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.jsoniter.JsonIterator;
 import com.jsoniter.any.Any;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDao;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDaoInterface;
+import com.pubvantage.entity.OptimizeField;
 import com.pubvantage.learner.Params.LinearRegressionDataProcess;
 import com.pubvantage.service.DataTraning.DataTrainingService;
 import com.pubvantage.utils.AppResource;
@@ -142,7 +145,10 @@ public class ConvertUtilTest {
         List<HashMap<String, String>> anyList = JsonIterator.deserialize(listObjectInput, ArrayList.class);
         HashMap<String, String> any = anyList.get(0);
 
-        return;
+        OptimizeField optimizeField = new OptimizeField("field", 0.3, "Min");
+        Gson gsonBuilder = new GsonBuilder().create();
+        String jsonFromPojo = gsonBuilder.toJson(optimizeField);
+         return;
     }
 
     @Test

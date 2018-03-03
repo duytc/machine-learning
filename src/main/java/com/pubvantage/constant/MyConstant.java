@@ -5,6 +5,8 @@ package com.pubvantage.constant;
  */
 public class MyConstant {
     public static String FIELD = "field";
+    public static String WEIGHT = "weight";
+    public static String GOAL = "goal";
     public static String IDENTIFIER_COLUMN = "identifier";
     public static String COEFFICIENT = "Coefficients";
     public static String INTERCEPT = "Intercept";

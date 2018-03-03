@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.pubvantage.dao.SparkDataTrainingDao;
 import com.pubvantage.dao.SparkDataTrainingDaoInterface;
 import com.pubvantage.entity.FactorDataType;
+import com.pubvantage.entity.OptimizeField;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
 import com.pubvantage.utils.ConvertUtil;
@@ -35,14 +36,14 @@ public class LinearRegressionDataProcess {
     private String identifier;
     private List<String> oneSegmentGroup;
     private Map<String, Object> uniqueValue;
-    private String optimizeField;
+    private OptimizeField optimizeField;
     private List<String> objectiveAndFields;
     private JsonObject metricsPredictiveValues;
 
     public LinearRegressionDataProcess() {
     }
 
-    public LinearRegressionDataProcess(Long optimizationRuleId, String identifier, List<String> oneSegmentGroup, Map<String, Object> uniqueValue, String optimizeField) {
+    public LinearRegressionDataProcess(Long optimizationRuleId, String identifier, List<String> oneSegmentGroup, Map<String, Object> uniqueValue, OptimizeField optimizeField) {
         this.optimizationRuleId = optimizationRuleId;
         this.identifier = identifier;
         this.oneSegmentGroup = oneSegmentGroup;
@@ -62,16 +63,16 @@ public class LinearRegressionDataProcess {
         return vectorDataSet;
     }
 
-    public List<String> createObjectiveAndFields() {
+    private List<String> createObjectiveAndFields() {
         List<String> metrics = optimizationRuleService.getMetrics(this.optimizationRuleId);
         if (metrics != null) {
-            int indexOfOptimizeField = metrics.indexOf(this.optimizeField);
+            int indexOfOptimizeField = metrics.indexOf(this.optimizeField.getField());
             if (indexOfOptimizeField >= 0) {
                 metrics.remove(indexOfOptimizeField);
             }
         }
         List<String> objectiveAndFields = new ArrayList<>();
-        objectiveAndFields.add(optimizeField);
+        objectiveAndFields.add(optimizeField.getField());
         if (metrics != null) {
             objectiveAndFields.addAll(metrics);
         }
@@ -192,11 +193,11 @@ public class LinearRegressionDataProcess {
         this.uniqueValue = uniqueValue;
     }
 
-    public String getOptimizeField() {
+    public OptimizeField getOptimizeField() {
         return optimizeField;
     }
 
-    public void setOptimizeField(String optimizeField) {
+    public void setOptimizeField(OptimizeField optimizeField) {
         this.optimizeField = optimizeField;
     }
 

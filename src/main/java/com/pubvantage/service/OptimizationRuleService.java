@@ -9,7 +9,9 @@ import com.pubvantage.dao.SparkDataTrainingDao;
 import com.pubvantage.dao.SparkDataTrainingDaoInterface;
 import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.entity.CoreReportView;
+import com.pubvantage.entity.OptimizeField;
 import com.pubvantage.service.Learner.ReportViewService;
+import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.HibernateUtil;
 import com.pubvantage.utils.JsonUtil;
 import org.apache.log4j.Logger;
@@ -34,11 +36,18 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     @Override
-    public List<String> getOptimizeFields(Long optimizationRuleId) {
+    public List<OptimizeField> getOptimizeFields(Long optimizationRuleId) {
         CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
         List<HashMap<String, String>> map = JsonUtil.jsonArrayObjectsToListMap(optimizationRule.getOptimizeFields());
-        List<String> optimizeFieldList = new ArrayList<>();
-        map.forEach(optimizeField -> optimizeFieldList.add(optimizeField.get(MyConstant.FIELD)));
+        List<OptimizeField> optimizeFieldList = new ArrayList<>();
+        map.forEach(optimizeField -> {
+            OptimizeField optimizeFieldObject = new OptimizeField();
+            optimizeFieldObject.setField(optimizeField.get(MyConstant.FIELD));
+            optimizeFieldObject.setGoal(optimizeField.get(MyConstant.GOAL));
+            optimizeFieldObject.setWeight(ConvertUtil.convertObjectToDouble(optimizeField.get(MyConstant.WEIGHT)));
+            optimizeFieldList.add(optimizeFieldObject);
+
+        });
         return optimizeFieldList;
     }
 
