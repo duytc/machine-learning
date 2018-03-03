@@ -1,16 +1,18 @@
 package com.pubvantage.RestParams;
 
-import com.google.gson.JsonArray;
+import com.pubvantage.entity.FactorValues;
+import com.pubvantage.entity.SegmentField;
 
 import java.util.List;
 
 public class PredictionRequestParam {
     private Long optimizationRuleId;
     private List<String> identifiers;
-    private JsonArray conditions;
+    private List<SegmentField> conditions;
     private String token;
+    private FactorValues factorValues;
 
-    public PredictionRequestParam(Long optimizationRuleId, List<String> identifiers, JsonArray conditions, String token) {
+    public PredictionRequestParam(Long optimizationRuleId, List<String> identifiers, List<SegmentField> conditions, String token) {
         this.optimizationRuleId = optimizationRuleId;
         this.identifiers = identifiers;
         this.conditions = conditions;
@@ -36,11 +38,11 @@ public class PredictionRequestParam {
         this.identifiers = identifiers;
     }
 
-    public JsonArray getConditions() {
+    public List<SegmentField> getConditions() {
         return conditions;
     }
 
-    public void setConditions(JsonArray conditions) {
+    public void setConditions(List<SegmentField> conditions) {
         this.conditions = conditions;
     }
 
@@ -50,5 +52,13 @@ public class PredictionRequestParam {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public FactorValues getFactorValues() {
+        return factorValues;
+    }
+
+    public void setFactorValues(FactorValues factorValues) {
+        this.factorValues = factorValues;
     }
 }

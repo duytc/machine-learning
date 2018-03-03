@@ -9,10 +9,7 @@ import com.pubvantage.RestParams.LearningProcessParams;
 import com.pubvantage.RestParams.PredictionProcessParams;
 import com.pubvantage.constant.MessageConstant;
 import com.pubvantage.constant.MyConstant;
-import com.pubvantage.entity.CoreLearner;
-import com.pubvantage.entity.CoreLearningModel;
-import com.pubvantage.entity.CoreOptimizationRule;
-import com.pubvantage.entity.OptimizeField;
+import com.pubvantage.entity.*;
 import com.pubvantage.learner.LearnerInterface;
 import com.pubvantage.learner.LinearRegressionLearner;
 import com.pubvantage.learner.Params.LinearRegressionDataProcess;
@@ -226,7 +223,7 @@ public class AppMain {
         Long optimizationRuleId = predictionProcessParams.getOptimizationRuleId();
 
         List<String> identifiers = predictionProcessParams.getIdentifiers();
-        JsonArray conditions = predictionProcessParams.getConditions();
+        List<SegmentField> conditions = predictionProcessParams.getConditions();
 
         String token = predictionProcessParams.getToken();
 

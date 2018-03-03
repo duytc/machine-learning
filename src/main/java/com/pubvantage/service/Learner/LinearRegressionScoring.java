@@ -1,20 +1,23 @@
 package com.pubvantage.service.Learner;
 
-import com.google.gson.JsonArray;
 import com.pubvantage.ConditionProcessor.ConditionGenerator;
 import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.SegmentField;
 import com.pubvantage.utils.ConvertUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class LinearRegressionScoring implements ScoringServiceInterface {
 
     private static final double PREDICTION_DEFAULT_VALUE = 0d;
     private final CoreOptimizationRule coreOptimizationRule;
     private final List<String> identifiers;
-    private final JsonArray conditions;
+    private final List<SegmentField> conditions;
 
-    public LinearRegressionScoring(CoreOptimizationRule coreAutoOptimizationRule, List<String> identifiers, JsonArray conditions) {
+    public LinearRegressionScoring(CoreOptimizationRule coreAutoOptimizationRule, List<String> identifiers, List<SegmentField> conditions) {
         this.coreOptimizationRule = coreAutoOptimizationRule;
         this.identifiers = identifiers;
         this.conditions = conditions;

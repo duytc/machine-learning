@@ -1,10 +1,9 @@
 package com.pubvantage.RestParams;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.pubvantage.AppMain;
+import com.pubvantage.entity.SegmentField;
 import org.apache.log4j.Logger;
-import spark.Request;
 
 import java.util.List;
 
@@ -34,7 +33,7 @@ public class PredictionProcessParams {
         return requestParam.getIdentifiers();
     }
 
-    public JsonArray getConditions() {
+    public List<SegmentField> getConditions() {
         if (requestParam == null)
             return null;
 
