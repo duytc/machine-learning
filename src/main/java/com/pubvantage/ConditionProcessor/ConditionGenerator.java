@@ -1,5 +1,9 @@
 package com.pubvantage.ConditionProcessor;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.pubvantage.RestParams.FactorConditionData;
 import com.pubvantage.entity.Condition;
 import com.pubvantage.entity.CoreOptimizationRule;
@@ -10,6 +14,7 @@ import com.pubvantage.service.DataTrainingServiceOld;
 import com.pubvantage.service.OptimizationRuleService;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,27 +31,33 @@ public class ConditionGenerator {
     }
 
     /**
-     * @return list filtered factor condition data. exclude factor that is not in database
-     */
-    private List<FactorConditionData> validateConditions() {
-        return null;
-    }
-
-    /**
      * @return multiple condition data
      */
     public List<Map<String, Object>> generateMultipleSegmentGroupValues() {
+        List<SegmentField> segmentFieldList = this.conditions.getSegmentFields();
+        List<List<Object>> filteredConditionsDataList = new ArrayList();
+        for (SegmentField segmentField : segmentFieldList) {
+            filteredConditionsDataList.add(segmentField.getValues());
+        }
 
-        return null;
+        List<List<Object>> multipleConditionList = generateListConditions(filteredConditionsDataList);
+
+        List<String> listFactorName = new ArrayList<>();
+        segmentFieldList.forEach(segmentField ->  listFactorName.add(segmentField.getSegmentField()));
+
+        List<Map<String, Object>> multipleConditionMap = new ArrayList<>();
+        for (List<Object> conditionList : multipleConditionList) {
+            Map<String, Object> conditionMap = new LinkedHashMap<>();
+            for (int i = 0; i < conditionList.size(); i++) {
+                conditionMap.put(listFactorName.get(i), conditionList.get(i));
+            }
+            multipleConditionMap.add(conditionMap);
+        }
+        return multipleConditionMap;
     }
 
     public FactorValues getFactorValues() {
         return this.conditions.getFactorValues();
-    }
-
-    public List<String> getInputSegmentFields() {
-
-        return null;
     }
 
     /**
