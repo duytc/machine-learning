@@ -1,6 +1,7 @@
 package com.pubvantage.service.Learner;
 
 import com.pubvantage.ConditionProcessor.ConditionGenerator;
+import com.pubvantage.RestParams.FactorConditionData;
 import com.pubvantage.entity.Condition;
 import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.entity.FactorValues;
@@ -32,13 +33,13 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
     public Map<String, Map<String, Double>> predict() {
         Map<String, Map<String, Double>> predictions = new LinkedHashMap<>();
         ConditionGenerator conditionGenerator = new ConditionGenerator(coreOptimizationRule, conditions);
-        List<Map<String, Object>> multipleSegmentGroupValues = conditionGenerator.generateMultipleSegmentGroupValues();
-        Map<String, Object> factorValues = conditionGenerator.getFactorValues();
+        List<SegmentField> multipleSegmentGroupValues = conditionGenerator.generateMultipleSegmentGroupValues();
+        FactorValues factorValues = conditionGenerator.getFactorValues();
 
-        for (Map<String, Object> segmentGroupValue : multipleSegmentGroupValues) {
-            String key = buildSegmentInfo(segmentGroupValue);
-            Map<String, Double> predictionsOfOneCondition = makeMultiplePredictionsWithOneSegmentGroupValue(coreOptimizationRule, identifiers, segmentGroupValue, factorValues);
-            predictions.put(key, predictionsOfOneCondition);
+        for (SegmentField segmentGroupValue : multipleSegmentGroupValues) {
+//            String key = buildSegmentInfo(segmentGroupValue);
+//            Map<String, Double> predictionsOfOneCondition = makeMultiplePredictionsWithOneSegmentGroupValue(coreOptimizationRule, identifiers, segmentGroupValue, factorValues);
+//            predictions.put(key, predictionsOfOneCondition);
         }
 
         return predictions;
@@ -79,9 +80,9 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
      * @param condition condition
      * @return key
      */
-    private String buildSegmentInfo(Map<String, Object> condition) {
+    private String buildSegmentInfo(List<SegmentField> condition) {
         List<String> conditionArray = new ArrayList<>();
-        condition.forEach((factorName, value) -> conditionArray.add(String.valueOf(value)));
+//        condition.forEach((factorName, value) -> conditionArray.add(String.valueOf(value)));
 
         return String.join(",", conditionArray);
     }
