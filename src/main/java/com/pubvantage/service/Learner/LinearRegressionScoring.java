@@ -53,10 +53,12 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
      */
     private Double makeOnePrediction(CoreOptimizationRule coreOptimizationRule, String identifier, Map<String, Object> condition, FactorValues factorValues) {
 
+
+        // Step 3: Get learner model from data base
         // Step 0: buid vector for learn model tu factor values +  leanner model
         // Step 1: Get all optimize fields
         // Step 2: Loop optimize field.
-        // Step 3: Get learner model from data base
+
         // step 4: call predict function of spark
 
 

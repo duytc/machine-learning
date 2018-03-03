@@ -11,6 +11,8 @@ public interface OptimizationRuleServiceInterface {
 
     List<OptimizeField> getOptimizeFields(Long optimizationRuleId);
 
+    List<OptimizeField> getOptimizeFields(CoreOptimizationRule optimizationRule);
+
     List<String> getMetrics(Long optimizationRuleId);
 
     List<String> getIdentifiers(CoreOptimizationRule optimizationRule);

@@ -51,6 +51,12 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
         return optimizeFieldList;
     }
 
+    @Override
+    public List<OptimizeField> getOptimizeFields(CoreOptimizationRule optimizationRule) {
+
+        return null;
+    }
+
     /**
      * get only number metrics (not implement yet)
      *
