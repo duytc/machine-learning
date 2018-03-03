@@ -53,7 +53,7 @@ public class ConditionConverter {
         List<String> metrics = optimizationRuleService.getMetrics(coreLearner.getOptimizationRuleId());
         // prepare array of double value for vector
         JsonObject metricsPredictiveValues = new JsonObject();
-        double[] doubleValue = new double[metrics.size() - 1]; //skip optimize fieldatus
+        double[] doubleValue = new double[metrics.size() - 1]; //skip optimize field
         if (factorValues != null) {
             for (int index = 0; index < metrics.size(); index++) {
                 String fieldName = metrics.get(index);
