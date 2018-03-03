@@ -7,9 +7,12 @@ import com.pubvantage.Authentication.Authentication;
 import com.pubvantage.RestParams.LearnerResponse;
 import com.pubvantage.RestParams.LearningProcessParams;
 import com.pubvantage.RestParams.PredictionProcessParams;
+import com.pubvantage.constant.MessageConstant;
+import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreLearningModel;
 import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.OptimizeField;
 import com.pubvantage.learner.LearnerInterface;
 import com.pubvantage.learner.LinearRegressionLearner;
 import com.pubvantage.learner.Params.LinearRegressionDataProcess;
@@ -27,7 +30,10 @@ import org.apache.spark.sql.SparkSession;
 import spark.Request;
 import spark.Response;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import static spark.Spark.*;
 
@@ -165,7 +171,7 @@ public class AppMain {
         LearningProcessParams learningProcessParams = new LearningProcessParams(jsonParams);
         boolean isValidParams = learningProcessParams.validateOptimizationRules();
         if (!isValidParams) {
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, "Parameter is invalid", null);
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
             response.status(HttpStatus.SC_BAD_REQUEST);
             return new Gson().toJson(learnerResponse);
         }
@@ -174,7 +180,7 @@ public class AppMain {
         boolean isPassAuthentication = learningProcessParams.validateToken();
         if (!isPassAuthentication) {
             response.status(HttpStatus.SC_UNAUTHORIZED);
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, "Fail authentication", null);
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, MessageConstant.INVALID_PERMISSION, null);
             return new Gson().toJson(learnerResponse);
         }
 
@@ -187,11 +193,12 @@ public class AppMain {
         List<String> successIdentifiers = generateAndSaveModel(optimizationRule);
 
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("autoOptimizationConfigId", optimizationRuleId);
-        jsonObject.add("identifiers", JsonUtil.toJsonArray(successIdentifiers.toArray(new String[0])));
+        jsonObject.addProperty(MyConstant.OPTIMIZE_RULE_ID, optimizationRuleId);
+        jsonObject.add(MyConstant.IDENTIFIER, JsonUtil.toJsonArray(
+                successIdentifiers != null ? successIdentifiers.toArray(new String[0]) : new String[0]));
         dataResponseArray.add(jsonObject);
         //return response
-        LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, "Learn successfully", dataResponseArray);
+        LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.LEARN_SUCCESS, dataResponseArray);
         response.status(HttpStatus.SC_OK);
 
         return new Gson().toJson(learnerResponse);
@@ -210,7 +217,7 @@ public class AppMain {
         PredictionProcessParams predictionProcessParams = new PredictionProcessParams(predictPrams);
         boolean isValidParams = predictionProcessParams.validates();
         if (!isValidParams) {
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, "Parameter is invalid", null);
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
             response.status(HttpStatus.SC_BAD_REQUEST);
             return new Gson().toJson(learnerResponse);
         }
@@ -224,7 +231,7 @@ public class AppMain {
         Authentication authentication = new Authentication(optimizationRuleId, token);
         boolean isValid = authentication.authenticate();
         if (!isValid) {
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, "The request is unauthenticated", null);
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, MessageConstant.INVALID_PERMISSION, null);
             response.status(HttpStatus.SC_UNAUTHORIZED);
             return new Gson().toJson(learnerResponse);
         }
@@ -290,8 +297,8 @@ public class AppMain {
     private static List<String> generateAndSaveModel(CoreOptimizationRule optimizationRule) {
         List<String> successIdentifiers = new ArrayList<>();
         List<CoreLearner> modelList = new ArrayList<>();
-
-        List<String> identifiers = JsonUtil.jsonArrayStringToJavaList(optimizationRule.getIdentifierFields());
+        OptimizationRuleServiceInterface ruleService = new OptimizationRuleService();
+        List<String> identifiers = ruleService.getIdentifiers(optimizationRule);
         List<String> segmentFields = JsonUtil.jsonArrayStringToJavaList(optimizationRule.getSegmentFields());
 
         if (identifiers.size() == 0) {
@@ -306,7 +313,7 @@ public class AppMain {
         }
 
         for (PredictionParam predictionParam : predictionParams) {
-            modelList = generateModelForOneIdentifier(predictionParam);
+            modelList.addAll(generateModelForOneIdentifier(predictionParam));
         }
 
         saveModelToDatabase(modelList);
@@ -334,16 +341,16 @@ public class AppMain {
         List<CoreLearner> coreLearners = new ArrayList<>();
 
         OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
-        List<String> optimizeFields = optimizationRuleService.getOptimizeFields(segmentFieldGroup.getOptimizationRuleId());
+        List<OptimizeField> optimizeFields = optimizationRuleService.getOptimizeFields(segmentFieldGroup.getOptimizationRuleId());
 
-        for (String optimizeField : optimizeFields) {
+        for (OptimizeField optimizeField : optimizeFields) {
             coreLearners.addAll(generateModelForOneOptimizeField(segmentFieldGroup, optimizeField));
         }
 
         return coreLearners;
     }
 
-    private static List<CoreLearner> generateModelForOneOptimizeField(SegmentFieldGroup segmentFieldGroup, String optimizeField) {
+    private static List<CoreLearner> generateModelForOneOptimizeField(SegmentFieldGroup segmentFieldGroup, OptimizeField optimizeField) {
         List<CoreLearner> coreLearners = new ArrayList<>();
 
         Long optimizationRuleId = segmentFieldGroup.getOptimizationRuleId();
@@ -365,10 +372,28 @@ public class AppMain {
     private static CoreLearner generateModelForOneValueOfSegmentFieldGroups(LinearRegressionDataProcess linearRegressionDataProcess) {
         LinearRegressionLearner linearRegressionLearner = new LinearRegressionLearner(sparkSession, linearRegressionDataProcess);
         LinearRegressionModel linearRegressionModel = linearRegressionLearner.generateModel(sparkSession);
-        if (linearRegressionModel != null) {
 
+        CoreLearner coreLearner = new CoreLearner();
+        coreLearner.setId(0L);
+        coreLearner.setIdentifier(linearRegressionDataProcess.getIdentifier());
+        coreLearner.setOptimizationRuleId(linearRegressionDataProcess.getOptimizationRuleId());
+        coreLearner.setSegmentValues(JsonUtil.mapToJson(linearRegressionDataProcess.getUniqueValue()));
+        coreLearner.setOptimizeFields(JsonUtil.toJson(linearRegressionDataProcess.getOptimizeField()));
+        if (linearRegressionModel == null) {
+            coreLearner.setModelPath(null);
+            coreLearner.setMathModel(null);
+            coreLearner.setMetricsPredictiveValues(null);
+        } else {
+            coreLearner.setModelPath(FilePathUtil.getLearnerModelPath(
+                    linearRegressionDataProcess.getOptimizationRuleId(),
+                    linearRegressionDataProcess.getIdentifier(),
+                    linearRegressionDataProcess.getOneSegmentGroup(),
+                    linearRegressionDataProcess.getUniqueValue()));
+            coreLearner.setMathModel(getModelStringData(linearRegressionDataProcess, linearRegressionModel));
+            coreLearner.setMetricsPredictiveValues(linearRegressionDataProcess.getMetricsPredictiveValues().toString());
         }
-        return null;
+
+        return coreLearner;
     }
 
     /**
@@ -397,35 +422,44 @@ public class AppMain {
      * @param modelList list of model
      */
     private static void saveModelToDatabase(List<CoreLearner> modelList) {
-//        coreLearnerService.saveListModel(modelList);
+        coreLearnerService.saveListLearnerModel(modelList);
     }
 
-    /**
-     * @param learner learned data
-     * @return json data of model
-     */
-    private static String getModelStringData(LearnerInterface learner) {
 
-        return null;
-    }
+    private static String getModelStringData(LinearRegressionDataProcess linearRegressionDataProcess, LinearRegressionModel linearRegressionModel) {
+        List<String> objectiveAndFields = linearRegressionDataProcess.getObjectiveAndFields();
 
-    /**
-     * Create test data sample
-     *
-     * @return data test
-     */
-    private static String[] createTestData() {
-        String[] args;
-        args = new String[6];
-        int index = 0;
-        args[index++] = "--autoOptimizationId";
-        args[index++] = "=";
-        args[index++] = "1";
-        args[index++] = "--identifier";
-        args[index++] = "=";
-//        args[index++] = "all";
-        args[index++] = "allenwestrepublic.com";
-        return args;
+        JsonObject jsonObject = new JsonObject();
+        LinearRegressionModel model = linearRegressionModel;
+
+        //coefficient
+        Vector vec = model.coefficients();
+        double[] coefficientsArray = vec.toArray();
+
+        JsonObject coefficient = new JsonObject();
+
+        for (int i = 0; i < coefficientsArray.length; i++) {
+            logger.info(coefficientsArray[i]);
+
+            int factorIndex = i + 1;// index 0 is objective
+            if (Double.isNaN(coefficientsArray[i])) {
+                coefficient.addProperty(objectiveAndFields.get(factorIndex), "null");
+            } else {
+                double value = ConvertUtil.convertObjectToDecimal(coefficientsArray[i]).doubleValue();
+                coefficient.addProperty(objectiveAndFields.get(factorIndex), value);
+            }
+        }
+
+        jsonObject.add(MyConstant.COEFFICIENT, coefficient);
+
+        if (Double.isNaN(model.intercept())) {
+            jsonObject.addProperty(MyConstant.INTERCEPT, "null");
+        } else {
+            double value = ConvertUtil.convertObjectToDecimal(model.intercept()).doubleValue();
+            jsonObject.addProperty(MyConstant.INTERCEPT, value);
+        }
+
+        return jsonObject.toString();
     }
 
 }

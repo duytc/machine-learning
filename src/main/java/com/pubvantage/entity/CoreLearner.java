@@ -22,6 +22,9 @@ public class CoreLearner {
     @Column(name = "segment_values")
     private String segmentValues;
 
+    @Column(name = "optimize_fields")
+    private String optimizeFields;
+
     @Column(name = "model_path")
     private String modelPath;
 
@@ -123,6 +126,14 @@ public class CoreLearner {
 
     public void setMathModel(String mathModel) {
         this.mathModel = mathModel;
+    }
+
+    public String getOptimizeFields() {
+        return optimizeFields;
+    }
+
+    public void setOptimizeFields(String optimizeFields) {
+        this.optimizeFields = optimizeFields;
     }
 
     @Override

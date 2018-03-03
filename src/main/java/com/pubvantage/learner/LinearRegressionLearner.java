@@ -8,8 +8,6 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
-import java.io.IOException;
-
 public class LinearRegressionLearner implements LearnerInterface {
     private static final double REG_PARAM = 0.3;
     private static final double ELASTIC_NET_PARAM = 0.8;
@@ -24,27 +22,16 @@ public class LinearRegressionLearner implements LearnerInterface {
         this.linearRegressionDataProcess = linearRegressionDataProcess;
     }
 
-    public SparkSession getSparkSession() {
-        return sparkSession;
-    }
-
-    public void setSparkSession(SparkSession sparkSession) {
-        this.sparkSession = sparkSession;
-    }
-
     @Override
     public LinearRegressionDataProcess getLinearRegressionDataProcess() {
         return linearRegressionDataProcess;
     }
 
-    public void setLinearRegressionDataProcess(LinearRegressionDataProcess linearRegressionDataProcess) {
-        this.linearRegressionDataProcess = linearRegressionDataProcess;
-    }
 
     @Override
     public LinearRegressionModel generateModel(SparkSession sparkSession) {
         Dataset<Row> training = linearRegressionDataProcess.getTrainingDataForLinearRegression();
-
+        training.show();
         LinearRegression lr = new LinearRegression()
                 .setMaxIter(MAX_ITER)
                 .setRegParam(REG_PARAM)

@@ -1,7 +1,7 @@
 package com.pubvantage.dao;
 
 import com.pubvantage.AppMain;
-import com.pubvantage.constant.DataBaseConstant;
+import com.pubvantage.constant.MyConstant;
 import com.pubvantage.utils.AppResource;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.SparkSqlUtil;
@@ -63,26 +63,26 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         jdbcDF.createOrReplaceTempView(tableName);
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("SELECT ");
-        stringBuilder.append(ConvertUtil.joinListString(objectiveAndFields));
+        stringBuilder.append(ConvertUtil.joinListString(objectiveAndFields, ", "));
         stringBuilder.append(" FROM ");
         stringBuilder.append(tableName);
 
         if (identifier != null) {
             stringBuilder.append(" WHERE ");
-            stringBuilder.append(DataBaseConstant.INDENTIFIER_COLUMN)
+            stringBuilder.append(MyConstant.IDENTIFIER_COLUMN)
                     .append(" = '").append(identifier).append("'")
                     .append(" AND ");
             for (String field : oneSegmentGroup) {
                 Object value = uniqueValue.get(field);
                 if (value instanceof Date) {
-                    stringBuilder.append("DATE_FORMAT(" + field + ", '%Y-%m-%d')")
+                    stringBuilder.append("DATE_FORMAT(" + field + ", '" + MyConstant.DATE_FORMAT + "')")
                             .append(" = '")
                             .append(value.toString()).append("' AND ");
-                } else if(value instanceof Number){
+                } else if (value instanceof Number) {
                     stringBuilder.append(field)
                             .append(" = ")
                             .append(value).append(" AND ");
-                }else {
+                } else {
                     stringBuilder.append(field)
                             .append(" = '")
                             .append(value).append("' AND ");
@@ -91,8 +91,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
             }
             stringBuilder.append(" 1 = 1");
         }
-        Dataset<Row> rowDataset = AppMain.sparkSession.sql(stringBuilder.toString());
-        return rowDataset;
+        return AppMain.sparkSession.sql(stringBuilder.toString());
     }
 
     /**
@@ -104,10 +103,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         String tableName = TABLE_NAME_PREFIX + autoOptimizationConfigId;
         Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
         jdbcDF.createOrReplaceTempView(tableName);
-        String stringQuery = "SELECT DISTINCT " +
-                userConfig.getProperty("column.identifier") +
-                " FROM " +
-                tableName;
+        String stringQuery = "SELECT DISTINCT identifier" + " FROM " + tableName;
 
         Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringQuery);
 
@@ -146,7 +142,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
         jdbcDF.createOrReplaceTempView(tableName);
 
-        String stringQuery = "SELECT DISTINCT " + segments + " FROM " + tableName + " WHERE identifier = " + identifier;
+        String stringQuery = "SELECT DISTINCT " + segments + " FROM " + tableName + " WHERE identifier = '" + identifier +"'";
         Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringQuery);
         List<Row> resultList = sqlDF.collectAsList();
         List<Map<String, Object>> listData = new ArrayList<>();

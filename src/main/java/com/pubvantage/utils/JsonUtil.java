@@ -7,9 +7,11 @@ import com.google.gson.JsonParser;
 import com.jsoniter.JsonIterator;
 import spark.ResponseTransformer;
 
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class JsonUtil {
     public static String toJson(Object object) {
@@ -46,7 +48,12 @@ public class JsonUtil {
         return JsonIterator.deserialize(jsonArrayString, ArrayList.class);
     }
 
-    public static List<HashMap<String, String>> jsonArrayObjectsToListMap(String jsonArrayObjects){
+    public static List<HashMap<String, String>> jsonArrayObjectsToListMap(String jsonArrayObjects) {
         return JsonIterator.deserialize(jsonArrayObjects, ArrayList.class);
+    }
+
+    public static String mapToJson(Map map) {
+        Gson gson = new GsonBuilder().disableHtmlEscaping().create();
+        return gson.toJson(map);
     }
 }

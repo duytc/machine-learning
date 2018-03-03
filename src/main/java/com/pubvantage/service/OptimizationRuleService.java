@@ -2,15 +2,20 @@ package com.pubvantage.service;
 
 
 import com.google.gson.JsonObject;
-import com.pubvantage.constant.DataBaseConstant;
+import com.pubvantage.constant.MyConstant;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDao;
 import com.pubvantage.dao.OptimizationRuleDao;
+import com.pubvantage.dao.SparkDataTrainingDao;
+import com.pubvantage.dao.SparkDataTrainingDaoInterface;
 import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.entity.CoreReportView;
+import com.pubvantage.entity.OptimizeField;
 import com.pubvantage.service.Learner.ReportViewService;
+import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.HibernateUtil;
 import com.pubvantage.utils.JsonUtil;
 import org.apache.log4j.Logger;
+import org.apache.spark.sql.Row;
 import org.hibernate.Session;
 
 import java.util.ArrayList;
@@ -22,6 +27,7 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     private static Logger logger = Logger.getLogger(OptimizationRuleService.class.getName());
     private OptimizationRuleDao optimizationRuleDao = new OptimizationRuleDao();
     private ReportViewServiceInterface viewService = new ReportViewService();
+    private SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
 
     @Override
     public List<String> getSegmentFields(Long optimizationRuleId) {
@@ -30,16 +36,24 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     @Override
-    public List<String> getOptimizeFields(Long optimizationRuleId) {
+    public List<OptimizeField> getOptimizeFields(Long optimizationRuleId) {
         CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
         List<HashMap<String, String>> map = JsonUtil.jsonArrayObjectsToListMap(optimizationRule.getOptimizeFields());
-        List<String> optimizeFieldList = new ArrayList<>();
-        map.forEach(optimizeField -> optimizeFieldList.add(optimizeField.get(DataBaseConstant.FIELD)));
+        List<OptimizeField> optimizeFieldList = new ArrayList<>();
+        map.forEach(optimizeField -> {
+            OptimizeField optimizeFieldObject = new OptimizeField();
+            optimizeFieldObject.setField(optimizeField.get(MyConstant.FIELD));
+            optimizeFieldObject.setGoal(optimizeField.get(MyConstant.GOAL));
+            optimizeFieldObject.setWeight(ConvertUtil.convertObjectToDouble(optimizeField.get(MyConstant.WEIGHT)));
+            optimizeFieldList.add(optimizeFieldObject);
+
+        });
         return optimizeFieldList;
     }
 
     /**
      * get only number metrics (not implement yet)
+     *
      * @param optimizationRuleId
      * @return
      */
@@ -52,7 +66,15 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
 
     @Override
     public List<String> getIdentifiers(CoreOptimizationRule optimizationRule) {
-        return new ArrayList<>();
+        List<Row> resultList = sparkDataTrainingDao.getIdentifiers(optimizationRule.getId());
+        List<String> identifiers = new ArrayList<>();
+
+        if (resultList != null && !resultList.isEmpty()) {
+            for (Row aResultList : resultList) {
+                identifiers.add(aResultList.get(0).toString());
+            }
+        }
+        return identifiers;
     }
 
     @Override
