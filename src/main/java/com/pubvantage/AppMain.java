@@ -325,6 +325,12 @@ public class AppMain {
         return coreLearnersList;
     }
 
+
+    private List<CoreLearner> generateGlobalModelForOneIdentifier( Long optimizationRuleId ,String identifier)
+    {
+        return null;
+    }
+
     private static List<CoreLearner> generateModelForSegmentFieldGroup(SegmentFieldGroup segmentFieldGroup) {
         List<CoreLearner> coreLearners = new ArrayList<>();
 
@@ -344,6 +350,12 @@ public class AppMain {
         Long optimizationRuleId = segmentFieldGroup.getOptimizationRuleId();
         String identifier = segmentFieldGroup.getIdentifier();
         List<String> oneSegmentGroup = segmentFieldGroup.getOneSegmentFieldGroup();
+
+        if (null == oneSegmentGroup) {
+            // step 1: get all data for identifier, convert to DateSet<Row>
+            // Step 2: Create learner models
+            return coreLearners;
+        }
 
         DataTrainingService dataTrainingService = new DataTrainingService(optimizationRuleId, identifier, oneSegmentGroup);
         List<Map<String, Object>> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
