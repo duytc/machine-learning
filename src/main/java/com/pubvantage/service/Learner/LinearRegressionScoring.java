@@ -35,17 +35,25 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
      * @return score of multiple condition
      */
     public ResponsePredict predict() {
-
-
         ConditionGenerator conditionGenerator = new ConditionGenerator(coreOptimizationRule, conditions);
         List<Map<String, Object>> multipleSegmentGroupValues = conditionGenerator.generateMultipleSegmentGroupValues();
-        FactorValues factorValues = conditionGenerator.getFactorValues();
+
+        ResponsePredict predictions = new ResponsePredict();
         List<PredictScore> predictScoreList = new ArrayList<>();
+        FactorValues factorValues = conditionGenerator.getFactorValues();
+
+        if (null == multipleSegmentGroupValues) {
+            PredictScore predictionsOfOneCondition = makeMultiplePredictionsWithOneSegmentGroupValue(coreOptimizationRule, identifiers, null, factorValues);
+            predictScoreList.add(predictionsOfOneCondition);
+
+            return  predictions;
+        }
+
         for (Map<String, Object> segmentGroupValue : multipleSegmentGroupValues) {
             PredictScore predictionsOfOneCondition = makeMultiplePredictionsWithOneSegmentGroupValue(coreOptimizationRule, identifiers, segmentGroupValue, factorValues);
             predictScoreList.add(predictionsOfOneCondition);
         }
-        ResponsePredict predictions = new ResponsePredict();
+
         predictions.setId(coreOptimizationRule.getId());
         predictions.setInfo(predictScoreList);
         return predictions;
@@ -90,19 +98,19 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
     /**
      * @param coreOptimizationRule
      * @param identifiers
-     * @param condition
+     * @param segmentGroupValue
      * @return
      */
     private PredictScore makeMultiplePredictionsWithOneSegmentGroupValue(CoreOptimizationRule coreOptimizationRule,
                                                                          List<String> identifiers,
-                                                                         Map<String, Object> condition,
+                                                                         Map<String, Object> segmentGroupValue,
                                                                          FactorValues factorValues) {
         Map<String, Double> scoreData = new LinkedHashMap<>();
         List<OptimizeField> optimizeFieldList = optimizationRuleService.getOptimizeFields(coreOptimizationRule);
         for (OptimizeField optimizeField : optimizeFieldList) {
             Map<String, Double> predictByOptimizeFieldAndFactorValues = new LinkedHashMap<>();
             identifiers.forEach(identifier -> {
-                Double prediction = makeOnePrediction(coreOptimizationRule, identifier, condition, optimizeField, factorValues);
+                Double prediction = makeOnePrediction(coreOptimizationRule, identifier, segmentGroupValue, optimizeField, factorValues);
                 predictByOptimizeFieldAndFactorValues.put(identifier, prediction);
             });
 
