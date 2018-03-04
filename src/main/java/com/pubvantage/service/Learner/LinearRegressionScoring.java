@@ -107,13 +107,17 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
                                                                          Map<String, Object> segmentGroupValue,
                                                                          FactorValues factorValues) {
         Map<String, Double> scoreData = new LinkedHashMap<>();
+        Map<String, Map<String, Double>> optimizeMap = new LinkedHashMap<>();
         List<OptimizeField> optimizeFieldList = optimizationRuleService.getOptimizeFields(coreOptimizationRule);
+
+
         for (OptimizeField optimizeField : optimizeFieldList) {
             Map<String, Double> predictByOptimizeFieldAndFactorValues = new LinkedHashMap<>();
             identifiers.forEach(identifier -> {
                 Double prediction = makeOnePrediction(coreOptimizationRule, identifier, segmentGroupValue, optimizeField, factorValues);
                 predictByOptimizeFieldAndFactorValues.put(identifier, prediction);
             });
+            optimizeMap.put(optimizeField.getField(), predictByOptimizeFieldAndFactorValues);
 
             Double total = 0D;
             for (Map.Entry<String, Double> entry : predictByOptimizeFieldAndFactorValues.entrySet()) {
@@ -134,17 +138,30 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
 
                 if (scoreData.get(identifier) == null) {
                     Double localScoreValue = goalValue * weight * avg;
+
                     scoreData.put(identifier, localScoreValue);
                 } else {
                     Double localScoreValue = goalValue * weight * avg;
                     localScoreValue += scoreData.get(identifier);
+
                     scoreData.put(identifier, localScoreValue);
                 }
-
             }
         }
+        Map<String, Map<String, Double>> result = new LinkedHashMap<>();
+        for (String identifier : identifiers) {
+            Map<String, Double> doubleMap = new LinkedHashMap<>();
+            doubleMap.put(MyConstant.OVERALL_SCORE, scoreData.get(identifier));
+            for (Map.Entry<String, Map<String, Double>> entry : optimizeMap.entrySet()) {
+                String optimizeField = entry.getKey();
+                Map<String, Double> predicts = entry.getValue();
+                doubleMap.put(optimizeField, predicts.get(identifier));
+            }
+            result.put(identifier, doubleMap);
+        }
+
         PredictScore predictScore = new PredictScore();
-        predictScore.setScore(scoreData);
+        predictScore.setScore(result);
         predictScore.setFactorValues(factorValues.getValues());
         return predictScore;
     }

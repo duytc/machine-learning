@@ -9,16 +9,15 @@ import java.util.Map;
  */
 public class PredictScore {
     private JsonObject factorValues;
-    private Map<String, Double> score;
+    private Map<String, Map<String, Double>> score;
 
     public PredictScore() {
     }
 
-    public PredictScore(JsonObject factorValues, Map<String, Double> score) {
+    public PredictScore(JsonObject factorValues, Map<String, Map<String, Double>> score) {
         this.factorValues = factorValues;
         this.score = score;
     }
-
 
     public JsonObject getFactorValues() {
         return factorValues;
@@ -28,11 +27,11 @@ public class PredictScore {
         this.factorValues = factorValues;
     }
 
-    public Map<String, Double> getScore() {
+    public Map<String, Map<String, Double>> getScore() {
         return score;
     }
 
-    public void setScore(Map<String, Double> score) {
+    public void setScore(Map<String, Map<String, Double>> score) {
         this.score = score;
     }
 }
