@@ -33,18 +33,20 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
     /**
      * @return score of multiple condition
      */
-    public Map<String, Map<String, Double>> predict() {
-        Map<String, Map<String, Double>> predictions = new LinkedHashMap<>();
+    public ResponsePredict predict() {
+
+
         ConditionGenerator conditionGenerator = new ConditionGenerator(coreOptimizationRule, conditions);
         List<Map<String, Object>> multipleSegmentGroupValues = conditionGenerator.generateMultipleSegmentGroupValues();
         FactorValues factorValues = conditionGenerator.getFactorValues();
-
+        List<PredictScore> predictScoreList = new ArrayList<>();
         for (Map<String, Object> segmentGroupValue : multipleSegmentGroupValues) {
-//            String key = buildSegmentInfo(segmentGroupValue);
-            Map<String, Double> predictionsOfOneCondition = makeMultiplePredictionsWithOneSegmentGroupValue(coreOptimizationRule, identifiers, segmentGroupValue, factorValues);
-//            predictions.put(key, predictionsOfOneCondition);
+            PredictScore predictionsOfOneCondition = makeMultiplePredictionsWithOneSegmentGroupValue(coreOptimizationRule, identifiers, segmentGroupValue, factorValues);
+            predictScoreList.add(predictionsOfOneCondition);
         }
-
+        ResponsePredict predictions = new ResponsePredict();
+        predictions.setId(coreOptimizationRule.getId());
+        predictions.setInfo(predictScoreList);
         return predictions;
     }
 
@@ -90,20 +92,51 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
      * @param condition
      * @return
      */
-    private Map<String, Double> makeMultiplePredictionsWithOneSegmentGroupValue(CoreOptimizationRule coreOptimizationRule, List<String> identifiers, Map<String, Object> condition, FactorValues factorValues) {
-        Map<String, Double> predictions = new LinkedHashMap<>();
+    private PredictScore makeMultiplePredictionsWithOneSegmentGroupValue(CoreOptimizationRule coreOptimizationRule,
+                                                                         List<String> identifiers,
+                                                                         Map<String, Object> condition,
+                                                                         FactorValues factorValues) {
+        Map<String, Double> scoreData = new LinkedHashMap<>();
         List<OptimizeField> optimizeFieldList = optimizationRuleService.getOptimizeFields(coreOptimizationRule);
         for (OptimizeField optimizeField : optimizeFieldList) {
+            Map<String, Double> predictByOptimizeFieldAndFactorValues = new LinkedHashMap<>();
             identifiers.forEach(identifier -> {
                 Double prediction = makeOnePrediction(coreOptimizationRule, identifier, condition, optimizeField, factorValues);
-                predictions.put(identifier, prediction);
-
+                predictByOptimizeFieldAndFactorValues.put(identifier, prediction);
             });
 
+            Double total = 0D;
+            for (Map.Entry<String, Double> entry : predictByOptimizeFieldAndFactorValues.entrySet()) {
+                total += entry.getValue();
+            }
+            Map<String, Double> scoreValueByOptimizeField = new LinkedHashMap<>();
+            for (Map.Entry<String, Double> entry : predictByOptimizeFieldAndFactorValues.entrySet()) {
+                Double avg = total == 0 ? 0D : entry.getValue() / total;
+                String identifier = entry.getKey();
+                scoreValueByOptimizeField.put(identifier, avg);
+            }
+            for (Map.Entry<String, Double> entry : scoreValueByOptimizeField.entrySet()) {
+                Double avg = entry.getValue();
+                Double weight = optimizeField.getWeight();
+                String goal = optimizeField.getGoal();
+                double goalValue = "Max".equals(goal) ? 1 : -1;
+                String identifier = entry.getKey();
+
+                if (scoreData.get(identifier) == null) {
+                    Double localScoreValue = goalValue * weight * avg;
+                    scoreData.put(identifier, localScoreValue);
+                } else {
+                    Double localScoreValue = goalValue * weight * avg;
+                    localScoreValue += scoreData.get(identifier);
+                    scoreData.put(identifier, localScoreValue);
+                }
+
+            }
         }
-
-
-        return predictions;
+        PredictScore predictScore = new PredictScore();
+        predictScore.setScore(scoreData);
+        predictScore.setFactorValues(factorValues.getValues());
+        return predictScore;
     }
 
     /**

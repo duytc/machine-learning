@@ -239,7 +239,7 @@ public class AppMain {
         CoreOptimizationRule optimizationRule = coreOptimizationRuleService.findById(optimizationRuleId);
 
         LinearRegressionScoring linearRegressionScoring = new LinearRegressionScoring(optimizationRule, identifiers, conditions);
-        Map<String, Map<String, Double>> predictions = linearRegressionScoring.predict();
+        ResponsePredict predictions = linearRegressionScoring.predict();
 
         return new Gson().toJson(predictions);
     }
