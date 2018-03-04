@@ -1,29 +1,30 @@
 package com.pubvantage.entity;
 
-import com.google.gson.JsonObject;
-
-import java.util.Map;
+import java.util.LinkedHashMap;
 
 /**
  * Created by quyendq on 04/03/2018.
  */
 public class MathModel {
-    private Map<String, Double> Coefficients;
+    /**
+     * need to be LinkedHashMap to keep order
+     */
+    private LinkedHashMap<String, Double> Coefficients;
     private Double Intercept;
 
     public MathModel() {
     }
 
-    public MathModel(Map<String, Double> coefficients, Double intercept) {
+    public MathModel(LinkedHashMap<String, Double> coefficients, Double intercept) {
         Coefficients = coefficients;
         Intercept = intercept;
     }
 
-    public Map<String, Double> getCoefficients() {
+    public LinkedHashMap<String, Double> getCoefficients() {
         return Coefficients;
     }
 
-    public void setCoefficients(Map<String, Double> coefficients) {
+    public void setCoefficients(LinkedHashMap<String, Double> coefficients) {
         Coefficients = coefficients;
     }
 

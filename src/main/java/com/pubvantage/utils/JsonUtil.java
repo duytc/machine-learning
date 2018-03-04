@@ -8,10 +8,7 @@ import com.jsoniter.JsonIterator;
 import spark.ResponseTransformer;
 
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class JsonUtil {
     public static String toJson(Object object) {
@@ -60,7 +57,9 @@ public class JsonUtil {
     public static <K, V> Map<K, V> jsonToMap(String json) {
         return JsonIterator.deserialize(json, Map.class);
     }
-
+    public static <K, V> LinkedHashMap<K, V> jsonToLinkedHashMap(String json) {
+        return JsonIterator.deserialize(json, LinkedHashMap.class);
+    }
     public static <T> T jsonToObject(String json, Class<T> type) {
         return JsonIterator.deserialize(json, type);
     }

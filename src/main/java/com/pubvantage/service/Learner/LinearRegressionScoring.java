@@ -3,6 +3,7 @@ package com.pubvantage.service.Learner;
 import com.pubvantage.ConditionProcessor.ConditionConverter;
 import com.pubvantage.ConditionProcessor.ConditionGenerator;
 import com.pubvantage.RestParams.FactorConditionData;
+import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.*;
 import com.pubvantage.service.*;
 import com.pubvantage.utils.ConvertUtil;
@@ -119,7 +120,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
                 Double avg = entry.getValue();
                 Double weight = optimizeField.getWeight();
                 String goal = optimizeField.getGoal();
-                double goalValue = "Max".equals(goal) ? 1 : -1;
+                double goalValue = MyConstant.MAX.equals(goal) ? 1 : -1;
                 String identifier = entry.getKey();
 
                 if (scoreData.get(identifier) == null) {
@@ -139,23 +140,4 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
         return predictScore;
     }
 
-    /**
-     * Build key from one condition
-     *
-     * @param condition condition
-     * @return key
-     */
-    private String buildSegmentInfo(List<SegmentField> condition) {
-        List<String> conditionArray = new ArrayList<>();
-//        condition.forEach((factorName, value) -> conditionArray.add(String.valueOf(value)));
-
-        return String.join(",", conditionArray);
-    }
-
-    private Map<String, Double> sortPredictionsByExpectedObjective(String expectedObjective, Map<String, Double> predictions) {
-        if ("min".equals(expectedObjective))
-            return ConvertUtil.ascendingSortMapByValue(predictions);
-
-        return ConvertUtil.descendingSortMapByValue(predictions);
-    }
 }

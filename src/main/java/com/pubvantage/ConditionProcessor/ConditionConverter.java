@@ -2,8 +2,10 @@ package com.pubvantage.ConditionProcessor;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.jsoniter.any.Any;
-import com.pubvantage.entity.*;
+import com.pubvantage.entity.CoreLearner;
+import com.pubvantage.entity.FactorValues;
+import com.pubvantage.entity.MathModel;
+import com.pubvantage.entity.OptimizeField;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
 import com.pubvantage.utils.JsonUtil;
@@ -11,6 +13,7 @@ import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.Vectors;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,20 +39,23 @@ public class ConditionConverter {
     public Vector buildVector() {
         List<String> metrics = getMetrics(coreLearner);
         // prepare array of double value for vector
-        JsonObject metricsPredictiveValues = new JsonObject();
+        LinkedHashMap<String, Double> metricsPredictiveValues = getMetricsPredictionValues(coreLearner);
+
         double[] doubleValue = new double[metrics.size()];
         if (factorValues != null) {
             for (int index = 0; index < metrics.size(); index++) {
                 String fieldName = metrics.get(index);
 
                 if (factorValues.getIsPredictive()) {
-                    doubleValue[index] = metricsPredictiveValues.get(fieldName).getAsDouble();
+                    Double metricPredictValue = metricsPredictiveValues.get(fieldName);
+                    doubleValue[index] = metricPredictValue == null ? 0D : metricPredictValue;
                 } else {
                     JsonObject values = factorValues.getValues();
                     if (values != null) {
                         JsonElement value = values.get(fieldName);
                         if (value == null) {
-                            doubleValue[index] = metricsPredictiveValues.get(fieldName) != null ? metricsPredictiveValues.get(fieldName).getAsDouble() : 0D;
+                            Double metricPredictValue = metricsPredictiveValues.get(fieldName);
+                            doubleValue[index] = metricPredictValue == null ? 0D : metricPredictValue;
                         } else {
                             doubleValue[index] = value.getAsDouble();
                         }
@@ -59,6 +65,10 @@ public class ConditionConverter {
             }
         }
         return Vectors.dense(doubleValue);
+    }
+
+    private LinkedHashMap<String, Double> getMetricsPredictionValues(CoreLearner coreLearner) {
+        return JsonUtil.jsonToLinkedHashMap(coreLearner.getMetricsPredictiveValues());
     }
 
     private List<String> getMetrics(CoreLearner coreLearner) {
