@@ -57,7 +57,7 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     /**
-     * get only number metrics (not implement yet)
+     * get only number metrics (but not implement yet)
      *
      * @param optimizationRuleId
      * @return
@@ -71,6 +71,8 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
 
     @Override
     public List<String> getVectorFields(Long optimizationRuleId) {
+        CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
+
         return null;
     }
 

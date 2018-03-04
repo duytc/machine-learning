@@ -2,17 +2,17 @@ package com.pubvantage.ConditionProcessor;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.pubvantage.entity.CoreLearner;
-import com.pubvantage.entity.CoreOptimizationRule;
-import com.pubvantage.entity.FactorValues;
-import com.pubvantage.entity.OptimizeField;
+import com.jsoniter.any.Any;
+import com.pubvantage.entity.*;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
+import com.pubvantage.utils.JsonUtil;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.Vectors;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ConditionConverter {
     private String identifier;
@@ -37,14 +37,11 @@ public class ConditionConverter {
         List<String> metrics = getMetrics(coreLearner);
         // prepare array of double value for vector
         JsonObject metricsPredictiveValues = new JsonObject();
-        double[] doubleValue = new double[metrics.size() - 1]; //skip optimize field
+        double[] doubleValue = new double[metrics.size()];
         if (factorValues != null) {
             for (int index = 0; index < metrics.size(); index++) {
                 String fieldName = metrics.get(index);
-                if (fieldName.equals(optimizeField.getField())) {
-                    //skip optimizeField
-                    continue;
-                }
+
                 if (factorValues.getIsPredictive()) {
                     doubleValue[index] = metricsPredictiveValues.get(fieldName).getAsDouble();
                 } else {
@@ -52,7 +49,7 @@ public class ConditionConverter {
                     if (values != null) {
                         JsonElement value = values.get(fieldName);
                         if (value == null) {
-                            doubleValue[index] = metricsPredictiveValues.get(fieldName).getAsDouble();
+                            doubleValue[index] = metricsPredictiveValues.get(fieldName) != null ? metricsPredictiveValues.get(fieldName).getAsDouble() : 0D;
                         } else {
                             doubleValue[index] = value.getAsDouble();
                         }
@@ -65,7 +62,14 @@ public class ConditionConverter {
     }
 
     private List<String> getMetrics(CoreLearner coreLearner) {
-        return new ArrayList<>();
+        List<String> list = new ArrayList<>();
+        MathModel mathModel = JsonUtil.jsonToObject(coreLearner.getMathModel(), MathModel.class);
+        if (mathModel != null && mathModel.getCoefficients() != null && !mathModel.getCoefficients().isEmpty()) {
+            for (Map.Entry<String, Double> entry : mathModel.getCoefficients().entrySet()) {
+                list.add(entry.getKey());
+            }
+        }
+        return list;
     }
 
 }
