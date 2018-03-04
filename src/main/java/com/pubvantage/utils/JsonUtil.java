@@ -57,6 +57,8 @@ public class JsonUtil {
     }
 
     public static <K, V> Map<K, V> jsonToMap(String json) {
+        if (json == null)
+            return null;
         return JsonIterator.deserialize(json, Map.class);
     }
 

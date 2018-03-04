@@ -8,6 +8,7 @@ import java.util.List;
 public class Condition {
     private List<SegmentField> segmentFields;
     private FactorValues factorValues;
+    private Boolean isGlobal;
 
     public Condition() {
     }
@@ -30,5 +31,15 @@ public class Condition {
 
     public void setFactorValues(FactorValues factorValues) {
         this.factorValues = factorValues;
+    }
+
+    public Boolean getGlobal() {
+        return isGlobal;
+    }
+
+    public void setGlobal(Boolean global) {
+        if (global == null)
+            isGlobal = false;
+        isGlobal = global;
     }
 }

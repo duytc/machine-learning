@@ -325,12 +325,6 @@ public class AppMain {
         return coreLearnersList;
     }
 
-
-    private List<CoreLearner> generateGlobalModelForOneIdentifier( Long optimizationRuleId ,String identifier)
-    {
-        return null;
-    }
-
     private static List<CoreLearner> generateModelForSegmentFieldGroup(SegmentFieldGroup segmentFieldGroup) {
         List<CoreLearner> coreLearners = new ArrayList<>();
 
@@ -353,9 +347,7 @@ public class AppMain {
 
         //run global
         if (null == oneSegmentGroup) {
-            // step 1: get all data for identifier, convert to DateSet<Row>
-            // Step 2: Create learner models
-            LinearRegressionDataProcess linearRegressionDataProcess = new LinearRegressionDataProcess(optimizationRuleId, identifier, oneSegmentGroup, optimizeField);
+            LinearRegressionDataProcess linearRegressionDataProcess = new LinearRegressionDataProcess(optimizationRuleId, identifier, null, optimizeField);
             CoreLearner learners = generateModelForOneValueOfSegmentFieldGroups(linearRegressionDataProcess);
             coreLearners.add(learners);
             return coreLearners;
@@ -381,9 +373,7 @@ public class AppMain {
         coreLearner.setId(0L);
         coreLearner.setIdentifier(linearRegressionDataProcess.getIdentifier());
         coreLearner.setOptimizationRuleId(linearRegressionDataProcess.getOptimizationRuleId());
-
         coreLearner.setSegmentValues(JsonUtil.mapToJson(linearRegressionDataProcess.getUniqueValue()));
-
         coreLearner.setOptimizeFields(JsonUtil.toJson(linearRegressionDataProcess.getOptimizeField()));
         if (linearRegressionModel == null) {
             coreLearner.setModelPath(null);

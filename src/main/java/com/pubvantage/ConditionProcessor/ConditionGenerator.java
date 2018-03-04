@@ -24,7 +24,11 @@ public class ConditionGenerator {
      * @return multiple condition data
      */
     public List<Map<String, Object>> generateMultipleSegmentGroupValues() {
-        // Check is global = true, tra ve Null
+        boolean isGlobal = this.conditions.getGlobal();
+        if (isGlobal) {
+            return null;
+        }
+
         List<SegmentField> segmentFieldList = this.conditions.getSegmentFields();
         List<List<Object>> filteredConditionsDataList = new ArrayList();
         for (SegmentField segmentField : segmentFieldList) {
@@ -34,7 +38,7 @@ public class ConditionGenerator {
         List<List<Object>> multipleConditionList = generateListConditions(filteredConditionsDataList);
 
         List<String> listSegmentField = new ArrayList<>();
-        segmentFieldList.forEach(segmentField ->  listSegmentField.add(segmentField.getSegmentField()));
+        segmentFieldList.forEach(segmentField -> listSegmentField.add(segmentField.getSegmentField()));
 
         List<Map<String, Object>> multipleConditionMap = new ArrayList<>();
         for (List<Object> conditionList : multipleConditionList) {

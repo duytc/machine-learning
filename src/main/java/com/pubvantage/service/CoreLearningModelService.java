@@ -82,6 +82,10 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
                 }
 
                 Map<String, Object> segmentValuesFromDB = JsonUtil.jsonToMap(coreLearnerFromDB.getSegmentValues());
+                //run global
+                if (segmentValuesFromDB == null && segmentValues == null) {
+                    return coreLearnerFromDB;
+                }
                 if (segmentValuesFromDB != null && !segmentValuesFromDB.isEmpty()) {
                     if (segmentValuesFromDB.equals(segmentValues)) {
                         return coreLearnerFromDB;

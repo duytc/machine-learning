@@ -39,22 +39,23 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
         List<Map<String, Object>> multipleSegmentGroupValues = conditionGenerator.generateMultipleSegmentGroupValues();
 
         ResponsePredict predictions = new ResponsePredict();
+        predictions.setId(coreOptimizationRule.getId());
         List<PredictScore> predictScoreList = new ArrayList<>();
         FactorValues factorValues = conditionGenerator.getFactorValues();
 
+        //run global
         if (null == multipleSegmentGroupValues) {
             PredictScore predictionsOfOneCondition = makeMultiplePredictionsWithOneSegmentGroupValue(coreOptimizationRule, identifiers, null, factorValues);
             predictScoreList.add(predictionsOfOneCondition);
 
-            return  predictions;
+            predictions.setInfo(predictScoreList);
+            return predictions;
         }
 
         for (Map<String, Object> segmentGroupValue : multipleSegmentGroupValues) {
             PredictScore predictionsOfOneCondition = makeMultiplePredictionsWithOneSegmentGroupValue(coreOptimizationRule, identifiers, segmentGroupValue, factorValues);
             predictScoreList.add(predictionsOfOneCondition);
         }
-
-        predictions.setId(coreOptimizationRule.getId());
         predictions.setInfo(predictScoreList);
         return predictions;
     }
