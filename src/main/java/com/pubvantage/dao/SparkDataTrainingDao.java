@@ -72,23 +72,26 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
             stringBuilder.append(MyConstant.IDENTIFIER_COLUMN)
                     .append(" = '").append(identifier).append("'")
                     .append(" AND ");
-            for (String field : oneSegmentGroup) {
-                Object value = uniqueValue.get(field);
-                if (value instanceof Date) {
-                    stringBuilder.append("DATE_FORMAT(" + field + ", '" + MyConstant.DATE_FORMAT + "')")
-                            .append(" = '")
-                            .append(value.toString()).append("' AND ");
-                } else if (value instanceof Number) {
-                    stringBuilder.append(field)
-                            .append(" = ")
-                            .append(value).append(" AND ");
-                } else {
-                    stringBuilder.append(field)
-                            .append(" = '")
-                            .append(value).append("' AND ");
-                }
+            if (oneSegmentGroup != null) {
+                for (String field : oneSegmentGroup) {
+                    Object value = uniqueValue.get(field);
+                    if (value instanceof Date) {
+                        stringBuilder.append("DATE_FORMAT(" + field + ", '" + MyConstant.DATE_FORMAT + "')")
+                                .append(" = '")
+                                .append(value.toString()).append("' AND ");
+                    } else if (value instanceof Number) {
+                        stringBuilder.append(field)
+                                .append(" = ")
+                                .append(value).append(" AND ");
+                    } else {
+                        stringBuilder.append(field)
+                                .append(" = '")
+                                .append(value).append("' AND ");
+                    }
 
+                }
             }
+
             stringBuilder.append(" 1 = 1");
         }
         return AppMain.sparkSession.sql(stringBuilder.toString());
@@ -142,7 +145,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
         jdbcDF.createOrReplaceTempView(tableName);
 
-        String stringQuery = "SELECT DISTINCT " + segments + " FROM " + tableName + " WHERE identifier = '" + identifier +"'";
+        String stringQuery = "SELECT DISTINCT " + segments + " FROM " + tableName + " WHERE identifier = '" + identifier + "'";
         Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringQuery);
         List<Row> resultList = sqlDF.collectAsList();
         List<Map<String, Object>> listData = new ArrayList<>();

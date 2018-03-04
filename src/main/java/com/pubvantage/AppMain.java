@@ -351,9 +351,13 @@ public class AppMain {
         String identifier = segmentFieldGroup.getIdentifier();
         List<String> oneSegmentGroup = segmentFieldGroup.getOneSegmentFieldGroup();
 
+        //run global
         if (null == oneSegmentGroup) {
             // step 1: get all data for identifier, convert to DateSet<Row>
             // Step 2: Create learner models
+            LinearRegressionDataProcess linearRegressionDataProcess = new LinearRegressionDataProcess(optimizationRuleId, identifier, oneSegmentGroup, optimizeField);
+            CoreLearner learners = generateModelForOneValueOfSegmentFieldGroups(linearRegressionDataProcess);
+            coreLearners.add(learners);
             return coreLearners;
         }
 
@@ -377,7 +381,9 @@ public class AppMain {
         coreLearner.setId(0L);
         coreLearner.setIdentifier(linearRegressionDataProcess.getIdentifier());
         coreLearner.setOptimizationRuleId(linearRegressionDataProcess.getOptimizationRuleId());
+
         coreLearner.setSegmentValues(JsonUtil.mapToJson(linearRegressionDataProcess.getUniqueValue()));
+
         coreLearner.setOptimizeFields(JsonUtil.toJson(linearRegressionDataProcess.getOptimizeField()));
         if (linearRegressionModel == null) {
             coreLearner.setModelPath(null);

@@ -43,7 +43,21 @@ public class LinearRegressionDataProcess {
     public LinearRegressionDataProcess() {
     }
 
-    public LinearRegressionDataProcess(Long optimizationRuleId, String identifier, List<String> oneSegmentGroup, Map<String, Object> uniqueValue, OptimizeField optimizeField) {
+    public LinearRegressionDataProcess(Long optimizationRuleId,
+                                       String identifier,
+                                       List<String> oneSegmentGroup,
+                                       OptimizeField optimizeField) {
+        this.optimizationRuleId = optimizationRuleId;
+        this.identifier = identifier;
+        this.oneSegmentGroup = oneSegmentGroup;
+        this.optimizeField = optimizeField;
+    }
+
+    public LinearRegressionDataProcess(Long optimizationRuleId,
+                                       String identifier,
+                                       List<String> oneSegmentGroup,
+                                       Map<String, Object> uniqueValue,
+                                       OptimizeField optimizeField) {
         this.optimizationRuleId = optimizationRuleId;
         this.identifier = identifier;
         this.oneSegmentGroup = oneSegmentGroup;

@@ -58,15 +58,20 @@ public class FilePathUtil {
         if (baseFolder == null || baseFolder.isEmpty()) {
             baseFolder = BASE_FOLDER;
         }
-        String segmentGroupFolder = ConvertUtil.joinListString(oneSegmentGroup, "-");
-        String uniqueValueFolder = ConvertUtil.mapValueToString(uniqueValue);
-        return baseFolder
-                + "/"
-                + autoOptimizationConfigId + "/"
-                + identifier + "/"
-                + segmentGroupFolder + "/"
-                + uniqueValueFolder;
+        if (null != oneSegmentGroup && null != uniqueValue) {
+            String segmentGroupFolder = ConvertUtil.joinListString(oneSegmentGroup, "-");
+            String uniqueValueFolder = ConvertUtil.mapValueToString(uniqueValue);
+            return baseFolder
+                    + "/"
+                    + autoOptimizationConfigId + "/"
+                    + identifier + "/"
+                    + segmentGroupFolder + "/"
+                    + uniqueValueFolder;
+        }
 
+        return baseFolder + "/"
+                + autoOptimizationConfigId + "/"
+                + identifier;
     }
 
 }

@@ -50,6 +50,8 @@ public class JsonUtil {
     }
 
     public static String mapToJson(Map map) {
+        if (map == null)
+            return null;
         Gson gson = new GsonBuilder().disableHtmlEscaping().create();
         return gson.toJson(map);
     }
@@ -57,9 +59,11 @@ public class JsonUtil {
     public static <K, V> Map<K, V> jsonToMap(String json) {
         return JsonIterator.deserialize(json, Map.class);
     }
+
     public static <K, V> LinkedHashMap<K, V> jsonToLinkedHashMap(String json) {
         return JsonIterator.deserialize(json, LinkedHashMap.class);
     }
+
     public static <T> T jsonToObject(String json, Class<T> type) {
         return JsonIterator.deserialize(json, type);
     }

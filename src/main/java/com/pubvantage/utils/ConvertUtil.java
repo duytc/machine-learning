@@ -143,6 +143,8 @@ public class ConvertUtil {
             System.out.println("}");
             result.add(subSet);
         }
+        //for run global
+        result.add(null);
         return result;
     }
 
