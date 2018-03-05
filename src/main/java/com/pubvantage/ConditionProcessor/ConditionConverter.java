@@ -50,7 +50,7 @@ public class ConditionConverter {
                     Double metricPredictValue = metricsPredictiveValues.get(fieldName);
                     doubleValue[index] = metricPredictValue == null ? 0D : metricPredictValue;
                 } else {
-                    JsonObject values = factorValues.getValues();
+                    JsonObject values = factorValues.getValues().get(identifier);
                     if (values != null) {
                         JsonElement value = values.get(fieldName);
                         if (value == null) {

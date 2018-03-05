@@ -1,13 +1,15 @@
 package com.pubvantage.service.Learner;
 
+import com.pubvantage.AppMain;
 import com.pubvantage.ConditionProcessor.ConditionConverter;
 import com.pubvantage.ConditionProcessor.ConditionGenerator;
-import com.pubvantage.RestParams.FactorConditionData;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.*;
-import com.pubvantage.service.*;
-import com.pubvantage.utils.ConvertUtil;
-import com.pubvantage.utils.JsonUtil;
+import com.pubvantage.service.CoreLearningModelService;
+import com.pubvantage.service.CoreLearningModelServiceInterface;
+import com.pubvantage.service.OptimizationRuleService;
+import com.pubvantage.service.OptimizationRuleServiceInterface;
+import org.apache.log4j.Logger;
 import org.apache.spark.ml.regression.LinearRegressionModel;
 
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 public class LinearRegressionScoring implements ScoringServiceInterface {
+    private static Logger logger = Logger.getLogger(AppMain.class.getName());
 
     private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
     private CoreLearningModelServiceInterface coreLearningModelService = new CoreLearningModelService();
@@ -87,8 +90,14 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
         if (conditionVector == null) {
             return PREDICTION_DEFAULT_VALUE;
         }
-        LinearRegressionModel linearRegressionModel = LinearRegressionModel.load(coreLearner.getModelPath());
-        double predict = linearRegressionModel.predict(conditionVector);
+        double predict = 0d;
+        try{
+            LinearRegressionModel linearRegressionModel = LinearRegressionModel.load(coreLearner.getModelPath());
+            predict = linearRegressionModel.predict(conditionVector);
+        }catch (Exception e){
+            logger.error(e.getMessage(), e);
+        }
+
         if (Double.isNaN(predict)) {
             return PREDICTION_DEFAULT_VALUE;
         }
@@ -114,6 +123,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
         for (OptimizeField optimizeField : optimizeFieldList) {
             Map<String, Double> predictByOptimizeFieldAndFactorValues = new LinkedHashMap<>();
             identifiers.forEach(identifier -> {
+
                 Double prediction = makeOnePrediction(coreOptimizationRule, identifier, segmentGroupValue, optimizeField, factorValues);
                 predictByOptimizeFieldAndFactorValues.put(identifier, prediction);
             });
@@ -162,7 +172,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
 
         PredictScore predictScore = new PredictScore();
         predictScore.setScore(result);
-        predictScore.setFactorValues(factorValues.getValues());
+        predictScore.setFactorValues(segmentGroupValue);
         return predictScore;
     }
 
