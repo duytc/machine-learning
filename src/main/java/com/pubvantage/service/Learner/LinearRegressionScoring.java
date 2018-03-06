@@ -171,7 +171,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
         }
 
         PredictScore predictScore = new PredictScore();
-        predictScore.setScore(result);
+        predictScore.setScores(result);
         predictScore.setFactorValues(segmentGroupValue);
         return predictScore;
     }

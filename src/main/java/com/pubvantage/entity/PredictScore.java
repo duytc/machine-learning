@@ -1,7 +1,5 @@
 package com.pubvantage.entity;
 
-import com.google.gson.JsonObject;
-
 import java.util.Map;
 
 /**
@@ -9,14 +7,14 @@ import java.util.Map;
  */
 public class PredictScore {
     private Map<String, Object> factorValues;
-    private Map<String, Map<String, Double>> score;
+    private Map<String, Map<String, Double>> scores;
 
     public PredictScore() {
     }
 
-    public PredictScore(Map<String, Object> factorValues, Map<String, Map<String, Double>> score) {
+    public PredictScore(Map<String, Object> factorValues, Map<String, Map<String, Double>> scores) {
         this.factorValues = factorValues;
-        this.score = score;
+        this.scores = scores;
     }
 
     public Map<String, Object> getFactorValues() {
@@ -27,11 +25,11 @@ public class PredictScore {
         this.factorValues = factorValues;
     }
 
-    public Map<String, Map<String, Double>> getScore() {
-        return score;
+    public Map<String, Map<String, Double>> getScores() {
+        return scores;
     }
 
-    public void setScore(Map<String, Map<String, Double>> score) {
-        this.score = score;
+    public void setScores(Map<String, Map<String, Double>> scores) {
+        this.scores = scores;
     }
 }
