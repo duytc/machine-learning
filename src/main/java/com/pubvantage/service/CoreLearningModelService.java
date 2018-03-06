@@ -29,13 +29,14 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
             session = HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
             for (CoreLearner aModelList : modelList) {
-
-                CoreLearner foundModel = coreLearnerDao.findOne(session,
+                OptimizeField optimizeField = JsonUtil.jsonToObject(aModelList.getOptimizeFields(), OptimizeField.class);
+                Map<String, Object> segmentValues = JsonUtil.jsonToMap(aModelList.getSegmentValues());
+                CoreLearner foundModel = this.checkExist(session,
                         aModelList.getOptimizationRuleId(),
                         aModelList.getIdentifier(),
-                        aModelList.getSegmentValues()
-                        , aModelList.getOptimizeFields());
-                if (null == foundModel) {
+                        optimizeField
+                        , segmentValues);
+                if (null == foundModel || foundModel.getId() == null) {
                     //add new
                     aModelList.setCreatedDate(new Date());
                     aModelList.setUpdatedDate(new Date());
@@ -71,27 +72,7 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
         try {
             session = HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
-            List<CoreLearner> coreLearners = coreLearnerDao.findList(session, optimizationRuleId, identifier);
-            for (CoreLearner coreLearnerFromDB : coreLearners) {
-                OptimizeField optimizeFieldFromDB = JsonUtil.jsonToObject(coreLearnerFromDB.getOptimizeFields(), OptimizeField.class);
-                if (!(optimizeFieldFromDB.getField().equals(optimizeField.getField())
-                        && optimizeFieldFromDB.getGoal().equals(optimizeField.getGoal())
-                        && optimizeFieldFromDB.getWeight() != null
-                        && optimizeFieldFromDB.getWeight().doubleValue() == optimizeField.getWeight().doubleValue())) {
-                    continue;
-                }
-
-                Map<String, Object> segmentValuesFromDB = JsonUtil.jsonToMap(coreLearnerFromDB.getSegmentValues());
-                //run global
-                if (segmentValuesFromDB == null && segmentValues == null) {
-                    return coreLearnerFromDB;
-                }
-                if (segmentValuesFromDB != null && !segmentValuesFromDB.isEmpty()) {
-                    if (segmentValuesFromDB.equals(segmentValues)) {
-                        return coreLearnerFromDB;
-                    }
-                }
-            }
+            coreLearner = this.checkExist(session, optimizationRuleId, identifier, optimizeField, segmentValues);
 
             session.clear();
             session.getTransaction().commit();
@@ -103,6 +84,33 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
         } finally {
             if (session != null) {
                 session.close();
+            }
+        }
+        return coreLearner;
+    }
+
+
+    private CoreLearner checkExist(Session session, Long optimizationRuleId, String identifier, OptimizeField optimizeField, Map<String, Object> segmentValues) {
+        CoreLearner coreLearner = new CoreLearner();
+        List<CoreLearner> coreLearners = coreLearnerDao.findList(session, optimizationRuleId, identifier);
+        for (CoreLearner coreLearnerFromDB : coreLearners) {
+            OptimizeField optimizeFieldFromDB = JsonUtil.jsonToObject(coreLearnerFromDB.getOptimizeFields(), OptimizeField.class);
+            if (!(optimizeFieldFromDB.getField().equals(optimizeField.getField())
+                    && optimizeFieldFromDB.getGoal().equals(optimizeField.getGoal())
+                    && optimizeFieldFromDB.getWeight() != null
+                    && optimizeFieldFromDB.getWeight().doubleValue() == optimizeField.getWeight().doubleValue())) {
+                continue;
+            }
+
+            Map<String, Object> segmentValuesFromDB = JsonUtil.jsonToMap(coreLearnerFromDB.getSegmentValues());
+            //run global
+            if (segmentValuesFromDB == null && segmentValues == null) {
+                return coreLearnerFromDB;
+            }
+            if (segmentValuesFromDB != null && !segmentValuesFromDB.isEmpty()) {
+                if (segmentValuesFromDB.equals(segmentValues)) {
+                    return coreLearnerFromDB;
+                }
             }
         }
         return coreLearner;

@@ -15,4 +15,11 @@ public class MyConstant {
     public static String OPTIMIZE_RULE_ID = "optimizationRuleId";
     public static String IDENTIFIER = "identifiers";
     public static String DATE_FORMAT = "%Y-%m-%d";
+
+    public static String DATE_TYPE = "date";
+    public static String DATETIME_TYPE = "datetime";
+    public static String NUMBER_TYPE = "number";
+    public static String DECIMAL_TYPE = "decimal";
+    public static String TEXT_TYPE = "text";
+
 }

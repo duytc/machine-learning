@@ -21,6 +21,7 @@ import org.hibernate.Session;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class OptimizationRuleService implements OptimizationRuleServiceInterface {
     private CoreAutoOptimizationConfigDao coreAutoOptimizationConfigDao = new CoreAutoOptimizationConfigDao();
@@ -66,7 +67,23 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     public List<String> getMetrics(Long optimizationRuleId) {
         CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
         CoreReportView reportView = viewService.findById(optimizationRule.getReportViewId());
-        return JsonUtil.jsonArrayStringToJavaList(reportView.getMetrics());
+        String jsonFieldType = reportView.getFieldTypes();
+        List<String> metrics = JsonUtil.jsonArrayStringToJavaList(reportView.getMetrics());
+        Map<String, String> fieldType = JsonUtil.jsonToMap(jsonFieldType);
+        return filterNumberTypeMetric(metrics, fieldType);
+    }
+
+    private List<String> filterNumberTypeMetric(List<String> metrics, Map<String, String> fieldType) {
+        List<String> filteredMetrics = new ArrayList<>();
+        if (metrics != null && fieldType != null) {
+            for (int i = 0; i < metrics.size(); i++) {
+                String type = fieldType.get(metrics.get(i));
+                if (MyConstant.DECIMAL_TYPE.equals(type) || MyConstant.NUMBER_TYPE.equals(type)) {
+                    filteredMetrics.add(metrics.get(i));
+                }
+            }
+        }
+        return filteredMetrics;
     }
 
     @Override
