@@ -121,6 +121,13 @@ public class ConvertUtil {
         return string2;
     }
 
+    public static String generateAllIsNoteNull(List<String> list) {
+        String concatString = String.join(" IS NOT NULL AND ", list);
+        String string2 = concatString + " IS NOT NULL";
+
+        return string2;
+    }
+
     public static List<List<String>> generateSubsets(List<String> set) {
         List<List<String>> result = new ArrayList<>();
         result.add(null);

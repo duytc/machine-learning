@@ -64,11 +64,13 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("SELECT ");
         stringBuilder.append(ConvertUtil.joinListString(objectiveAndFields, ", "));
-        stringBuilder.append(" FROM ");
-        stringBuilder.append(tableName);
+        stringBuilder.append(" FROM ").append(tableName)
+                .append(" WHERE ")
+                .append(ConvertUtil.generateAllIsNoteNull(objectiveAndFields))
+                .append(" ");
 
         if (identifier != null) {
-            stringBuilder.append(" WHERE ");
+            stringBuilder.append(" AND ");
             stringBuilder.append(MyConstant.IDENTIFIER_COLUMN)
                     .append(" = '").append(identifier).append("'")
                     .append(" AND ");
