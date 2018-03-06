@@ -22,7 +22,7 @@ public class CoreLearner {
     @Column(name = "segment_values")
     private String segmentValues;
 
-    @Column(name = "optimize_fields")
+    @Column(name = "optimize_field")
     private String optimizeFields;
 
     @Column(name = "model_path")
