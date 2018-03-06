@@ -217,13 +217,14 @@ public class AppMain {
      */
     private static String predictScores(Request request, Response response) {
         response.type("application/json");
+        try {
         String predictPrams = request.body();
         PredictionProcessParams predictionProcessParams = new PredictionProcessParams(predictPrams);
         boolean isValidParams = predictionProcessParams.validates();
         if (!isValidParams) {
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
+            LearnerResponse predictResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
             response.status(HttpStatus.SC_BAD_REQUEST);
-            return new Gson().toJson(learnerResponse);
+            return new Gson().toJson(predictResponse);
         }
 
         Long optimizationRuleId = predictionProcessParams.getOptimizationRuleId();
@@ -248,6 +249,12 @@ public class AppMain {
         ResponsePredict predictions = linearRegressionScoring.predict();
 
         return new Gson().toJson(predictions);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        LearnerResponse predictResponse = new LearnerResponse(HttpStatus.SC_NOT_FOUND, MessageConstant.INTERNAL_ERROR, null);
+        response.status(HttpStatus.SC_NOT_FOUND);
+        return new Gson().toJson(predictResponse);
     }
 
     /**
