@@ -397,7 +397,8 @@ public class AppMain {
                     linearRegressionDataProcess.getOptimizationRuleId(),
                     linearRegressionDataProcess.getIdentifier(),
                     linearRegressionDataProcess.getOneSegmentGroup(),
-                    linearRegressionDataProcess.getUniqueValue()));
+                    linearRegressionDataProcess.getUniqueValue(),
+                    linearRegressionDataProcess.getOptimizeField().getField()));
             coreLearner.setMathModel(getModelStringData(linearRegressionDataProcess, linearRegressionModel));
             coreLearner.setMetricsPredictiveValues(linearRegressionDataProcess.getMetricsPredictiveValues().toString());
         }

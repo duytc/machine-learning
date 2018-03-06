@@ -46,7 +46,8 @@ public class LinearRegressionLearner implements LearnerInterface {
                     linearRegressionDataProcess.getOptimizationRuleId(),
                     linearRegressionDataProcess.getIdentifier(),
                     linearRegressionDataProcess.getOneSegmentGroup(),
-                    linearRegressionDataProcess.getUniqueValue());
+                    linearRegressionDataProcess.getUniqueValue(),
+                    linearRegressionDataProcess.getOptimizeField().getField());
             lrModel.write().overwrite().save(savePath);
 
             return lrModel;
