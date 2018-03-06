@@ -81,7 +81,6 @@ public class AppMain {
         threadPool(MAX_THREADS, MIN_THREADS, TIME_OUT_MILLIS);
         learningProcessAction();
         predictScoreAction();
-
     }
 
     /**

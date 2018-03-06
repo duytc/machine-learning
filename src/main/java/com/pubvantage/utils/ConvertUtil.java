@@ -123,6 +123,7 @@ public class ConvertUtil {
 
     public static List<List<String>> generateSubsets(List<String> set) {
         List<List<String>> result = new ArrayList<>();
+        result.add(null);
         int size = set.size();
         for (int i = 1; i < (1 << size); i++) {
             List<String> subSet = new ArrayList<>();
@@ -144,7 +145,7 @@ public class ConvertUtil {
             result.add(subSet);
         }
         //for run global
-        result.add(null);
+
         return result;
     }
 
