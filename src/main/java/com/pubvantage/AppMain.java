@@ -162,42 +162,49 @@ public class AppMain {
     private static String activeLearningProcess(Request request, Response response) {
         response.type("application/json");
 
-        //extract data from request
-        String jsonParams = request.body();
+        try {
+            //extract data from request
+            String jsonParams = request.body();
 
-        LearningProcessParams learningProcessParams = new LearningProcessParams(jsonParams);
-        boolean isValidParams = learningProcessParams.validateOptimizationRules();
-        if (!isValidParams) {
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
-            response.status(HttpStatus.SC_BAD_REQUEST);
+            LearningProcessParams learningProcessParams = new LearningProcessParams(jsonParams);
+            boolean isValidParams = learningProcessParams.validateOptimizationRules();
+            if (!isValidParams) {
+                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
+                response.status(HttpStatus.SC_BAD_REQUEST);
+                return new Gson().toJson(learnerResponse);
+            }
+
+            //verify token
+            boolean isPassAuthentication = learningProcessParams.validateToken();
+            if (!isPassAuthentication) {
+                response.status(HttpStatus.SC_UNAUTHORIZED);
+                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, MessageConstant.INVALID_PERMISSION, null);
+                return new Gson().toJson(learnerResponse);
+            }
+
+            //get data then convert and learn
+            Long optimizationRuleId = learningProcessParams.getOptimizationRuleId();
+            OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
+            CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId);
+
+            JsonArray dataResponseArray = new JsonArray();
+            List<String> successIdentifiers = generateAndSaveModel(optimizationRule);
+
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty(MyConstant.OPTIMIZE_RULE_ID, optimizationRuleId);
+            jsonObject.add(MyConstant.IDENTIFIER, JsonUtil.toJsonArray(
+                    successIdentifiers != null ? successIdentifiers.toArray(new String[0]) : new String[0]));
+            dataResponseArray.add(jsonObject);
+            //return response
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.LEARN_SUCCESS, dataResponseArray);
+            response.status(HttpStatus.SC_OK);
+
             return new Gson().toJson(learnerResponse);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         }
-
-        //verify token
-        boolean isPassAuthentication = learningProcessParams.validateToken();
-        if (!isPassAuthentication) {
-            response.status(HttpStatus.SC_UNAUTHORIZED);
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, MessageConstant.INVALID_PERMISSION, null);
-            return new Gson().toJson(learnerResponse);
-        }
-
-        //get data then convert and learn
-        Long optimizationRuleId = learningProcessParams.getOptimizationRuleId();
-        OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
-        CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId);
-
-        JsonArray dataResponseArray = new JsonArray();
-        List<String> successIdentifiers = generateAndSaveModel(optimizationRule);
-
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty(MyConstant.OPTIMIZE_RULE_ID, optimizationRuleId);
-        jsonObject.add(MyConstant.IDENTIFIER, JsonUtil.toJsonArray(
-                successIdentifiers != null ? successIdentifiers.toArray(new String[0]) : new String[0]));
-        dataResponseArray.add(jsonObject);
-        //return response
-        LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.LEARN_SUCCESS, dataResponseArray);
-        response.status(HttpStatus.SC_OK);
-
+        LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_NOT_FOUND, MessageConstant.INTERNAL_ERROR, null);
+        response.status(HttpStatus.SC_NOT_FOUND);
         return new Gson().toJson(learnerResponse);
     }
 
