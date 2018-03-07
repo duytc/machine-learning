@@ -234,7 +234,7 @@ public class LinearRegressionConverter implements DataConverterInterface {
                 }
                 Dataset<Row> textGroupData = trainingDataSet.groupBy(objectiveAndFactor[i]).agg(map);
                 dataSetList.add(textGroupData);
-                textGroupData.show();
+//                textGroupData.show();
             }
 
         }
@@ -306,7 +306,7 @@ public class LinearRegressionConverter implements DataConverterInterface {
         }
 
         Dataset<Row> avgData = trainingDataSet.agg(map);
-        avgData.show();
+//        avgData.show();
         return avgData;
     }
 
