@@ -95,10 +95,7 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
         List<CoreLearner> coreLearners = coreLearnerDao.findList(session, optimizationRuleId, identifier);
         for (CoreLearner coreLearnerFromDB : coreLearners) {
             OptimizeField optimizeFieldFromDB = JsonUtil.jsonToObject(coreLearnerFromDB.getOptimizeFields(), OptimizeField.class);
-            if (!(optimizeFieldFromDB.getField().equals(optimizeField.getField())
-                    && optimizeFieldFromDB.getGoal().equals(optimizeField.getGoal())
-                    && optimizeFieldFromDB.getWeight() != null
-                    && optimizeFieldFromDB.getWeight().doubleValue() == optimizeField.getWeight().doubleValue())) {
+            if (!(optimizeFieldFromDB.getField().equals(optimizeField.getField()))) {
                 continue;
             }
 
