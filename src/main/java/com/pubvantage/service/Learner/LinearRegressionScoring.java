@@ -12,10 +12,7 @@ import com.pubvantage.service.OptimizationRuleServiceInterface;
 import org.apache.log4j.Logger;
 import org.apache.spark.ml.regression.LinearRegressionModel;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class LinearRegressionScoring implements ScoringServiceInterface {
     private static Logger logger = Logger.getLogger(AppMain.class.getName());
@@ -91,10 +88,10 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
             return PREDICTION_DEFAULT_VALUE;
         }
         double predict = 0d;
-        try{
+        try {
             LinearRegressionModel linearRegressionModel = LinearRegressionModel.load(coreLearner.getModelPath());
             predict = linearRegressionModel.predict(conditionVector);
-        }catch (Exception e){
+        } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
 
@@ -122,11 +119,12 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
 
         for (OptimizeField optimizeField : optimizeFieldList) {
             Map<String, Double> predictByOptimizeFieldAndFactorValues = new LinkedHashMap<>();
-            identifiers.forEach(identifier -> {
 
+            for (String identifier : identifiers) {
                 Double prediction = makeOnePrediction(coreOptimizationRule, identifier, segmentGroupValue, optimizeField, factorValues);
                 predictByOptimizeFieldAndFactorValues.put(identifier, prediction);
-            });
+            }
+
             optimizeMap.put(optimizeField.getField(), predictByOptimizeFieldAndFactorValues);
 
             Double total = 0D;
@@ -172,6 +170,9 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
 
         PredictScore predictScore = new PredictScore();
         predictScore.setScores(result);
+        if (segmentGroupValue == null) {
+            segmentGroupValue = new HashMap<>();
+        }
         predictScore.setFactorValues(segmentGroupValue);
         return predictScore;
     }
