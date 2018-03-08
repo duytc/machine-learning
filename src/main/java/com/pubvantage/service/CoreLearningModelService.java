@@ -47,6 +47,7 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
                     foundModel.setModelPath(aModelList.getModelPath());
                     foundModel.setMetricsPredictiveValues(aModelList.getMetricsPredictiveValues());
                     foundModel.setSegmentValues(aModelList.getSegmentValues());
+                    foundModel.setOptimizeFields(aModelList.getOptimizeFields());
                     foundModel.setUpdatedDate(new Date());
 
                     coreLearnerDao.save(foundModel, session);
