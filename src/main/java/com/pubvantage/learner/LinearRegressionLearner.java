@@ -31,6 +31,9 @@ public class LinearRegressionLearner implements LearnerInterface {
     @Override
     public LinearRegressionModel generateModel(SparkSession sparkSession) {
         Dataset<Row> training = linearRegressionDataProcess.getTrainingDataForLinearRegression();
+        if(training == null){
+            return null;
+        }
 //        training.show();
         LinearRegression lr = new LinearRegression()
                 .setMaxIter(MAX_ITER)

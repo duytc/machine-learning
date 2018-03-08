@@ -218,37 +218,37 @@ public class AppMain {
     private static String predictScores(Request request, Response response) {
         response.type("application/json");
         try {
-        String predictPrams = request.body();
-        PredictionProcessParams predictionProcessParams = new PredictionProcessParams(predictPrams);
-        boolean isValidParams = predictionProcessParams.validates();
-        if (!isValidParams) {
-            LearnerResponse predictResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
-            response.status(HttpStatus.SC_BAD_REQUEST);
-            return new Gson().toJson(predictResponse);
-        }
+            String predictPrams = request.body();
+            PredictionProcessParams predictionProcessParams = new PredictionProcessParams(predictPrams);
+            boolean isValidParams = predictionProcessParams.validates();
+            if (!isValidParams) {
+                LearnerResponse predictResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
+                response.status(HttpStatus.SC_BAD_REQUEST);
+                return new Gson().toJson(predictResponse);
+            }
 
-        Long optimizationRuleId = predictionProcessParams.getOptimizationRuleId();
+            Long optimizationRuleId = predictionProcessParams.getOptimizationRuleId();
 
-        List<String> identifiers = predictionProcessParams.getIdentifiers();
-        Condition conditions = predictionProcessParams.getConditions();
+            List<String> identifiers = predictionProcessParams.getIdentifiers();
+            Condition conditions = predictionProcessParams.getConditions();
 
-        String token = predictionProcessParams.getToken();
+            String token = predictionProcessParams.getToken();
 
-        Authentication authentication = new Authentication(optimizationRuleId, token);
-        boolean isValid = authentication.authenticate();
-        if (!isValid) {
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, MessageConstant.INVALID_PERMISSION, null);
-            response.status(HttpStatus.SC_UNAUTHORIZED);
-            return new Gson().toJson(learnerResponse);
-        }
+            Authentication authentication = new Authentication(optimizationRuleId, token);
+            boolean isValid = authentication.authenticate();
+            if (!isValid) {
+                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, MessageConstant.INVALID_PERMISSION, null);
+                response.status(HttpStatus.SC_UNAUTHORIZED);
+                return new Gson().toJson(learnerResponse);
+            }
 
-        OptimizationRuleService coreOptimizationRuleService = new OptimizationRuleService();
-        CoreOptimizationRule optimizationRule = coreOptimizationRuleService.findById(optimizationRuleId);
+            OptimizationRuleService coreOptimizationRuleService = new OptimizationRuleService();
+            CoreOptimizationRule optimizationRule = coreOptimizationRuleService.findById(optimizationRuleId);
 
-        LinearRegressionScoring linearRegressionScoring = new LinearRegressionScoring(optimizationRule, identifiers, conditions);
-        ResponsePredict predictions = linearRegressionScoring.predict();
+            LinearRegressionScoring linearRegressionScoring = new LinearRegressionScoring(optimizationRule, identifiers, conditions);
+            ResponsePredict predictions = linearRegressionScoring.predict();
 
-        return new Gson().toJson(predictions);
+            return new Gson().toJson(predictions);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
@@ -372,7 +372,10 @@ public class AppMain {
         for (Map<String, Object> uniqueValue : uniqueValuesOfOneSegmentFieldGroup) {
             LinearRegressionDataProcess linearRegressionDataProcess = new LinearRegressionDataProcess(optimizationRuleId, identifier, oneSegmentGroup, uniqueValue, optimizeField);
             CoreLearner learners = generateModelForOneValueOfSegmentFieldGroups(linearRegressionDataProcess);
-            coreLearners.add(learners);
+            if (learners != null) {
+                coreLearners.add(learners);
+            }
+
         }
 
         return coreLearners;
@@ -389,9 +392,10 @@ public class AppMain {
         coreLearner.setSegmentValues(JsonUtil.mapToJson(linearRegressionDataProcess.getUniqueValue()));
         coreLearner.setOptimizeFields(JsonUtil.toJson(linearRegressionDataProcess.getOptimizeField()));
         if (linearRegressionModel == null) {
-            coreLearner.setModelPath(null);
-            coreLearner.setMathModel(null);
-            coreLearner.setMetricsPredictiveValues(null);
+            return null;
+//            coreLearner.setModelPath(null);
+//            coreLearner.setMathModel(null);
+//            coreLearner.setMetricsPredictiveValues(null);
         } else {
             coreLearner.setModelPath(FilePathUtil.getLearnerModelPath(
                     linearRegressionDataProcess.getOptimizationRuleId(),

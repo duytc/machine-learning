@@ -24,11 +24,17 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
 
     @Override
     public void saveListLearnerModel(List<CoreLearner> modelList) {
+        if(modelList == null || modelList.isEmpty()){
+            return;
+        }
         Session session = null;
         try {
             session = HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
             for (CoreLearner aModelList : modelList) {
+                if(aModelList== null){
+                    return;
+                }
                 OptimizeField optimizeField = JsonUtil.jsonToObject(aModelList.getOptimizeFields(), OptimizeField.class);
                 Map<String, Object> segmentValues = JsonUtil.jsonToMap(aModelList.getSegmentValues());
                 CoreLearner foundModel = this.checkExist(session,

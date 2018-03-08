@@ -1,13 +1,19 @@
 package com.pubvantage.learner.Params;
 
 import com.google.gson.JsonObject;
+import com.pubvantage.constant.MyConstant;
 import com.pubvantage.dao.SparkDataTrainingDao;
 import com.pubvantage.dao.SparkDataTrainingDaoInterface;
+import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.CoreReportView;
 import com.pubvantage.entity.FactorDataType;
 import com.pubvantage.entity.OptimizeField;
+import com.pubvantage.service.Learner.ReportViewService;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
+import com.pubvantage.service.ReportViewServiceInterface;
 import com.pubvantage.utils.ConvertUtil;
+import com.pubvantage.utils.JsonUtil;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.ml.linalg.Vector;
@@ -32,6 +38,8 @@ import java.util.Map;
 public class LinearRegressionDataProcess {
     private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
     SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
+    private ReportViewServiceInterface reportViewService = new ReportViewService();
+
     private Long optimizationRuleId;
     private String identifier;
     private List<String> oneSegmentGroup;
@@ -68,6 +76,9 @@ public class LinearRegressionDataProcess {
 
     public Dataset<Row> getTrainingDataForLinearRegression() {
         List<String> objectiveAndFields = this.createObjectiveAndFields();
+        if(objectiveAndFields == null || objectiveAndFields.size() == 0){
+            return null;
+        }
         Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRuleId, identifier, objectiveAndFields, uniqueValue, oneSegmentGroup);
         this.metricsPredictiveValues = createMetricsPredictiveValues(dataSet);
         Dataset<Row> vectorDataSet = null;
@@ -86,12 +97,33 @@ public class LinearRegressionDataProcess {
             }
         }
         List<String> objectiveAndFields = new ArrayList<>();
+        boolean isOptimizeFieldNumber = checkOptimizeFieldIsNumber(optimizationRuleId, optimizeField.getField());
+        if (optimizeField != null && !isOptimizeFieldNumber) {
+            return new ArrayList<>();
+        }
         objectiveAndFields.add(optimizeField.getField());
         if (metrics != null) {
             objectiveAndFields.addAll(metrics);
         }
         this.objectiveAndFields = objectiveAndFields;
         return objectiveAndFields;
+    }
+
+    private boolean checkOptimizeFieldIsNumber(Long optimizeRuleId, String optimizeFieldName) {
+        CoreOptimizationRule coreOptimizationRule = optimizationRuleService.findById(optimizeRuleId);
+        if (coreOptimizationRule != null && coreOptimizationRule.getReportViewId() != null) {
+            CoreReportView reportView = reportViewService.findById(coreOptimizationRule.getReportViewId());
+            if (reportView != null && reportView.getId() != null) {
+                String jsonFieldType = reportView.getFieldTypes();
+                Map<String, String> fieldType = JsonUtil.jsonToMap(jsonFieldType);
+                String optimizeType = fieldType.get(optimizeFieldName);
+                if (MyConstant.DECIMAL_TYPE.equals(optimizeType) || MyConstant.NUMBER_TYPE.equals(optimizeType)) {
+                    return true;
+                }
+            }
+
+        }
+        return false;
     }
 
     /**
