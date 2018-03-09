@@ -76,7 +76,8 @@ public class LinearRegressionDataProcess {
 
     public Dataset<Row> getTrainingDataForLinearRegression() {
         List<String> objectiveAndFields = this.createObjectiveAndFields();
-        if(objectiveAndFields == null || objectiveAndFields.size() == 0){
+        if(objectiveAndFields == null || objectiveAndFields.size() <= 1){
+            // missing optimize field or metrics
             return null;
         }
         Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRuleId, identifier, objectiveAndFields, uniqueValue, oneSegmentGroup);
