@@ -314,7 +314,14 @@ public class AppMain {
         }
 
         for (PredictionParam predictionParam : predictionParams) {
-            modelList.addAll(generateModelForOneIdentifier(predictionParam));
+            List<CoreLearner> coreLearnerList = generateModelForOneIdentifier(predictionParam);
+            if (coreLearnerList != null && !coreLearnerList.isEmpty()) {
+                for (CoreLearner coreLearner : coreLearnerList) {
+                    if (coreLearner != null) {
+                        modelList.add(coreLearner);
+                    }
+                }
+            }
         }
 
         saveModelToDatabase(modelList);
@@ -332,7 +339,9 @@ public class AppMain {
         for (List<String> segmentFieldGroup : segmentFieldGroups) {
             SegmentFieldGroup segmentFieldGroupObject = new SegmentFieldGroup(optimizationRuleId, identifier, segmentFieldGroup);
             List<CoreLearner> coreLearners = generateModelForSegmentFieldGroup(segmentFieldGroupObject);
-            coreLearnersList.addAll(coreLearners);
+            if (coreLearners != null && !coreLearners.isEmpty()) {
+                coreLearnersList.addAll(coreLearners);
+            }
         }
 
         return coreLearnersList;
@@ -345,7 +354,13 @@ public class AppMain {
         List<OptimizeField> optimizeFields = optimizationRuleService.getOptimizeFields(segmentFieldGroup.getOptimizationRuleId());
 
         for (OptimizeField optimizeField : optimizeFields) {
-            coreLearners.addAll(generateModelForOneOptimizeField(segmentFieldGroup, optimizeField));
+            List<CoreLearner> coreLearnerList = generateModelForOneOptimizeField(segmentFieldGroup, optimizeField);
+            if (coreLearnerList != null && !coreLearnerList.isEmpty())
+                for (CoreLearner coreLearner : coreLearnerList) {
+                    if (coreLearner != null) {
+                        coreLearners.add(coreLearner);
+                    }
+                }
         }
 
         return coreLearners;
@@ -362,7 +377,9 @@ public class AppMain {
         if (null == oneSegmentGroup) {
             LinearRegressionDataProcess linearRegressionDataProcess = new LinearRegressionDataProcess(optimizationRuleId, identifier, null, optimizeField);
             CoreLearner learners = generateModelForOneValueOfSegmentFieldGroups(linearRegressionDataProcess);
-            coreLearners.add(learners);
+            if (learners != null) {
+                coreLearners.add(learners);
+            }
             return coreLearners;
         }
 
@@ -375,9 +392,7 @@ public class AppMain {
             if (learners != null) {
                 coreLearners.add(learners);
             }
-
         }
-
         return coreLearners;
     }
 

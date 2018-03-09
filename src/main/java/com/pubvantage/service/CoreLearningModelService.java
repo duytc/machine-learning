@@ -33,7 +33,7 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
             session.beginTransaction();
             for (CoreLearner aModelList : modelList) {
                 if(aModelList== null){
-                    return;
+                    continue;
                 }
                 OptimizeField optimizeField = JsonUtil.jsonToObject(aModelList.getOptimizeFields(), OptimizeField.class);
                 Map<String, Object> segmentValues = JsonUtil.jsonToMap(aModelList.getSegmentValues());
