@@ -315,6 +315,7 @@ public class LinearRegressionScoringV2 {
                 segmentMap = JsonUtil.jsonToMap(segment.toString());
             }
             Map<String, Object> finalSegmentMap = segmentMap;
+            executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadLeaner());
             executorService.execute(() -> {
                 logger.error("executorService execute");
                 List<String> listIdentifier = coreLearnerModelService.getDistinctIdentifiersBySegment(finalSegmentMap, ruleId);

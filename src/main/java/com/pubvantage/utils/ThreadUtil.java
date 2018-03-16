@@ -1,6 +1,7 @@
 package com.pubvantage.utils;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -17,5 +18,10 @@ public class ThreadUtil {
             threadPool.shutdownNow();
             Thread.currentThread().interrupt();
         }
+    }
+
+    public static ExecutorService start(ExecutorService executorService) {
+        executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadLeaner());
+        return executorService;
     }
 }

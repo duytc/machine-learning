@@ -353,6 +353,7 @@ public class AppMain {
             PredictionParam predictionParam = new PredictionParam(optimizationRule.getId(), identifier, segmentFields);
             predictionParams.add(predictionParam);
         }
+        executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadLeaner());
 
         for (PredictionParam predictionParam : predictionParams) {
             executorService.execute(() -> {
