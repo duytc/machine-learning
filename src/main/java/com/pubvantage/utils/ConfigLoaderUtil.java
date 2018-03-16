@@ -8,8 +8,8 @@ import java.util.Properties;
 public class ConfigLoaderUtil {
     private static Properties defaultConfig;
     private static Properties userConfig;
-    private static final int THREAD_EXECUTE_SERVICE_SCORE_DEFAULT = 20;
-    private static final int THREAD_EXECUTE_SERVICE_LEARNER_DEFAULT = 20;
+    private static final int THREAD_EXECUTE_SERVICE_SCORE_DEFAULT = 10;
+    private static final int THREAD_EXECUTE_SERVICE_LEARNER_DEFAULT = 10;
 
     static {
         AppResource appResource = new AppResource();
