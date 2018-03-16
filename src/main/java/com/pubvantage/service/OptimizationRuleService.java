@@ -44,7 +44,7 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
         columns.add(optimizationRule.getDateField());
         columns.add(MyConstant.SCORE_IDENTIFIER);
         columns.add(MyConstant.SCORE_SEGMENT_VALUES);
-        
+
         List<HashMap<String, String>> optimizeFields = JsonIterator.deserialize(optimizationRule.getOptimizeFields(), ArrayList.class);
         for (HashMap<String, String> optimize : optimizeFields) {
             String string = JsonUtil.toJson(optimize);

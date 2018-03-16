@@ -65,6 +65,16 @@ public class LinearRegressionScoringV2 {
 
     private void addFutureDate(List<String> listDate) {
         try {
+            if (listDate == null || listDate.isEmpty()) {
+                Date today = new Date();
+                Date nextDay = ConvertUtil.nextDay(today);
+                String nextDayString = ConvertUtil.dateToString(nextDay, MyConstant.DATE_FORMAT_JAVA);
+                listDate = new ArrayList<>();
+                listDate.add(nextDayString);
+                this.futureDate = nextDayString;
+
+                return;
+            }
             java.util.Collections.sort(listDate);
             String latestDate = listDate.get(listDate.size() - 1);
             Date date1 = new SimpleDateFormat(MyConstant.DATE_FORMAT_JAVA).parse(latestDate);
@@ -295,6 +305,9 @@ public class LinearRegressionScoringV2 {
         Long ruleId = this.coreOptimizationRule.getId();
         this.listSegments = coreLearnerModelService.getDistinctSegmentsByRuleId(ruleId);
         Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict = new ConcurrentHashMap<>();
+
+        if (listSegments == null)
+            return new ConcurrentHashMap<>();
 
         for (Object segment : listSegments) {
             Map<String, Object> segmentMap = null;
