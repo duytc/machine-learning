@@ -26,7 +26,7 @@ public class MyConstant {
     //score columns
     public static String SCORE_ID = "__id";
     public static String SCORE_IDENTIFIER = "identifier";
-    public static String SCORE_SEGMENT_VALUES = "segment_values";
+    public static String SCORE_SEGMENT_VALUES = "segment_field_values";
     public static String SCORE = "score";
     public static String SCORE_IS_PREDICT = "is_predict";
 
