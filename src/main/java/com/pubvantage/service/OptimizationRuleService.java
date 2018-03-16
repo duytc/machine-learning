@@ -2,6 +2,7 @@ package com.pubvantage.service;
 
 
 import com.google.gson.JsonObject;
+import com.jsoniter.JsonIterator;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDao;
 import com.pubvantage.dao.OptimizationRuleDao;
@@ -34,6 +35,25 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     public List<String> getSegmentFields(Long optimizationRuleId) {
         CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
         return JsonUtil.jsonArrayStringToJavaList(optimizationRule.getSegmentFields());
+    }
+
+    @Override
+    public List<String> getColumnsForScoreTable(CoreOptimizationRule optimizationRule) {
+        List<String> columns = new ArrayList<>();
+        columns.add(MyConstant.SCORE_ID);
+        columns.add(optimizationRule.getDateField());
+        columns.add(MyConstant.SCORE_IDENTIFIER);
+        columns.add(MyConstant.SCORE_SEGMENT_VALUES);
+        
+        List<HashMap<String, String>> optimizeFields = JsonIterator.deserialize(optimizationRule.getOptimizeFields(), ArrayList.class);
+        for (HashMap<String, String> optimize : optimizeFields) {
+            String string = JsonUtil.toJson(optimize);
+            OptimizeField optimizeField3 = JsonUtil.jsonToObject(string, OptimizeField.class);
+            columns.add(optimizeField3.getField());
+        }
+        columns.add(MyConstant.SCORE);
+        columns.add(MyConstant.SCORE_IS_PREDICT);
+        return columns;
     }
 
     @Override
@@ -71,6 +91,15 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
         List<String> metrics = JsonUtil.jsonArrayStringToJavaList(reportView.getMetrics());
         Map<String, String> fieldType = JsonUtil.jsonToMap(jsonFieldType);
         return filterNumberTypeMetric(metrics, fieldType);
+    }
+
+    @Override
+    public String getDateField(Long optimizationRuleId) {
+        CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
+        if (optimizationRule != null) {
+            return optimizationRule.getDateField();
+        }
+        return null;
     }
 
     private List<String> filterNumberTypeMetric(List<String> metrics, Map<String, String> fieldType) {

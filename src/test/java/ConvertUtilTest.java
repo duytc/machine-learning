@@ -144,6 +144,8 @@ public class ConvertUtilTest {
         String listObjectInput = "[{\"field\":\"largetext2_2\",\"goal\":\"Min\",\"weight\":0.2}]";
         List<HashMap<String, String>> anyList = JsonIterator.deserialize(listObjectInput, ArrayList.class);
         HashMap<String, String> any = anyList.get(0);
+        String string = JsonUtil.toJson(any);
+        OptimizeField optimizeField3 = JsonUtil.jsonToObject(string, OptimizeField.class);
 
         OptimizeField optimizeField = new OptimizeField("field", 0.3, "Min");
         Gson gsonBuilder = new GsonBuilder().create();
@@ -227,5 +229,15 @@ public class ConvertUtilTest {
         boolean s = map.equals(map2);
         return;
     }
+    @Test
+    public void sort() {
+        List<String> list = new ArrayList<>();
+        list.add("2017-01-01");
+        list.add("2017-01-02");
+        list.add("2017-01-03");
 
+        Collections.sort(list);
+
+        return;
+    }
 }

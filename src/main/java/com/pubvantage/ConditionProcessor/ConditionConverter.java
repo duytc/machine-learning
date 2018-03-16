@@ -2,10 +2,9 @@ package com.pubvantage.ConditionProcessor;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.pubvantage.entity.CoreLearner;
-import com.pubvantage.entity.FactorValues;
-import com.pubvantage.entity.MathModel;
-import com.pubvantage.entity.OptimizeField;
+import com.pubvantage.entity.*;
+import com.pubvantage.service.DataTraning.DataTrainingService;
+import com.pubvantage.service.DataTraning.DataTrainingServiceInterface;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
 import com.pubvantage.utils.JsonUtil;
@@ -18,11 +17,15 @@ import java.util.List;
 import java.util.Map;
 
 public class ConditionConverter {
+    DataTrainingServiceInterface dataTrainingService = new DataTrainingService();
     private String identifier;
     private FactorValues factorValues;
     private CoreLearner coreLearner;
     private OptimizeField optimizeField;
     private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
+    private CoreOptimizationRule optimizationRule;
+    private String date;
+    private boolean isPredict;
 
     public ConditionConverter(String identifier, FactorValues factorValues, CoreLearner coreLearner, OptimizeField optimizeField) {
         this.identifier = identifier;
@@ -31,13 +34,48 @@ public class ConditionConverter {
         this.optimizeField = optimizeField;
     }
 
+    public ConditionConverter(String identifier,
+                              FactorValues factorValues,
+                              CoreLearner coreLearner,
+                              OptimizeField optimizeField,
+                              CoreOptimizationRule optimizationRule,
+                              String date,
+                              boolean isPredict) {
+        this.identifier = identifier;
+        this.factorValues = factorValues;
+        this.coreLearner = coreLearner;
+        this.optimizeField = optimizeField;
+        this.optimizationRule = optimizationRule;
+        this.date = date;
+        this.isPredict = isPredict;
+    }
+
+    public Vector buildVectorV2() {
+        List<String> metrics = getMetricsFromCoreLeaner(coreLearner);
+        double[] doubleValue = new double[metrics.size()];
+        if (!isPredict) {
+            List<Double> doubleFromDB = dataTrainingService.getVectorData(metrics, this.optimizationRule, this.date);
+            for (int i = 0; i < doubleValue.length; i++) {
+                doubleValue[i] = doubleFromDB.get(i);
+            }
+        } else {
+            LinkedHashMap<String, Double> metricsPredictiveValues = getMetricsPredictionValues(coreLearner);
+            for (int index = 0; index < metrics.size(); index++) {
+                String fieldName = metrics.get(index);
+                Double metricPredictValue = metricsPredictiveValues.get(fieldName);
+                doubleValue[index] = metricPredictValue == null ? 0D : metricPredictValue;
+            }
+        }
+        return Vectors.dense(doubleValue);
+    }
+
     /**
      * Build vector that is the input of linear regression model
      *
      * @return input vector for linear regression model
      */
     public Vector buildVector() {
-        List<String> metrics = getMetrics(coreLearner);
+        List<String> metrics = getMetricsFromCoreLeaner(coreLearner);
         // prepare array of double value for vector
         LinkedHashMap<String, Double> metricsPredictiveValues = getMetricsPredictionValues(coreLearner);
 
@@ -71,7 +109,7 @@ public class ConditionConverter {
         return JsonUtil.jsonToLinkedHashMap(coreLearner.getMetricsPredictiveValues());
     }
 
-    private List<String> getMetrics(CoreLearner coreLearner) {
+    private List<String> getMetricsFromCoreLeaner(CoreLearner coreLearner) {
         List<String> list = new ArrayList<>();
         MathModel mathModel = JsonUtil.jsonToObject(coreLearner.getMathModel(), MathModel.class);
         if (mathModel != null && mathModel.getCoefficients() != null && !mathModel.getCoefficients().isEmpty()) {

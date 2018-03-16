@@ -9,11 +9,15 @@ import java.util.List;
 public interface OptimizationRuleServiceInterface {
     List<String> getSegmentFields(Long optimizationRuleId);
 
+    List<String> getColumnsForScoreTable(CoreOptimizationRule optimizationRule);
+
     List<OptimizeField> getOptimizeFields(Long optimizationRuleId);
 
     List<OptimizeField> getOptimizeFields(CoreOptimizationRule optimizationRule);
 
     List<String> getMetrics(Long optimizationRuleId);
+
+    String getDateField(Long optimizationRuleId);
 
     List<String> getVectorFields(Long optimizationRuleId);
 

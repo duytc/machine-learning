@@ -4,19 +4,22 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.pubvantage.Authentication.Authentication;
-import com.pubvantage.RestParams.LearnerResponse;
-import com.pubvantage.RestParams.LearningProcessParams;
-import com.pubvantage.RestParams.PredictionProcessParams;
+import com.pubvantage.RestParams.*;
 import com.pubvantage.constant.MessageConstant;
 import com.pubvantage.constant.MyConstant;
+import com.pubvantage.dao.SparkDataTrainingDao;
+import com.pubvantage.dao.SparkDataTrainingDaoInterface;
 import com.pubvantage.entity.*;
-import com.pubvantage.learner.LearnerInterface;
 import com.pubvantage.learner.LinearRegressionLearner;
 import com.pubvantage.learner.Params.LinearRegressionDataProcess;
 import com.pubvantage.learner.Params.SegmentFieldGroup;
-import com.pubvantage.service.*;
+import com.pubvantage.service.CoreLearningModelService;
+import com.pubvantage.service.CoreLearningModelServiceInterface;
 import com.pubvantage.service.DataTraning.DataTrainingService;
 import com.pubvantage.service.Learner.LinearRegressionScoring;
+import com.pubvantage.service.Learner.LinearRegressionScoringV2;
+import com.pubvantage.service.OptimizationRuleService;
+import com.pubvantage.service.OptimizationRuleServiceInterface;
 import com.pubvantage.utils.*;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
@@ -37,8 +40,7 @@ import static spark.Spark.*;
 
 public class AppMain {
 
-    private static final String LINEAR_REGRESSION_TYPE = "LinearRegression";
-    private static final int MAX_THREADS = 8;
+    private static final int MAX_THREADS = 15;
     private static final int MIN_THREADS = 2;
     private static final int TIME_OUT_MILLIS = 30000;
     public static SparkSession sparkSession;
@@ -46,12 +48,14 @@ public class AppMain {
     private static String sparkMaster;
     private static String SPARK_MASTER_DEFAULT = "local[*]";
     private static Logger logger = Logger.getLogger(AppMain.class.getName());
-    private static DataTrainingServiceInterface dataTrainingService;
     private static CoreLearningModelServiceInterface coreLearnerService;
     private static Properties defaultConfig;
     private static Properties userConfig;
     private static int DEFAULT_PORT = 8086;
     private static int PORT;
+    private static SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
+    private static CoreLearningModelServiceInterface coreLearnerModelService = new CoreLearningModelService();
+    private static OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
 
     static {
         AppResource appResource = new AppResource();
@@ -81,6 +85,14 @@ public class AppMain {
         threadPool(MAX_THREADS, MIN_THREADS, TIME_OUT_MILLIS);
         learningProcessAction();
         predictScoreAction();
+        predictScoreActionV2();
+    }
+
+    /**
+     * listen and process learning request
+     */
+    private static void predictScoreActionV2() {
+        post("api/v2/scores", AppMain::activeLearningProcessV2);
     }
 
     /**
@@ -152,6 +164,41 @@ public class AppMain {
         return port;
     }
 
+
+    private static String activeLearningProcessV2(Request request, Response response) {
+        response.type("application/json");
+        try {
+            String predictPrams = request.body();
+            PredictionProcessParamsV2 predictionProcessParams = new PredictionProcessParamsV2(predictPrams);
+            boolean isValidParams = predictionProcessParams.validates();
+            if (!isValidParams) {
+                LearnerResponse predictResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
+                response.status(HttpStatus.SC_BAD_REQUEST);
+                return new Gson().toJson(predictResponse);
+            }
+            Long optimizationRuleId = predictionProcessParams.getOptimizationRuleId();
+            String token = predictionProcessParams.getToken();
+            Authentication authentication = new Authentication(optimizationRuleId, token);
+            boolean isValid = authentication.authenticate();
+            if (!isValid) {
+                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, MessageConstant.INVALID_PERMISSION, null);
+                response.status(HttpStatus.SC_UNAUTHORIZED);
+                return new Gson().toJson(learnerResponse);
+            }
+            CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId);
+            List<String> listDate = sparkDataTrainingDao.getDistinctDates(optimizationRuleId, optimizationRule.getDateField());
+            List<CoreLearner> coreLearnerList = coreLearnerModelService.findListByRuleId(optimizationRuleId);
+            LinearRegressionScoringV2 regressionScoringV2 = new LinearRegressionScoringV2(optimizationRule,listDate, coreLearnerList);
+            Map<String, Map<String, Map<String, Map<String, Double>>>> result = regressionScoringV2.predict();
+            return new Gson().toJson("{'message': 'Done'}");
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        LearnerResponse predictResponse = new LearnerResponse(HttpStatus.SC_NOT_FOUND, MessageConstant.INTERNAL_ERROR, null);
+        response.status(HttpStatus.SC_NOT_FOUND);
+        return new Gson().toJson(predictResponse);
+    }
+
     /**
      * process learning request
      *
@@ -163,6 +210,7 @@ public class AppMain {
         response.type("application/json");
 
         try {
+
             //extract data from request
             String jsonParams = request.body();
 
@@ -184,7 +232,6 @@ public class AppMain {
 
             //get data then convert and learn
             Long optimizationRuleId = learningProcessParams.getOptimizationRuleId();
-            OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
             CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId);
 
             JsonArray dataResponseArray = new JsonArray();
@@ -228,12 +275,9 @@ public class AppMain {
             }
 
             Long optimizationRuleId = predictionProcessParams.getOptimizationRuleId();
-
             List<String> identifiers = predictionProcessParams.getIdentifiers();
             Condition conditions = predictionProcessParams.getConditions();
-
             String token = predictionProcessParams.getToken();
-
             Authentication authentication = new Authentication(optimizationRuleId, token);
             boolean isValid = authentication.authenticate();
             if (!isValid) {
@@ -241,10 +285,7 @@ public class AppMain {
                 response.status(HttpStatus.SC_UNAUTHORIZED);
                 return new Gson().toJson(learnerResponse);
             }
-
-            OptimizationRuleService coreOptimizationRuleService = new OptimizationRuleService();
-            CoreOptimizationRule optimizationRule = coreOptimizationRuleService.findById(optimizationRuleId);
-
+            CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId);
             LinearRegressionScoring linearRegressionScoring = new LinearRegressionScoring(optimizationRule, identifiers, conditions);
             ResponsePredict predictions = linearRegressionScoring.predict();
 
@@ -286,7 +327,6 @@ public class AppMain {
 
             HibernateUtil.startSession();
 
-            dataTrainingService = new DataTrainingServiceOld();
             coreLearnerService = new CoreLearningModelService();
             return true;
         } catch (Exception e) {
@@ -298,8 +338,8 @@ public class AppMain {
     private static List<String> generateAndSaveModel(CoreOptimizationRule optimizationRule) {
         List<String> successIdentifiers = new ArrayList<>();
         List<CoreLearner> modelList = new ArrayList<>();
-        OptimizationRuleServiceInterface ruleService = new OptimizationRuleService();
-        List<String> identifiers = ruleService.getIdentifiers(optimizationRule);
+
+        List<String> identifiers = optimizationRuleService.getIdentifiers(optimizationRule);
         List<String> segmentFields = JsonUtil.jsonArrayStringToJavaList(optimizationRule.getSegmentFields());
 
         if (identifiers.size() == 0) {

@@ -1,7 +1,9 @@
 package com.pubvantage.service.DataTraning;
 
 import com.pubvantage.dao.SparkDataTrainingDao;
+import com.pubvantage.entity.CoreOptimizationRule;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -55,5 +57,10 @@ public class DataTrainingService implements DataTrainingServiceInterface {
     public List<Map<String, Object>> getAllUniqueValuesForOneSegmentFieldGroup() {
         List<Map<String, Object>> objects = sparkDataTrainingDao.getAllUniqueValuesForOneSegmentFieldGroup(optimizationRuleId, identifier, oneSegmentFieldGroup);
         return objects;
+    }
+
+    @Override
+    public List<Double> getVectorData(List<String> optimizeFieldAndMetrics, CoreOptimizationRule optimizationRule, String dateValue) {
+        return sparkDataTrainingDao.getVectorData(optimizeFieldAndMetrics, optimizationRule,dateValue);
     }
 }

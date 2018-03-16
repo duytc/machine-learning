@@ -2,13 +2,17 @@ package com.pubvantage.dao;
 
 import com.pubvantage.AppMain;
 import com.pubvantage.constant.MyConstant;
+import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.utils.AppResource;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.SparkSqlUtil;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
+
+import static org.apache.spark.sql.functions.col;
 
 public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
     private SparkSqlUtil sqlUtil;
@@ -55,7 +59,8 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
                                    String identifier,
                                    List<String> objectiveAndFields,
                                    Map<String, Object> uniqueValue,
-                                   List<String> oneSegmentGroup) {
+                                   List<String> oneSegmentGroup,
+                                   String dateField) {
 
         String tableName = TABLE_NAME_PREFIX + optimizationRuleId;
         Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
@@ -63,7 +68,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         jdbcDF.createOrReplaceTempView(tableName);
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("SELECT ");
-        stringBuilder.append(ConvertUtil.joinListString(objectiveAndFields, ", "));
+        stringBuilder.append(ConvertUtil.joinListString(ConvertUtil.buildListSUMQuery(objectiveAndFields), ", "));
         stringBuilder.append(" FROM ").append(tableName)
                 .append(" WHERE ")
                 .append(ConvertUtil.generateAllIsNoteNull(objectiveAndFields))
@@ -95,6 +100,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
             }
 
             stringBuilder.append(" 1 = 1");
+            stringBuilder.append(" GROUP BY " + dateField);
         }
         return AppMain.sparkSession.sql(stringBuilder.toString());
     }
@@ -160,5 +166,65 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
             listData.add(map);
         }
         return listData;
+    }
+
+    @Override
+    public List<String> getDistinctDates(Long optimizationRuleId, String dateField) {
+        String tableName = TABLE_NAME_PREFIX + optimizationRuleId;
+        Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
+        jdbcDF.createOrReplaceTempView(tableName);
+
+        String stringQuery = "SELECT DISTINCT " + dateField + " FROM " + tableName + " ORDER BY " + dateField;
+        Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringQuery);
+        List<Row> resultList = sqlDF.collectAsList();
+        List<String> listData = new ArrayList<>();
+        for (Row row : resultList) {
+            Date date = row.getDate(0);
+            String dateString = new SimpleDateFormat("yyyy-MM-dd").format(date);
+            listData.add(dateString);
+        }
+        return listData;
+    }
+
+    @Override
+    public List<Double> getVectorData(List<String> metrics, CoreOptimizationRule optimizationRule, String dateValue) {
+        Long optimizeRuleId = optimizationRule.getId();
+        String dateField = optimizationRule.getDateField();
+
+        String tableName = TABLE_NAME_PREFIX + optimizeRuleId;
+        Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
+
+        jdbcDF.createOrReplaceTempView(tableName);
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("SELECT").append(" " + dateField + ", ");
+        stringBuilder.append(ConvertUtil.joinListString(ConvertUtil.buildListSUMQuery(metrics), ", "));
+        stringBuilder.append("FROM ").append(tableName)
+                .append(" WHERE ")
+                .append(ConvertUtil.generateAllIsNoteNull(metrics))
+                .append(" AND ");
+//        stringBuilder.append("DATE_FORMAT(" + dateField + ", '" + MyConstant.DATE_FORMAT + "')")
+//                .append(" = '")
+//                .append(dateValue)
+//                .append("' AND ");
+
+        stringBuilder.append(" 1 = 1");
+        stringBuilder.append(" GROUP BY " + dateField);
+
+        Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringBuilder.toString());
+        Dataset<Row> filteredDataSet = sqlDF.filter(col(dateField).equalTo(dateValue));
+//        filteredDataSet.show();
+        List<Row> resultList = filteredDataSet.collectAsList();
+
+        if (resultList != null && !resultList.isEmpty()) {
+            List<Double> listData = new ArrayList<>();
+            Row row = resultList.get(0);
+            for (int i = 1; i < row.length(); i++) {
+                //skip 0 is date field
+                Double value = ConvertUtil.convertObjectToDouble(row.get(i));
+                listData.add(value);
+            }
+            return listData;
+        }
+        return null;
     }
 }

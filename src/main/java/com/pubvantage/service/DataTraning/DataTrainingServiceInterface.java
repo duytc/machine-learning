@@ -1,5 +1,7 @@
 package com.pubvantage.service.DataTraning;
 
+import com.pubvantage.entity.CoreOptimizationRule;
+
 import java.util.List;
 import java.util.Map;
 
@@ -17,4 +19,6 @@ public interface DataTrainingServiceInterface {
     void setOneSegmentFieldGroup(List<String> oneSegmentFieldGroup);
 
     List<Map<String, Object>> getAllUniqueValuesForOneSegmentFieldGroup();
+
+    List<Double> getVectorData(List<String> optimizeFieldAndMetrics, CoreOptimizationRule optimizationRule, String dateValue);
 }

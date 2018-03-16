@@ -1,18 +1,17 @@
 package com.pubvantage.service;
 
+import com.google.gson.JsonObject;
 import com.pubvantage.dao.CoreLearnerDao;
 import com.pubvantage.dao.CoreLearnerDaoInterface;
 import com.pubvantage.dao.CoreLearningModelDao;
 import com.pubvantage.dao.CoreLearningModelDaoInterface;
-import com.pubvantage.entity.CoreAutoOptimizationConfig;
-import com.pubvantage.entity.CoreLearner;
-import com.pubvantage.entity.CoreLearningModel;
-import com.pubvantage.entity.OptimizeField;
+import com.pubvantage.entity.*;
 import com.pubvantage.utils.HibernateUtil;
 import com.pubvantage.utils.JsonUtil;
 import org.apache.log4j.Logger;
 import org.hibernate.Session;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +23,7 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
 
     @Override
     public void saveListLearnerModel(List<CoreLearner> modelList) {
-        if(modelList == null || modelList.isEmpty()){
+        if (modelList == null || modelList.isEmpty()) {
             return;
         }
         Session session = null;
@@ -32,7 +31,7 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
             session = HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
             for (CoreLearner aModelList : modelList) {
-                if(aModelList== null){
+                if (aModelList == null) {
                     continue;
                 }
                 OptimizeField optimizeField = JsonUtil.jsonToObject(aModelList.getOptimizeFields(), OptimizeField.class);
@@ -205,5 +204,101 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
             }
         }
         return coreLearningModel;
+    }
+
+    @Override
+    public List<CoreLearner> findListByRuleId(Long optimizeRuleId) {
+        Session session = null;
+        List<CoreLearner> coreLearnerList = null;
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
+            coreLearnerList = coreLearnerDao.findListByRuleId(session, optimizeRuleId);
+            session.clear();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+        return coreLearnerList;
+    }
+
+    @Override
+    public List<Object> getDistinctSegmentsByRuleId(Long optimizationRuleId) {
+        Session session = null;
+        List<Object> coreLearnerList = null;
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
+            coreLearnerList = coreLearnerDao.getDistinctSegmentsByRuleId(session, optimizationRuleId);
+            session.clear();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+        return coreLearnerList;
+    }
+
+    @Override
+    public List<String> getDistinctIdentifiersBySegment(Map<String, Object> segments, Long optimizationRuleId) {
+        Session session = null;
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
+            List<String> identifierList = new ArrayList<>();
+            List<SegmentAndIdentifier> segmentAndIdentifierList = coreLearnerDao.getDistinctIdentifiersByRuleId(session, optimizationRuleId);
+            for (SegmentAndIdentifier segmentAndIdentifier : segmentAndIdentifierList) {
+                String segmentFromDB = segmentAndIdentifier.getSegment_values();
+                String identifier = segmentAndIdentifier.getIdentifier();
+                Map<String, Object> segmentMapFromDB = JsonUtil.jsonToMap(segmentFromDB);
+                if (segments == null && segmentMapFromDB == null) {
+                    identifierList.add(identifier);
+                }
+                if (segments != null && segmentMapFromDB != null && segments.equals(segmentMapFromDB)) {
+                    identifierList.add(identifier);
+                }
+            }
+            session.clear();
+            return identifierList;
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public List<OptimizeField> getDistinctOptimizeBySegmentAndIdentifier(Map<String, Object> segments, String identifier, Long optimizationRuleId) {
+        Session session = null;
+        List<OptimizeField> optimizeFieldList = new ArrayList<>();
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
+            List<SegmentAndIOptimizeField> segmentAndIOptimizeFieldList = coreLearnerDao.getDistinctOptimizeByRuleIdAndIdentifier(session, identifier, optimizationRuleId);
+            for (SegmentAndIOptimizeField segmentAndIOptimizeField : segmentAndIOptimizeFieldList) {
+                String optimizeField = segmentAndIOptimizeField.getOptimize_field();
+                OptimizeField optimizeFieldObject = JsonUtil.jsonToObject(optimizeField, OptimizeField.class);
+                String segmentFromDB = segmentAndIOptimizeField.getSegment_values();
+                Map<String, Object> segmentMapFromDB = JsonUtil.jsonToMap(segmentFromDB);
+                if (segments == null && segmentMapFromDB == null) {
+                    optimizeFieldList.add(optimizeFieldObject);
+                }
+                if (segments != null && segmentMapFromDB != null && segments.equals(segmentMapFromDB)) {
+                    optimizeFieldList.add(optimizeFieldObject);
+                }
+            }
+            session.clear();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+        return optimizeFieldList;
     }
 }

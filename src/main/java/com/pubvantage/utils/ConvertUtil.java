@@ -1,9 +1,12 @@
 package com.pubvantage.utils;
 
+import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.FactorDataType;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -162,6 +165,18 @@ public class ConvertUtil {
                 .collect(Collectors.joining(separate));
     }
 
+    public static String buildSUMQuery(String field) {
+        return " SUM(" + field + ")" + " AS " + field + " ";
+    }
+
+    public static List<String> buildListSUMQuery(List<String> list) {
+        List<String> result = new ArrayList<>();
+        for (String item : list) {
+            result.add(buildSUMQuery(item));
+        }
+        return result;
+    }
+
     public static String mapValueToString(Map<String, Object> map) {
         List<String> list = new ArrayList<>();
         map.forEach((key, value) -> list.add(value.toString()));
@@ -174,5 +189,34 @@ public class ConvertUtil {
         Collections.sort(values1);
         Collections.sort(values2);
         return values1.equals(values2);
+    }
+
+    public static String buildInsertValueQuery(List<String> columns) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(":");
+        stringBuilder.append(joinListString(columns, ",:"));
+        return stringBuilder.toString();
+    }
+
+    public static List<String> concatParamUpdateQuery(List<String> field) {
+        List<String> result = new ArrayList<>();
+        for (String aField : field) {
+            if (MyConstant.SCORE_ID.equals(aField)) continue;
+            result.add(aField + " = :" + aField);
+        }
+        return result;
+    }
+
+    public static Date nextDay(Date dt) {
+        Calendar c = Calendar.getInstance();
+        c.setTime(dt);
+        c.add(Calendar.DATE, 1);
+        dt = c.getTime();
+        return dt;
+    }
+
+    public static String dateToString(Date date, String format) {
+        DateFormat dateFormat = new SimpleDateFormat(format);
+        return dateFormat.format(date);
     }
 }

@@ -76,11 +76,13 @@ public class LinearRegressionDataProcess {
 
     public Dataset<Row> getTrainingDataForLinearRegression() {
         List<String> objectiveAndFields = this.createObjectiveAndFields();
-        if(objectiveAndFields == null || objectiveAndFields.size() <= 1){
+        if (objectiveAndFields == null || objectiveAndFields.size() <= 1) {
             // missing optimize field or metrics
             return null;
         }
-        Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRuleId, identifier, objectiveAndFields, uniqueValue, oneSegmentGroup);
+        String dateField = this.getDateField(optimizationRuleId);
+        Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRuleId, identifier, objectiveAndFields, uniqueValue, oneSegmentGroup, dateField);
+//        dataSet.show();
         this.metricsPredictiveValues = createMetricsPredictiveValues(dataSet);
         Dataset<Row> vectorDataSet = null;
         if (dataSet != null) {
@@ -88,6 +90,11 @@ public class LinearRegressionDataProcess {
         }
         return vectorDataSet;
     }
+
+    private String getDateField(Long optimizeRuleId) {
+        return optimizationRuleService.getDateField(optimizeRuleId);
+    }
+
 
     private List<String> createObjectiveAndFields() {
         List<String> metrics = optimizationRuleService.getMetrics(this.optimizationRuleId);
@@ -204,7 +211,7 @@ public class LinearRegressionDataProcess {
         }
 
         Dataset<Row> avgData = trainingDataSet.agg(map);
-        avgData.show();
+//        avgData.show();
         return avgData;
     }
 

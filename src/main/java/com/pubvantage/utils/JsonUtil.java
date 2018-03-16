@@ -28,18 +28,6 @@ public class JsonUtil {
         JsonParser jsonParser = new JsonParser();
         return jsonParser.parse(daysJson).getAsJsonArray();
     }
-//
-//    /**
-//     * convert string json to array list.NOTE: error occur when string has special characters
-//     * @param jsonArrayString
-//     * @return
-//     */
-//    public static ArrayList<String> jsonArrayStringToJavaList(String jsonArrayString) {
-//        JsonParser jsonParser = new JsonParser();
-//        JsonArray arrayFromString = jsonParser.parse(jsonArrayString).getAsJsonArray();
-//        ArrayList<String> arrayList = new Gson().fromJson(arrayFromString, ArrayList.class);
-//        return arrayList;
-//    }
 
     public static List<String> jsonArrayStringToJavaList(String jsonArrayString) {
         return JsonIterator.deserialize(jsonArrayString, ArrayList.class);
@@ -68,5 +56,10 @@ public class JsonUtil {
 
     public static <T> T jsonToObject(String json, Class<T> type) {
         return JsonIterator.deserialize(json, type);
+    }
+
+    public static String getFirstString(String json) {
+        List<String> anyList = JsonIterator.deserialize(json, ArrayList.class);
+        return anyList.get(0);
     }
 }
