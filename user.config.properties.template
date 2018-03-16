@@ -7,3 +7,6 @@ db.serverTimezone=UTC
 column.identifier=__identifier
 #rest
 api.port=8086
+#predict execute service thread
+THREAD_EXECUTE_SERVICE_SCORE=20
+THREAD_EXECUTE_SERVICE_LEARNER=20

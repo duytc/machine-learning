@@ -102,6 +102,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
         return predict;
     }
 
+
     /**
      * @param coreOptimizationRule
      * @param identifiers
@@ -112,10 +113,10 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
                                                                          List<String> identifiers,
                                                                          Map<String, Object> segmentGroupValue,
                                                                          FactorValues factorValues) {
-        Map<String, Double> scoreData = new LinkedHashMap<>();
-        Map<String, Map<String, Double>> optimizeMap = new LinkedHashMap<>();
-        List<OptimizeField> optimizeFieldList = optimizationRuleService.getOptimizeFields(coreOptimizationRule);
 
+        Map<String, Map<String, Double>> optimizeMap = new LinkedHashMap<>();
+        Map<String, Map<String, Double>> avgMap = new LinkedHashMap<>();
+        List<OptimizeField> optimizeFieldList = optimizationRuleService.getOptimizeFields(coreOptimizationRule);
 
         for (OptimizeField optimizeField : optimizeFieldList) {
             Map<String, Double> predictByOptimizeFieldAndFactorValues = new LinkedHashMap<>();
@@ -124,7 +125,6 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
                 Double prediction = makeOnePrediction(coreOptimizationRule, identifier, segmentGroupValue, optimizeField, factorValues);
                 predictByOptimizeFieldAndFactorValues.put(identifier, prediction);
             }
-
             optimizeMap.put(optimizeField.getField(), predictByOptimizeFieldAndFactorValues);
 
             Double total = 0D;
@@ -137,25 +137,20 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
                 String identifier = entry.getKey();
                 scoreValueByOptimizeField.put(identifier, avg);
             }
-            for (Map.Entry<String, Double> entry : scoreValueByOptimizeField.entrySet()) {
-                Double avg = entry.getValue();
-                Double weight = optimizeField.getWeight();
-                String goal = optimizeField.getGoal();
-                double goalValue = MyConstant.MAX.equals(goal) ? 1 : -1;
-                String identifier = entry.getKey();
-
-                if (scoreData.get(identifier) == null) {
-                    Double localScoreValue = goalValue * weight * avg;
-
-                    scoreData.put(identifier, localScoreValue);
-                } else {
-                    Double localScoreValue = goalValue * weight * avg;
-                    localScoreValue += scoreData.get(identifier);
-
-                    scoreData.put(identifier, localScoreValue);
-                }
-            }
+            avgMap.put(optimizeField.getField(), scoreValueByOptimizeField);
         }
+        Map<String, Double> maxAvgByOptimizeField = getMaxAvgByOptimizeField(optimizeFieldList, identifiers, avgMap);
+        Map<String, Map<String, Double>> invertedMap1 = getInvertedMap1(optimizeFieldList, identifiers, avgMap, maxAvgByOptimizeField);
+        Map<String, Double> totalInvertedMapByOptimize = getMaxInvertedTotalByOptimize(optimizeFieldList, invertedMap1);
+        Map<String, Map<String, Double>> avgInvertedMap2 = getInvertedMap2(totalInvertedMapByOptimize, invertedMap1, optimizeFieldList, identifiers);
+        Map<String, Double> scoreData = computeScore(avgInvertedMap2, optimizeFieldList, identifiers);
+
+        return generateResponse(scoreData, identifiers, segmentGroupValue, optimizeMap);
+    }
+
+    private PredictScore generateResponse(Map<String, Double> scoreData,
+                                          List<String> identifiers, Map<String, Object> segmentGroupValue,
+                                          Map<String, Map<String, Double>> optimizeMap) {
         Map<String, Map<String, Double>> result = new LinkedHashMap<>();
         for (String identifier : identifiers) {
             Map<String, Double> doubleMap = new LinkedHashMap<>();
@@ -174,7 +169,117 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
             segmentGroupValue = new HashMap<>();
         }
         predictScore.setFactorValues(segmentGroupValue);
+
         return predictScore;
     }
 
+    private Map<String, Double> computeScore(Map<String, Map<String, Double>> avgInvertedMap2,
+                                             List<OptimizeField> optimizeFieldList,
+                                             List<String> identifierList) {
+
+        Map<String, Double> scoreData = new LinkedHashMap<>();
+
+        for (String identifier : identifierList) {
+            double score = 0d;
+            for (OptimizeField optimizeField : optimizeFieldList) {
+                String goal = optimizeField.getGoal();
+                String optimizeName = optimizeField.getField();
+                double weight = optimizeField.getWeight();
+                score += weight * avgInvertedMap2.get(optimizeName).get(identifier);
+            }
+            scoreData.put(identifier, score);
+        }
+        return scoreData;
+    }
+
+    private Map<String, Map<String, Double>> getInvertedMap2(Map<String, Double> totalInvertedMapByOptimize,
+                                                             Map<String, Map<String, Double>> invertedMap1,
+                                                             List<OptimizeField> optimizeFieldList,
+                                                             List<String> identifierList) {
+        Map<String, Map<String, Double>> invertedMap2 = new LinkedHashMap<>();
+        for (OptimizeField optimizeField : optimizeFieldList) {
+            String goal = optimizeField.getGoal();
+            String optimize = optimizeField.getField();
+            Map<String, Double> avg = invertedMap1.get(optimize);
+            Map<String, Double> invertedByIdentifier = new LinkedHashMap<>();
+            for (String identifier : identifierList) {
+                if (MyConstant.MIN.equals(goal)) {
+                    double total = totalInvertedMapByOptimize.get(optimize);
+                    double invertedValue = total == 0 ? 0 : avg.get(identifier) / total;
+                    invertedByIdentifier.put(identifier, invertedValue);
+                } else {
+                    invertedByIdentifier.put(identifier, avg.get(identifier));
+                }
+            }
+            invertedMap2.put(optimize, invertedByIdentifier);
+        }
+        return invertedMap2;
+    }
+
+    private Map<String, Double> getMaxInvertedTotalByOptimize(List<OptimizeField> optimizeFieldList,
+                                                              Map<String, Map<String, Double>> invertedMap1) {
+        Map<String, Double> maxInvertedByOptimize = new HashMap<>();
+        for (OptimizeField optimizeField : optimizeFieldList) {
+            String goal = optimizeField.getGoal();
+            if (MyConstant.MIN.equals(goal)) {
+                String optimize = optimizeField.getField();
+                Map<String, Double> invertedAvg = invertedMap1.get(optimize);
+                Double total = 0d;
+                for (Map.Entry<String, Double> entry : invertedAvg.entrySet()) {
+                    total += entry.getValue();
+                }
+                maxInvertedByOptimize.put(optimize, total);
+            }
+        }
+        return maxInvertedByOptimize;
+    }
+
+    private Map<String, Map<String, Double>> getInvertedMap1(List<OptimizeField> optimizeFieldList,
+                                                             List<String> identifierList,
+                                                             Map<String, Map<String, Double>> avgMap,
+                                                             Map<String, Double> maxAvgByOptimizeField) {
+        Map<String, Map<String, Double>> invertedMap1 = new LinkedHashMap<>();
+        for (OptimizeField optimizeField : optimizeFieldList) {
+            String goal = optimizeField.getGoal();
+            String optimize = optimizeField.getField();
+            Map<String, Double> avg = avgMap.get(optimize);
+            Map<String, Double> invertedByIdentifier = new LinkedHashMap<>();
+            for (String identifier : identifierList) {
+                double avgValue = avg.get(identifier);
+                if (MyConstant.MIN.equals(goal)) {
+                    double maxAvg = maxAvgByOptimizeField.get(optimize);
+                    double invertedValue = avgValue == 0 ? 0 : maxAvg / avgValue;
+                    invertedByIdentifier.put(identifier, invertedValue);
+                } else {
+                    invertedByIdentifier.put(identifier, avg.get(identifier));
+                }
+            }
+            invertedMap1.put(optimize, invertedByIdentifier);
+
+        }
+
+        return invertedMap1;
+    }
+
+    private Map<String, Double> getMaxAvgByOptimizeField(List<OptimizeField> optimizeFieldList,
+                                                         List<String> identifiers,
+                                                         Map<String, Map<String, Double>> avgMap) {
+        Map<String, Double> maxByOptimizeFieldMap = new LinkedHashMap<>();
+        for (OptimizeField optimizeField : optimizeFieldList) {
+            String goal = optimizeField.getGoal();
+            String optimize = optimizeField.getField();
+            Map<String, Double> avg = avgMap.get(optimize);
+
+            if (MyConstant.MIN.equals(goal)) {
+                double max = -Double.MIN_VALUE;
+                for (Map.Entry<String, Double> entry : avg.entrySet()) {
+                    double value = entry.getValue();
+                    if (max < value)
+                        max = value;
+                }
+                maxByOptimizeFieldMap.put(optimize, max);
+            }
+        }
+        return maxByOptimizeFieldMap;
+    }
 }

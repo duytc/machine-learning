@@ -19,8 +19,14 @@ import javax.persistence.Convert;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.junit.Assert.assertEquals;
 
 public class ConvertUtilTest {
 
@@ -229,6 +235,7 @@ public class ConvertUtilTest {
         boolean s = map.equals(map2);
         return;
     }
+
     @Test
     public void sort() {
         List<String> list = new ArrayList<>();
@@ -238,6 +245,75 @@ public class ConvertUtilTest {
 
         Collections.sort(list);
 
+        return;
+    }
+
+    @Test
+    public void givenConcurrentMap_whenSumParallel_thenCorrect()
+            throws Exception {
+        Map<String, Integer> map = new ConcurrentHashMap<>();
+        List<Integer> sumList = parallelSum100(map, 1);
+
+        assertEquals(1, sumList
+                .stream()
+                .distinct()
+                .count());
+        long wrongResultCount = sumList
+                .stream()
+                .filter(num -> num != 100)
+                .count();
+
+        assertEquals(0, wrongResultCount);
+    }
+
+    private List<Integer> parallelSum100(Map<String, Integer> map,
+                                         int executionTimes) throws InterruptedException {
+        List<Integer> sumList = new ArrayList<>(1000);
+        for (int i = 0; i < executionTimes; i++) {
+            map.put("test", 0);
+            ExecutorService executorService =
+                    Executors.newFixedThreadPool(4);
+            for (int j = 0; j < 10; j++) {
+                executorService.execute(() -> {
+                    for (int k = 0; k < 10; k++)
+                        map.computeIfPresent(
+                                "test",
+                                (key, value) -> value + 1
+                        );
+                });
+            }
+            executorService.shutdown();
+            executorService.awaitTermination(5, TimeUnit.SECONDS);
+            sumList.add(map.get("test"));
+        }
+        return sumList;
+    }
+
+    @Test
+    public void testThread() {
+        List<String> segments = new ArrayList<>();
+        segments.add("segment 1");
+        segments.add("segment 2");
+        segments.add("segment 3");
+        segments.add("segment 4");
+        segments.add("segment 5");
+        Map<String, Map<String, Double>> map = new ConcurrentHashMap<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
+
+        for (String segment : segments) {
+            executorService.execute(() -> {
+                List<String> identifiers = new ArrayList<>();
+                Map<String, Double> idenMap = new ConcurrentHashMap<>();
+                identifiers.add("identifier 1");
+                identifiers.add("identifier 2");
+                for (String identifier : identifiers) {
+                    idenMap.put(identifier, 1.0d);
+                }
+                map.put(segment, idenMap);
+            });
+        }
+
+        System.out.print(segments);
         return;
     }
 }

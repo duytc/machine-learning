@@ -31,10 +31,9 @@ import org.apache.spark.sql.SparkSession;
 import spark.Request;
 import spark.Response;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static spark.Spark.*;
 
@@ -56,6 +55,7 @@ public class AppMain {
     private static SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
     private static CoreLearningModelServiceInterface coreLearnerModelService = new CoreLearningModelService();
     private static OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
+    private static ExecutorService executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadLeaner());
 
     static {
         AppResource appResource = new AppResource();
@@ -188,7 +188,7 @@ public class AppMain {
             CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId);
             List<String> listDate = sparkDataTrainingDao.getDistinctDates(optimizationRuleId, optimizationRule.getDateField());
             List<CoreLearner> coreLearnerList = coreLearnerModelService.findListByRuleId(optimizationRuleId);
-            LinearRegressionScoringV2 regressionScoringV2 = new LinearRegressionScoringV2(optimizationRule,listDate, coreLearnerList);
+            LinearRegressionScoringV2 regressionScoringV2 = new LinearRegressionScoringV2(optimizationRule, listDate, coreLearnerList);
             Map<String, Map<String, Map<String, Map<String, Double>>>> result = regressionScoringV2.predict();
             return new Gson().toJson("{'message': 'Done'}");
         } catch (Exception e) {
@@ -338,6 +338,7 @@ public class AppMain {
     private static List<String> generateAndSaveModel(CoreOptimizationRule optimizationRule) {
         List<String> successIdentifiers = new ArrayList<>();
         List<CoreLearner> modelList = new ArrayList<>();
+        List<CoreLearner> modelSafeList = Collections.synchronizedList(modelList);
 
         List<String> identifiers = optimizationRuleService.getIdentifiers(optimizationRule);
         List<String> segmentFields = JsonUtil.jsonArrayStringToJavaList(optimizationRule.getSegmentFields());
@@ -354,18 +355,22 @@ public class AppMain {
         }
 
         for (PredictionParam predictionParam : predictionParams) {
-            List<CoreLearner> coreLearnerList = generateModelForOneIdentifier(predictionParam);
-            if (coreLearnerList != null && !coreLearnerList.isEmpty()) {
-                for (CoreLearner coreLearner : coreLearnerList) {
-                    if (coreLearner != null) {
-                        modelList.add(coreLearner);
+            executorService.execute(() -> {
+                List<CoreLearner> coreLearnerList = generateModelForOneIdentifier(predictionParam);
+                if (coreLearnerList != null && !coreLearnerList.isEmpty()) {
+                    for (CoreLearner coreLearner : coreLearnerList) {
+                        if (coreLearner != null) {
+                            modelSafeList.add(coreLearner);
+                        }
                     }
                 }
-            }
+            });
         }
-
-        saveModelToDatabase(modelList);
-
+        logger.error("executorService awaitTerminationAfterShutdown");
+        ThreadUtil.awaitTerminationAfterShutdown(executorService);
+        if (executorService.isShutdown()) {
+            saveModelToDatabase(modelSafeList);
+        }
         return successIdentifiers;
     }
 
