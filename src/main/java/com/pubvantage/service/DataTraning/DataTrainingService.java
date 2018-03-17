@@ -44,16 +44,6 @@ public class DataTrainingService implements DataTrainingServiceInterface {
     }
 
     @Override
-    public List<String> getOneSegmentFieldGroup() {
-        return null;
-    }
-
-    @Override
-    public void setOneSegmentFieldGroup(List<String> oneSegmentFieldGroup) {
-
-    }
-
-    @Override
     public List<Map<String, Object>> getAllUniqueValuesForOneSegmentFieldGroup() {
         List<Map<String, Object>> objects = sparkDataTrainingDao.getAllUniqueValuesForOneSegmentFieldGroup(optimizationRuleId, identifier, oneSegmentFieldGroup);
         return objects;

@@ -82,7 +82,6 @@ public class LinearRegressionDataProcess {
         }
         String dateField = this.getDateField(optimizationRuleId);
         Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRuleId, identifier, objectiveAndFields, uniqueValue, oneSegmentGroup, dateField);
-//        dataSet.show();
         this.metricsPredictiveValues = createMetricsPredictiveValues(dataSet);
         Dataset<Row> vectorDataSet = null;
         if (dataSet != null) {
@@ -211,7 +210,6 @@ public class LinearRegressionDataProcess {
         }
 
         Dataset<Row> avgData = trainingDataSet.agg(map);
-//        avgData.show();
         return avgData;
     }
 

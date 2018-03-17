@@ -14,9 +14,6 @@ public interface DataTrainingServiceInterface {
 
     void setIdentifier(String identifier);
 
-    List<String> getOneSegmentFieldGroup();
-
-    void setOneSegmentFieldGroup(List<String> oneSegmentFieldGroup);
 
     List<Map<String, Object>> getAllUniqueValuesForOneSegmentFieldGroup();
 

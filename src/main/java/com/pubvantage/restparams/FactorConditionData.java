@@ -2,6 +2,9 @@ package com.pubvantage.restparams;
 
 import java.util.List;
 
+/**
+ * use to listen param from request. don't remove this
+ */
 public class FactorConditionData {
     private String factor;
     private List<Object> values;

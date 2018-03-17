@@ -121,23 +121,6 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         return sqlDF.collectAsList();
     }
 
-    @Override
-    public List<Object> getDistinctByFactor(String factorName, Long autoOptimizationConfigId) {
-        String tableName = TABLE_NAME_PREFIX + autoOptimizationConfigId;
-        Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
-        jdbcDF.createOrReplaceTempView(tableName);
-
-        String stringQuery = "SELECT DISTINCT " + factorName + " FROM " + tableName;
-        Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringQuery);
-        List<Row> resultList = sqlDF.collectAsList();
-        List<Object> listData = new ArrayList<>();
-        for (Row row : resultList) {
-            Object data = row.get(0);
-            listData.add(data);
-        }
-        return listData;
-    }
-
     /**
      * consider avoid use collectAsList() if data is big. it cause out of memory.
      *
@@ -212,7 +195,6 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
 
         Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringBuilder.toString());
         Dataset<Row> filteredDataSet = sqlDF.filter(col(dateField).equalTo(dateValue));
-//        filteredDataSet.show();
         List<Row> resultList = filteredDataSet.collectAsList();
 
         if (resultList != null && !resultList.isEmpty()) {

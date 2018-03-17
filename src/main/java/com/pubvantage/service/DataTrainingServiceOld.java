@@ -12,16 +12,6 @@ public class DataTrainingServiceOld implements DataTrainingServiceInterface {
 
     /**
      * @param autoOptimizationConfigId auto optimization config id
-     * @param identifier               identifier
-     * @param objectiveAndFactor       training data from database
-     */
-    @Override
-    public Dataset<Row> getDataSetByTable(Long autoOptimizationConfigId, String identifier, String[] objectiveAndFactor) {
-        return sparkDataTrainingDaoInterface.getDataSetByTable(autoOptimizationConfigId, identifier, objectiveAndFactor);
-    }
-
-    /**
-     * @param autoOptimizationConfigId auto optimization config id
      * @return list of identifiers
      */
     @Override

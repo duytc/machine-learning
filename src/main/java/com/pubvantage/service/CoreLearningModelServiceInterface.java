@@ -15,11 +15,7 @@ public interface CoreLearningModelServiceInterface {
 
     CoreLearner getOneCoreLeaner(Long optimizationRule, String identifier, OptimizeField optimizeFields, Map<String, Object> segmentValues);
 
-    void saveListModel(List<CoreLearningModel> modelList);
 
-    String getModelPath(CoreAutoOptimizationConfig coreAutoOptimizationConfig, String identifier);
-
-    CoreLearningModel findOne(Long autOptimizationConfigId, String identifier);
 
     List<CoreLearner> findListByRuleId(Long autOptimizationConfigId);
 

@@ -14,7 +14,6 @@ public class LearningProcessParams {
 
     public LearningProcessParams(String stringJson) {
         // Check string json before call API
-
         try {
             requestParam = new Gson().fromJson(stringJson, LearnerRequestParam.class);
         } catch (Exception e) {

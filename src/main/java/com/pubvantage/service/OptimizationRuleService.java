@@ -32,12 +32,6 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     private SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
 
     @Override
-    public List<String> getSegmentFields(Long optimizationRuleId) {
-        CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
-        return JsonUtil.jsonArrayStringToJavaList(optimizationRule.getSegmentFields());
-    }
-
-    @Override
     public List<String> getColumnsForScoreTable(CoreOptimizationRule optimizationRule) {
         List<String> columns = new ArrayList<>();
         columns.add(MyConstant.SCORE_ID);
@@ -80,8 +74,8 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     /**
      * get only number metrics (but not implement yet)
      *
-     * @param optimizationRuleId
-     * @return
+     * @param optimizationRuleId optimize rule
+     * @return list metrics
      */
     @Override
     public List<String> getMetrics(Long optimizationRuleId) {
@@ -105,23 +99,15 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     private List<String> filterNumberTypeMetric(List<String> metrics, Map<String, String> fieldType) {
         List<String> filteredMetrics = new ArrayList<>();
         if (metrics != null && fieldType != null) {
-            for (int i = 0; i < metrics.size(); i++) {
-                String type = fieldType.get(metrics.get(i));
+            for (String metric : metrics) {
+                String type = fieldType.get(metric);
                 if (MyConstant.DECIMAL_TYPE.equals(type) || MyConstant.NUMBER_TYPE.equals(type)) {
-                    filteredMetrics.add(metrics.get(i));
+                    filteredMetrics.add(metric);
                 }
             }
         }
         return filteredMetrics;
     }
-
-    @Override
-    public List<String> getVectorFields(Long optimizationRuleId) {
-        CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
-
-        return null;
-    }
-
 
     @Override
     public List<String> getIdentifiers(CoreOptimizationRule optimizationRule) {
@@ -154,16 +140,6 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     @Override
-    public List<String> getFactors(Long id) {
-        return null;
-    }
-
-    @Override
-    public JsonObject getFieldType(Long id) {
-        return null;
-    }
-
-    @Override
     public CoreOptimizationRule findById(Long optimizationRuleId) {
         Session session = null;
         CoreOptimizationRule optimizationRule = null;
@@ -185,20 +161,4 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
         }
         return optimizationRule;
     }
-
-    @Override
-    public String[] getObjectiveAndFactors(Long autoOptimizationId) {
-        return new String[0];
-    }
-
-    @Override
-    public List<String> getPositiveFactors(Long autoOptimizationId) {
-        return null;
-    }
-
-    @Override
-    public List<String> getNegativeFactors(Long autoOptimizationId) {
-        return null;
-    }
-
 }

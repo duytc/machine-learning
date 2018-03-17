@@ -1,8 +1,6 @@
 package com.pubvantage.dao;
 
-import com.google.gson.JsonObject;
 import com.pubvantage.entity.CoreLearner;
-import com.pubvantage.entity.OptimizeField;
 import com.pubvantage.entity.SegmentAndIOptimizeField;
 import com.pubvantage.entity.SegmentAndIdentifier;
 import org.apache.log4j.Logger;

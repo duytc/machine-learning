@@ -1,5 +1,8 @@
 package com.pubvantage.restparams;
 
+/**
+ * use to listen param from request. don't remove this
+ */
 public class LearnerRequestParam {
     private Long optimizationRuleId;
     private String token;
