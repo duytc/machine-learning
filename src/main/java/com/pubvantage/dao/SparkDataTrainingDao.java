@@ -26,34 +26,6 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         userConfig = appResource.getUserConfiguration();
     }
 
-    /**
-     * @param autoOptimizationConfigId auto optimization config id
-     * @param identifier               input identifier
-     * @return training data from database
-     */
-    public Dataset<Row> getDataSetByTable(Long autoOptimizationConfigId, String identifier, String[] objectiveAndFactor) {
-        String tableName = TABLE_NAME_PREFIX +
-                autoOptimizationConfigId;
-        Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
-
-        jdbcDF.createOrReplaceTempView(tableName);
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("SELECT ");
-        stringBuilder.append(String.join(",", objectiveAndFactor));
-        stringBuilder.append(" FROM ");
-        stringBuilder.append(tableName);
-
-        if (identifier != null) {
-            stringBuilder.append(" WHERE ");
-            stringBuilder.append(userConfig.getProperty("column.identifier"))
-                    .append(" = '").append(identifier).append("'")
-                    .append(" AND ")
-                    .append(ConvertUtil.generateAllIsNoteNull(objectiveAndFactor));
-
-        }
-        return AppMain.sparkSession.sql(stringBuilder.toString());
-    }
-
     @Override
     public Dataset<Row> getDataSet(Long optimizationRuleId,
                                    String identifier,
@@ -190,8 +162,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
 //                .append(dateValue)
 //                .append("' AND ");
 
-        stringBuilder.append(" 1 = 1");
-        stringBuilder.append(" GROUP BY " + dateField);
+        stringBuilder.append(" 1 = 1").append(" GROUP BY ").append(dateField);
 
         Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringBuilder.toString());
         Dataset<Row> filteredDataSet = sqlDF.filter(col(dateField).equalTo(dateValue));

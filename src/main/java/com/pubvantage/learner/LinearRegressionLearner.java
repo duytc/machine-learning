@@ -13,12 +13,10 @@ public class LinearRegressionLearner implements LearnerInterface {
     private static final double ELASTIC_NET_PARAM = 0.8;
     private static final int MAX_ITER = 10;
 
-    private SparkSession sparkSession;
     private LinearRegressionDataProcess linearRegressionDataProcess;
 
 
-    public LinearRegressionLearner(SparkSession sparkSession, LinearRegressionDataProcess linearRegressionDataProcess) {
-        this.sparkSession = sparkSession;
+    public LinearRegressionLearner(LinearRegressionDataProcess linearRegressionDataProcess) {
         this.linearRegressionDataProcess = linearRegressionDataProcess;
     }
 

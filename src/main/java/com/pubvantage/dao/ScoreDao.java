@@ -26,9 +26,15 @@ public class ScoreDao implements ScoreDaoInterface {
         List<String> paramString = ConvertUtil.concatParamUpdateQuery(columns);
         try {
 
-            stringBuilder.append("UPDATE " + MyConstant.SCORE_TABLE_NAME_PRE + optimizeRuleId + " SET ");
-            stringBuilder.append(ConvertUtil.joinListString(paramString, ", "));
-            stringBuilder.append(" WHERE ").append(MyConstant.SCORE_ID).append(" = " + scoreId);
+            stringBuilder.append("UPDATE ")
+                    .append(MyConstant.SCORE_TABLE_NAME_PRE)
+                    .append(optimizeRuleId)
+                    .append(" SET ")
+                    .append(ConvertUtil.joinListString(paramString, ", "))
+                    .append(" WHERE ")
+                    .append(MyConstant.SCORE_ID)
+                    .append(" = ")
+                    .append(scoreId);
             Query query = session.createSQLQuery(stringBuilder.toString());
             query.setParameter(dateField, values.get(dateField));
             query.setParameter(MyConstant.SCORE_IDENTIFIER, values.get(MyConstant.SCORE_IDENTIFIER));
@@ -57,7 +63,9 @@ public class ScoreDao implements ScoreDaoInterface {
 
         try {
 
-            stringBuilder.append("INSERT INTO " + MyConstant.SCORE_TABLE_NAME_PRE + optimizeRuleId + "(")
+            stringBuilder.append("INSERT INTO ")
+                    .append(MyConstant.SCORE_TABLE_NAME_PRE)
+                    .append(optimizeRuleId).append("(")
                     .append(ConvertUtil.joinListString(columns, ", "))
                     .append(")").append(" VALUES (");
 
@@ -91,11 +99,20 @@ public class ScoreDao implements ScoreDaoInterface {
         String dateField = optimizationRule.getDateField();
         StringBuilder stringBuilder = new StringBuilder();
         try {
-            stringBuilder.append("SELECT " + ConvertUtil.joinListString(columns, ", ")
-                    + " FROM " + MyConstant.SCORE_TABLE_NAME_PRE + optimizeRuleId
-                    + " WHERE " + MyConstant.SCORE_IDENTIFIER + " = :identifier AND ");
-            stringBuilder.append(" " + MyConstant.SCORE_SEGMENT_VALUES + " = :segment_values AND ");
-            stringBuilder.append("DATE_FORMAT(" + dateField + ", '" + MyConstant.DATE_FORMAT + "')")
+            stringBuilder.append("SELECT ")
+                    .append(ConvertUtil.joinListString(columns, ", "))
+                    .append(" FROM ")
+                    .append(MyConstant.SCORE_TABLE_NAME_PRE)
+                    .append(optimizeRuleId).append(" WHERE ")
+                    .append(MyConstant.SCORE_IDENTIFIER)
+                    .append(" = :identifier AND ")
+                    .append(" ").append(MyConstant.SCORE_SEGMENT_VALUES)
+                    .append(" = :segment_values AND ")
+                    .append("DATE_FORMAT(")
+                    .append(dateField)
+                    .append(", '")
+                    .append(MyConstant.DATE_FORMAT)
+                    .append("')")
                     .append(" = '")
                     .append(values.get(dateField)).append("'");
             Query query = session.createSQLQuery(stringBuilder.toString());

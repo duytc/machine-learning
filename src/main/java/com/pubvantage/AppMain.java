@@ -442,7 +442,7 @@ public class AppMain {
     }
 
     private static CoreLearner generateModelForOneValueOfSegmentFieldGroups(LinearRegressionDataProcess linearRegressionDataProcess) {
-        LinearRegressionLearner linearRegressionLearner = new LinearRegressionLearner(sparkSession, linearRegressionDataProcess);
+        LinearRegressionLearner linearRegressionLearner = new LinearRegressionLearner(linearRegressionDataProcess);
         LinearRegressionModel linearRegressionModel = linearRegressionLearner.generateModel(sparkSession);
 
         CoreLearner coreLearner = new CoreLearner();
@@ -453,9 +453,6 @@ public class AppMain {
         coreLearner.setOptimizeFields(JsonUtil.toJson(linearRegressionDataProcess.getOptimizeField()));
         if (linearRegressionModel == null) {
             return null;
-//            coreLearner.setModelPath(null);
-//            coreLearner.setMathModel(null);
-//            coreLearner.setMetricsPredictiveValues(null);
         } else {
             coreLearner.setModelPath(FilePathUtil.getLearnerModelPath(
                     linearRegressionDataProcess.getOptimizationRuleId(),

@@ -37,10 +37,4 @@ public class CoreLearningModelDao extends AbstractGenericDao<CoreLearningModel> 
         return null;
     }
 
-    @Override
-    public String getModelPath(Session session, Long autOptimizationConfigId, String identifier) {
-        CoreLearningModel coreLearningModel = findOne(session, autOptimizationConfigId, identifier);
-        return coreLearningModel.getModelPath();
-    }
-
 }

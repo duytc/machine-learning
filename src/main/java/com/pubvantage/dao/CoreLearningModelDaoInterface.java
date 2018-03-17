@@ -7,5 +7,4 @@ public interface CoreLearningModelDaoInterface extends GenericDaoInterface<CoreL
 
     CoreLearningModel findOne(Session session, Long autOptimizationConfigId, String identifier);
 
-    String getModelPath(Session session, Long autOptimizationConfigId, String identifier);
 }

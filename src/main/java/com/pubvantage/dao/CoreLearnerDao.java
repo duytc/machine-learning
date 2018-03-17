@@ -15,34 +15,6 @@ public class CoreLearnerDao extends AbstractGenericDao<CoreLearner> implements C
     private static Logger logger = Logger.getLogger(CoreLearningModelDao.class.getName());
 
     @Override
-    public CoreLearner findOne(Session session, Long optimizationRuleId, String identifier, String segmentValues, String optimizeField) {
-        StringBuilder stringBuilder = new StringBuilder();
-        try {
-            stringBuilder.append("FROM CoreLearner WHERE optimizationRuleId = :optimizationRuleId AND identifier = :identifier AND segmentValues = :segmentValues AND optimizeFields = :optimizeFields");
-
-            Query query = session.createQuery(stringBuilder.toString());
-            query.setParameter("optimizationRuleId", optimizationRuleId);
-            query.setParameter("identifier", identifier);
-            query.setParameter("segmentValues", segmentValues);
-            query.setParameter("optimizeFields", segmentValues);
-
-            List<CoreLearner> list = query.list();
-            if (list != null && !list.isEmpty()) {
-                return list.get(0);
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-
-        return null;
-    }
-
-    @Override
-    public CoreLearner findOne(Session session, Long autOptimizationConfigId, String identifier, Map<String, Object> segmentValues, String optimizeField) {
-        return null;
-    }
-
-    @Override
     public List<CoreLearner> findList(Session session, Long optimizationRuleId, String identifier) {
         StringBuilder stringBuilder = new StringBuilder();
         try {
@@ -125,16 +97,16 @@ public class CoreLearnerDao extends AbstractGenericDao<CoreLearner> implements C
             query.setParameter("optimizationRuleId", optimizationRuleId);
             query.setParameter("identifier", identifier);
             List<Object[]> list = query.list();
-            List<SegmentAndIOptimizeField> resultlist = new ArrayList<>();
+            List<SegmentAndIOptimizeField> resultList = new ArrayList<>();
             if (list != null && !list.isEmpty()) {
                 for (Object[] object : list) {
                     String optimizeField = object[0] == null ? null : object[0].toString();
                     String segment = object[1] == null ? null : object[1].toString();
                     SegmentAndIOptimizeField segmentAndIdentifier = new SegmentAndIOptimizeField(optimizeField, segment);
-                    resultlist.add(segmentAndIdentifier);
+                    resultList.add(segmentAndIdentifier);
                 }
             }
-            return resultlist;
+            return resultList;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
