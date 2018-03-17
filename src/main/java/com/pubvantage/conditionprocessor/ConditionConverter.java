@@ -21,30 +21,25 @@ public class ConditionConverter {
     private String identifier;
     private FactorValues factorValues;
     private CoreLearner coreLearner;
-    private OptimizeField optimizeField;
-    private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
     private CoreOptimizationRule optimizationRule;
     private String date;
     private boolean isPredict;
 
-    public ConditionConverter(String identifier, FactorValues factorValues, CoreLearner coreLearner, OptimizeField optimizeField) {
+    public ConditionConverter(String identifier, FactorValues factorValues, CoreLearner coreLearner) {
         this.identifier = identifier;
         this.factorValues = factorValues;
         this.coreLearner = coreLearner;
-        this.optimizeField = optimizeField;
     }
 
     public ConditionConverter(String identifier,
                               FactorValues factorValues,
                               CoreLearner coreLearner,
-                              OptimizeField optimizeField,
                               CoreOptimizationRule optimizationRule,
                               String date,
                               boolean isPredict) {
         this.identifier = identifier;
         this.factorValues = factorValues;
         this.coreLearner = coreLearner;
-        this.optimizeField = optimizeField;
         this.optimizationRule = optimizationRule;
         this.date = date;
         this.isPredict = isPredict;

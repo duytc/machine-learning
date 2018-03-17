@@ -1,7 +1,6 @@
 package com.pubvantage.service;
 
 
-import com.google.gson.JsonObject;
 import com.jsoniter.JsonIterator;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.dao.CoreAutoOptimizationConfigDao;

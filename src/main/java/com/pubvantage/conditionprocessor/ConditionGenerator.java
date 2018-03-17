@@ -12,11 +12,9 @@ import java.util.Map;
 
 public class ConditionGenerator {
 
-    private CoreOptimizationRule coreOptimizationRule;
     private Condition conditions;
 
-    public ConditionGenerator(CoreOptimizationRule coreOptimizationRule, Condition conditions) {
-        this.coreOptimizationRule = coreOptimizationRule;
+    public ConditionGenerator(Condition conditions) {
         this.conditions = conditions;
     }
 

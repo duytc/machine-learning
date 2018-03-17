@@ -35,7 +35,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
      * @return score of multiple condition
      */
     public ResponsePredict predict() {
-        ConditionGenerator conditionGenerator = new ConditionGenerator(coreOptimizationRule, conditions);
+        ConditionGenerator conditionGenerator = new ConditionGenerator(conditions);
         List<Map<String, Object>> multipleSegmentGroupValues = conditionGenerator.generateMultipleSegmentGroupValues();
 
         ResponsePredict predictions = new ResponsePredict();
@@ -61,10 +61,10 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
     }
 
     /**
-     * @param coreOptimizationRule
-     * @param identifier
-     * @param segmentValues
-     * @return
+     * @param coreOptimizationRule  optimize rule
+     * @param identifier list identifiers
+     * @param segmentValues set {a,b} or {a} or {b} or {null}
+     * @return double predict value
      */
     private Double makeOnePrediction(CoreOptimizationRule coreOptimizationRule,
                                      String identifier,
@@ -81,7 +81,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
             return 0D;
         }
 
-        ConditionConverter conditionConverter = new ConditionConverter(identifier, factorValues, coreLearner, optimizeField);
+        ConditionConverter conditionConverter = new ConditionConverter(identifier, factorValues, coreLearner);
         org.apache.spark.ml.linalg.Vector conditionVector = conditionConverter.buildVector();
 
         if (conditionVector == null) {
@@ -104,10 +104,10 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
 
 
     /**
-     * @param coreOptimizationRule
-     * @param identifiers
-     * @param segmentGroupValue
-     * @return
+     * @param coreOptimizationRule optimize rule
+     * @param identifiers list identifiers
+     * @param segmentGroupValue set {a,b} or {a} or {b} or {null}
+     * @return prediction data
      */
     private PredictScore makeMultiplePredictionsWithOneSegmentGroupValue(CoreOptimizationRule coreOptimizationRule,
                                                                          List<String> identifiers,
@@ -139,7 +139,7 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
             }
             avgMap.put(optimizeField.getField(), scoreValueByOptimizeField);
         }
-        Map<String, Double> maxAvgByOptimizeField = getMaxAvgByOptimizeField(optimizeFieldList, identifiers, avgMap);
+        Map<String, Double> maxAvgByOptimizeField = getMaxAvgByOptimizeField(optimizeFieldList, avgMap);
         Map<String, Map<String, Double>> invertedMap1 = getInvertedMap1(optimizeFieldList, identifiers, avgMap, maxAvgByOptimizeField);
         Map<String, Double> totalInvertedMapByOptimize = getMaxInvertedTotalByOptimize(optimizeFieldList, invertedMap1);
         Map<String, Map<String, Double>> avgInvertedMap2 = getInvertedMap2(totalInvertedMapByOptimize, invertedMap1, optimizeFieldList, identifiers);
@@ -182,7 +182,6 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
         for (String identifier : identifierList) {
             double score = 0d;
             for (OptimizeField optimizeField : optimizeFieldList) {
-                String goal = optimizeField.getGoal();
                 String optimizeName = optimizeField.getField();
                 double weight = optimizeField.getWeight();
                 score += weight * avgInvertedMap2.get(optimizeName).get(identifier);
@@ -262,7 +261,6 @@ public class LinearRegressionScoring implements ScoringServiceInterface {
     }
 
     private Map<String, Double> getMaxAvgByOptimizeField(List<OptimizeField> optimizeFieldList,
-                                                         List<String> identifiers,
                                                          Map<String, Map<String, Double>> avgMap) {
         Map<String, Double> maxByOptimizeFieldMap = new LinkedHashMap<>();
         for (OptimizeField optimizeField : optimizeFieldList) {
