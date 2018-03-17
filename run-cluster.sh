@@ -20,6 +20,7 @@ if [[ ${masterUrl} == "" ]]
 then
    echo "PLease enter master url"
    echo "Use option -m='your master url'"
+   echo "Example: spark://dtag-litpu:7077"
 else
   echo "Master url is ${masterUrl}"
 
