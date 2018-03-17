@@ -1,8 +1,6 @@
-package com.pubvantage.RestParams;
+package com.pubvantage.restparams;
 
 import com.pubvantage.entity.Condition;
-import com.pubvantage.entity.FactorValues;
-import com.pubvantage.entity.SegmentField;
 
 import java.util.List;
 

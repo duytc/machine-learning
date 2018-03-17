@@ -1,4 +1,4 @@
-package com.pubvantage.ConditionProcessor;
+package com.pubvantage.conditionprocessor;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

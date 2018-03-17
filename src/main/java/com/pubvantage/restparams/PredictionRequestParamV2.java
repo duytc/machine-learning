@@ -1,15 +1,15 @@
-package com.pubvantage.RestParams;
+package com.pubvantage.restparams;
 
-public class LearnerRequestParam {
+public class PredictionRequestParamV2 {
     private Long optimizationRuleId;
     private String token;
 
-    public LearnerRequestParam() {
-    }
-
-    public LearnerRequestParam(Long optimizationRuleId, String token) {
+    public PredictionRequestParamV2(Long optimizationRuleId, String token) {
         this.optimizationRuleId = optimizationRuleId;
         this.token = token;
+    }
+
+    public PredictionRequestParamV2() {
     }
 
     public Long getOptimizationRuleId() {
@@ -27,4 +27,5 @@ public class LearnerRequestParam {
     public void setToken(String token) {
         this.token = token;
     }
+
 }

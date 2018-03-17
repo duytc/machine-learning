@@ -3,8 +3,8 @@ package com.pubvantage;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.pubvantage.Authentication.Authentication;
-import com.pubvantage.RestParams.*;
+import com.pubvantage.authentication.Authentication;
+import com.pubvantage.restparams.*;
 import com.pubvantage.constant.MessageConstant;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.dao.SparkDataTrainingDao;
@@ -55,7 +55,6 @@ public class AppMain {
     private static SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
     private static CoreLearningModelServiceInterface coreLearnerModelService = new CoreLearningModelService();
     private static OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
-    private static ExecutorService executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadLeaner());
 
     static {
         AppResource appResource = new AppResource();
@@ -92,7 +91,7 @@ public class AppMain {
      * listen and process learning request
      */
     private static void predictScoreActionV2() {
-        post("api/v2/scores", AppMain::activeLearningProcessV2);
+        post("api/v2/scores", AppMain::activeScoreProcessV2);
     }
 
     /**
@@ -165,7 +164,7 @@ public class AppMain {
     }
 
 
-    private static String activeLearningProcessV2(Request request, Response response) {
+    private static String activeScoreProcessV2(Request request, Response response) {
         response.type("application/json");
         try {
             String predictPrams = request.body();
@@ -353,7 +352,7 @@ public class AppMain {
             PredictionParam predictionParam = new PredictionParam(optimizationRule.getId(), identifier, segmentFields);
             predictionParams.add(predictionParam);
         }
-        executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadLeaner());
+        ExecutorService executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadLeaner());
 
         for (PredictionParam predictionParam : predictionParams) {
             executorService.execute(() -> {

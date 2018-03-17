@@ -1,4 +1,4 @@
-package com.pubvantage.Authentication;
+package com.pubvantage.authentication;
 
 import com.pubvantage.service.OptimizationRuleServiceInterface;
 import com.pubvantage.service.OptimizationRuleService;

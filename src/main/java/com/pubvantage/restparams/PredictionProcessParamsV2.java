@@ -1,4 +1,4 @@
-package com.pubvantage.RestParams;
+package com.pubvantage.restparams;
 
 import com.google.gson.Gson;
 import com.pubvantage.AppMain;

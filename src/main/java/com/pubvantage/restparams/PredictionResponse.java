@@ -1,4 +1,4 @@
-package com.pubvantage.RestParams;
+package com.pubvantage.restparams;
 
 public class PredictionResponse {
 

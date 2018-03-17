@@ -1,4 +1,4 @@
-package com.pubvantage.RestParams;
+package com.pubvantage.restparams;
 
 import java.util.List;
 

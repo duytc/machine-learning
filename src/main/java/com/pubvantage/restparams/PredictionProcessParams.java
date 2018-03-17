@@ -1,10 +1,8 @@
-package com.pubvantage.RestParams;
+package com.pubvantage.restparams;
 
 import com.google.gson.Gson;
 import com.pubvantage.AppMain;
 import com.pubvantage.entity.Condition;
-import com.pubvantage.entity.FactorValues;
-import com.pubvantage.entity.SegmentField;
 import org.apache.log4j.Logger;
 
 import java.util.List;

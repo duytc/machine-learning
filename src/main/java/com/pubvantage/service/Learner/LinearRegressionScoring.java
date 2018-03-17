@@ -1,8 +1,8 @@
 package com.pubvantage.service.Learner;
 
 import com.pubvantage.AppMain;
-import com.pubvantage.ConditionProcessor.ConditionConverter;
-import com.pubvantage.ConditionProcessor.ConditionGenerator;
+import com.pubvantage.conditionprocessor.ConditionConverter;
+import com.pubvantage.conditionprocessor.ConditionGenerator;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.*;
 import com.pubvantage.service.CoreLearningModelService;

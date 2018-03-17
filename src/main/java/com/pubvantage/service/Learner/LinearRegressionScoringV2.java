@@ -1,7 +1,7 @@
 package com.pubvantage.service.Learner;
 
 import com.pubvantage.AppMain;
-import com.pubvantage.ConditionProcessor.ConditionConverter;
+import com.pubvantage.conditionprocessor.ConditionConverter;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.entity.CoreOptimizationRule;
@@ -24,7 +24,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class LinearRegressionScoringV2 {
     private static Logger logger = Logger.getLogger(AppMain.class.getName());
