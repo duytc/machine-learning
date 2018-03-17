@@ -37,7 +37,6 @@ public class LinearRegressionScoringV2 {
     private List<CoreLearner> coreLearnerList;
     List<Object> listSegments;
     private String futureDate;
-    private ExecutorService executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadScore());
 
     public LinearRegressionScoringV2(CoreOptimizationRule coreOptimizationRule,
                                      List<String> listDate,
@@ -49,10 +48,10 @@ public class LinearRegressionScoringV2 {
 
 
     public Map<String, Map<String, Map<String, Map<String, Double>>>> predict() {
-
         addFutureDate(this.listDate);
 
-        Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict = generatePredictValue();
+        ExecutorService executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadLeaner());
+        Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict = generatePredictValue(executorService);
         if (executorService.isShutdown()) {
             logger.error("executorService isShutdown");
             Map<String, Map<String, Map<String, Map<String, Double>>>> predictTransform = transform2(segmentsPredict, listDate, this.listSegments);
@@ -300,7 +299,7 @@ public class LinearRegressionScoringV2 {
         return datePredict;
     }
 
-    private Map<String, Map<String, Map<String, Map<String, Double>>>> generatePredictValue() {
+    private Map<String, Map<String, Map<String, Map<String, Double>>>> generatePredictValue(ExecutorService executorService) {
         Long ruleId = this.coreOptimizationRule.getId();
         this.listSegments = coreLearnerModelService.getDistinctSegmentsByRuleId(ruleId);
         Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict = new ConcurrentHashMap<>();
@@ -314,7 +313,7 @@ public class LinearRegressionScoringV2 {
                 segmentMap = JsonUtil.jsonToMap(segment.toString());
             }
             Map<String, Object> finalSegmentMap = segmentMap;
-            executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadLeaner());
+
             executorService.execute(() -> {
                 logger.error("executorService execute");
                 List<String> listIdentifier = coreLearnerModelService.getDistinctIdentifiersBySegment(finalSegmentMap, ruleId);
@@ -370,7 +369,7 @@ public class LinearRegressionScoringV2 {
         FactorValues factorValues = new FactorValues();
         factorValues.setIsPredictive(true);
         ConditionConverter conditionConverter = new ConditionConverter(identifier, factorValues, coreLearner,
-                 this.coreOptimizationRule, date, isPredict);
+                this.coreOptimizationRule, date, isPredict);
         org.apache.spark.ml.linalg.Vector conditionVector = conditionConverter.buildVectorV2();
         if (conditionVector == null) {
             return PREDICTION_DEFAULT_VALUE;
