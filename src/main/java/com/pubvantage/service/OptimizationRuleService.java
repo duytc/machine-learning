@@ -141,11 +141,8 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
         Session session = null;
         boolean isValid = false;
         try {
-            HibernateUtil.getSessionFactory().evict(CoreOptimizationRule.class);
             session = HibernateUtil.getSessionFactory().openSession();
             isValid = coreAutoOptimizationConfigDao.checkToken(session, autoOptimizationConfigId, token);
-            HibernateUtil.getSessionFactory().evict(CoreOptimizationRule.class);
-            session.clear();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         } finally {
