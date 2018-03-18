@@ -552,7 +552,7 @@ public class LinearRegressionScoring {
         if (Double.isNaN(predict)) {
             return PREDICTION_DEFAULT_VALUE;
         }
-        return getFinalPredict(predict);
+        return handleNegativePredictValue(predict);
     }
 
     private Double getObjectiveFromDatabase(CoreLearner coreLearner, OptimizeField optimizeField,
@@ -565,7 +565,7 @@ public class LinearRegressionScoring {
         return value == null ? MyConstant.NULL_PREDICT_VALUE : value;
     }
 
-    private double getFinalPredict(Double predict) {
+    private double handleNegativePredictValue(Double predict) {
         return predict < 0 ? 0 : predict;
     }
 }
