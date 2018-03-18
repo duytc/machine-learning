@@ -64,20 +64,8 @@ public class ConvertUtilTest {
 
     }
 
-
-    public void testClosure() {
-        int counter = 0;
-        List<Integer> data = Arrays.asList(1, 2, 3, 4, 5);
-        JavaRDD<Integer> rdd = sparkContext.parallelize(data);
-
-        // Wrong: Don't do this!!
-//        rdd.foreach(x -> counter += x);
-
-        System.out.println("Counter value: " + counter);
-    }
-
     @Test
-    public void testRegrex() {
+    public void testRegex() {
         String commandPattern = properties.getProperty("command.pattern");
         Pattern p = Pattern.compile(commandPattern);
         Matcher m = p.matcher("--autoOptimizationId=102,1,2,3\n" +

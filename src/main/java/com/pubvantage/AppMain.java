@@ -16,7 +16,7 @@ import com.pubvantage.learner.Params.SegmentFieldGroup;
 import com.pubvantage.service.CoreLearningModelService;
 import com.pubvantage.service.CoreLearningModelServiceInterface;
 import com.pubvantage.service.DataTraning.DataTrainingService;
-import com.pubvantage.service.Learner.LinearRegressionScoringV2;
+import com.pubvantage.service.Learner.LinearRegressionScoring;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
 import com.pubvantage.utils.*;
@@ -176,7 +176,7 @@ public class AppMain {
             }
             CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId);
             List<String> listDate = sparkDataTrainingDao.getDistinctDates(optimizationRuleId, optimizationRule.getDateField());
-            LinearRegressionScoringV2 regressionScoringV2 = new LinearRegressionScoringV2(optimizationRule, listDate);
+            LinearRegressionScoring regressionScoringV2 = new LinearRegressionScoring(optimizationRule, listDate);
             regressionScoringV2.predict();
             return new Gson().toJson("{'message': 'Done'}");
         } catch (Exception e) {
