@@ -35,7 +35,7 @@ public class MyConstant {
     public static double DEFAULT_SCORE_VALUE = 0.5d;
     public static String GLOBAL_KEY = "NULL";
 
-
+    public static String NULL_COEFFICIENT = "null";
 
 
 }

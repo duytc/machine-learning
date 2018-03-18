@@ -53,7 +53,6 @@ public class AppMain {
     private static int DEFAULT_PORT = 8086;
     private static int PORT;
     private static SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
-    private static CoreLearningModelServiceInterface coreLearnerModelService = new CoreLearningModelService();
     private static OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
 
     static {
@@ -83,7 +82,6 @@ public class AppMain {
         port(PORT);
         threadPool(MAX_THREADS, MIN_THREADS, TIME_OUT_MILLIS);
         learningProcessAction();
-        predictScoreAction();
         predictScoreActionV2();
     }
 
@@ -99,13 +97,6 @@ public class AppMain {
      */
     private static void learningProcessAction() {
         post("api/learner", AppMain::activeLearningProcess);
-    }
-
-    /**
-     * listen and process score request
-     */
-    private static void predictScoreAction() {
-        post("api/scores", AppMain::predictScores);
     }
 
     /**
@@ -187,7 +178,7 @@ public class AppMain {
             CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId);
             List<String> listDate = sparkDataTrainingDao.getDistinctDates(optimizationRuleId, optimizationRule.getDateField());
             LinearRegressionScoringV2 regressionScoringV2 = new LinearRegressionScoringV2(optimizationRule, listDate);
-            Map<String, Map<String, Map<String, Map<String, Double>>>> result = regressionScoringV2.predict();
+            regressionScoringV2.predict();
             return new Gson().toJson("{'message': 'Done'}");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -215,7 +206,8 @@ public class AppMain {
             LearningProcessParams learningProcessParams = new LearningProcessParams(jsonParams);
             boolean isValidParams = learningProcessParams.validateOptimizationRules();
             if (!isValidParams) {
-                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
+                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST,
+                        MessageConstant.INVALID_PARAM, null);
                 response.status(HttpStatus.SC_BAD_REQUEST);
                 return new Gson().toJson(learnerResponse);
             }
@@ -224,7 +216,8 @@ public class AppMain {
             boolean isPassAuthentication = learningProcessParams.validateToken();
             if (!isPassAuthentication) {
                 response.status(HttpStatus.SC_UNAUTHORIZED);
-                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, MessageConstant.INVALID_PERMISSION, null);
+                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED,
+                        MessageConstant.INVALID_PERMISSION, null);
                 return new Gson().toJson(learnerResponse);
             }
 
@@ -241,59 +234,18 @@ public class AppMain {
                     successIdentifiers != null ? successIdentifiers.toArray(new String[0]) : new String[0]));
             dataResponseArray.add(jsonObject);
             //return response
-            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.LEARN_SUCCESS, dataResponseArray);
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK,
+                    MessageConstant.LEARN_SUCCESS, dataResponseArray);
             response.status(HttpStatus.SC_OK);
 
             return new Gson().toJson(learnerResponse);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
-        LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_NOT_FOUND, MessageConstant.INTERNAL_ERROR, null);
+        LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_NOT_FOUND,
+                MessageConstant.INTERNAL_ERROR, null);
         response.status(HttpStatus.SC_NOT_FOUND);
         return new Gson().toJson(learnerResponse);
-    }
-
-    /**
-     * Predict the scores for multiple conditions
-     *
-     * @param request  rest request
-     * @param response response
-     * @return json array that are score for multiple condition
-     */
-    private static String predictScores(Request request, Response response) {
-        response.type("application/json");
-        try {
-            String predictPrams = request.body();
-            PredictionProcessParams predictionProcessParams = new PredictionProcessParams(predictPrams);
-            boolean isValidParams = predictionProcessParams.validates();
-            if (!isValidParams) {
-                LearnerResponse predictResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);
-                response.status(HttpStatus.SC_BAD_REQUEST);
-                return new Gson().toJson(predictResponse);
-            }
-
-            Long optimizationRuleId = predictionProcessParams.getOptimizationRuleId();
-            List<String> identifiers = predictionProcessParams.getIdentifiers();
-            Condition conditions = predictionProcessParams.getConditions();
-            String token = predictionProcessParams.getToken();
-            Authentication authentication = new Authentication(optimizationRuleId, token);
-            boolean isValid = authentication.authenticate();
-            if (!isValid) {
-                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_UNAUTHORIZED, MessageConstant.INVALID_PERMISSION, null);
-                response.status(HttpStatus.SC_UNAUTHORIZED);
-                return new Gson().toJson(learnerResponse);
-            }
-            CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId);
-            LinearRegressionScoring linearRegressionScoring = new LinearRegressionScoring(optimizationRule, identifiers, conditions);
-            ResponsePredict predictions = linearRegressionScoring.predict();
-
-            return new Gson().toJson(predictions);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-        LearnerResponse predictResponse = new LearnerResponse(HttpStatus.SC_NOT_FOUND, MessageConstant.INTERNAL_ERROR, null);
-        response.status(HttpStatus.SC_NOT_FOUND);
-        return new Gson().toJson(predictResponse);
     }
 
     /**
@@ -381,7 +333,8 @@ public class AppMain {
         List<List<String>> segmentFieldGroups = predictionParam.generateMultipleSegmentFieldGroups();
 
         for (List<String> segmentFieldGroup : segmentFieldGroups) {
-            SegmentFieldGroup segmentFieldGroupObject = new SegmentFieldGroup(optimizationRuleId, identifier, segmentFieldGroup);
+            SegmentFieldGroup segmentFieldGroupObject = new SegmentFieldGroup(optimizationRuleId,
+                    identifier, segmentFieldGroup);
             List<CoreLearner> coreLearners = generateModelForSegmentFieldGroup(segmentFieldGroupObject);
             if (coreLearners != null && !coreLearners.isEmpty()) {
                 coreLearnersList.addAll(coreLearners);
@@ -395,7 +348,8 @@ public class AppMain {
         List<CoreLearner> coreLearners = new ArrayList<>();
 
         OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
-        List<OptimizeField> optimizeFields = optimizationRuleService.getOptimizeFields(segmentFieldGroup.getOptimizationRuleId());
+        List<OptimizeField> optimizeFields = optimizationRuleService.getOptimizeFields(
+                segmentFieldGroup.getOptimizationRuleId());
 
         for (OptimizeField optimizeField : optimizeFields) {
             List<CoreLearner> coreLearnerList = generateModelForOneOptimizeField(segmentFieldGroup, optimizeField);
@@ -410,7 +364,8 @@ public class AppMain {
         return coreLearners;
     }
 
-    private static List<CoreLearner> generateModelForOneOptimizeField(SegmentFieldGroup segmentFieldGroup, OptimizeField optimizeField) {
+    private static List<CoreLearner> generateModelForOneOptimizeField(SegmentFieldGroup segmentFieldGroup,
+                                                                      OptimizeField optimizeField) {
         List<CoreLearner> coreLearners = new ArrayList<>();
 
         Long optimizationRuleId = segmentFieldGroup.getOptimizationRuleId();
@@ -419,7 +374,8 @@ public class AppMain {
 
         //run global
         if (null == oneSegmentGroup) {
-            LinearRegressionDataProcess linearRegressionDataProcess = new LinearRegressionDataProcess(optimizationRuleId, identifier, null, optimizeField);
+            LinearRegressionDataProcess linearRegressionDataProcess = new LinearRegressionDataProcess(
+                    optimizationRuleId, identifier, null, optimizeField);
             CoreLearner learners = generateModelForOneValueOfSegmentFieldGroups(linearRegressionDataProcess);
             if (learners != null) {
                 coreLearners.add(learners);
@@ -431,7 +387,8 @@ public class AppMain {
         List<Map<String, Object>> uniqueValuesOfOneSegmentFieldGroup = dataTrainingService.getAllUniqueValuesForOneSegmentFieldGroup();
 
         for (Map<String, Object> uniqueValue : uniqueValuesOfOneSegmentFieldGroup) {
-            LinearRegressionDataProcess linearRegressionDataProcess = new LinearRegressionDataProcess(optimizationRuleId, identifier, oneSegmentGroup, uniqueValue, optimizeField);
+            LinearRegressionDataProcess linearRegressionDataProcess = new LinearRegressionDataProcess(
+                    optimizationRuleId, identifier, oneSegmentGroup, uniqueValue, optimizeField);
             CoreLearner learners = generateModelForOneValueOfSegmentFieldGroups(linearRegressionDataProcess);
             if (learners != null) {
                 coreLearners.add(learners);
@@ -440,7 +397,8 @@ public class AppMain {
         return coreLearners;
     }
 
-    private static CoreLearner generateModelForOneValueOfSegmentFieldGroups(LinearRegressionDataProcess linearRegressionDataProcess) {
+    private static CoreLearner generateModelForOneValueOfSegmentFieldGroups(
+            LinearRegressionDataProcess linearRegressionDataProcess) {
         LinearRegressionLearner linearRegressionLearner = new LinearRegressionLearner(linearRegressionDataProcess);
         LinearRegressionModel linearRegressionModel = linearRegressionLearner.generateModel(sparkSession);
 
@@ -476,38 +434,30 @@ public class AppMain {
     }
 
 
-    private static String getModelStringData(LinearRegressionDataProcess linearRegressionDataProcess, LinearRegressionModel linearRegressionModel) {
+    private static String getModelStringData(
+            LinearRegressionDataProcess linearRegressionDataProcess, LinearRegressionModel linearRegressionModel) {
         List<String> objectiveAndFields = linearRegressionDataProcess.getObjectiveAndFields();
-
         JsonObject jsonObject = new JsonObject();
-
         //coefficient
         Vector vec = linearRegressionModel.coefficients();
         double[] coefficientsArray = vec.toArray();
-
         JsonObject coefficient = new JsonObject();
-
         for (int i = 0; i < coefficientsArray.length; i++) {
-            logger.info(coefficientsArray[i]);
-
             int factorIndex = i + 1;// index 0 is objective
             if (Double.isNaN(coefficientsArray[i])) {
-                coefficient.addProperty(objectiveAndFields.get(factorIndex), "null");
+                coefficient.addProperty(objectiveAndFields.get(factorIndex), MyConstant.NULL_COEFFICIENT);
             } else {
                 double value = ConvertUtil.convertObjectToDecimal(coefficientsArray[i]).doubleValue();
                 coefficient.addProperty(objectiveAndFields.get(factorIndex), value);
             }
         }
-
         jsonObject.add(MyConstant.COEFFICIENT, coefficient);
-
         if (Double.isNaN(linearRegressionModel.intercept())) {
-            jsonObject.addProperty(MyConstant.INTERCEPT, "null");
+            jsonObject.addProperty(MyConstant.INTERCEPT, MyConstant.NULL_COEFFICIENT);
         } else {
             double value = ConvertUtil.convertObjectToDecimal(linearRegressionModel.intercept()).doubleValue();
             jsonObject.addProperty(MyConstant.INTERCEPT, value);
         }
-
         return jsonObject.toString();
     }
 
