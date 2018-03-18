@@ -457,7 +457,7 @@ public class LinearRegressionScoring {
             }
             Map<String, Object> finalSegmentMap = segmentMap;
 
-//            executorService.execute(() -> {
+            executorService.execute(() -> {
             logger.error("executorService execute");
             List<String> listIdentifier = coreLearnerModelService.getDistinctIdentifiersBySegment(finalSegmentMap, ruleId);
             Map<String, Map<String, Map<String, Double>>> dateAndIdentifierAndOptimizePredict = new LinkedHashMap<>();
@@ -490,7 +490,7 @@ public class LinearRegressionScoring {
             String key = segment == null ? MyConstant.GLOBAL_KEY : segment.toString();
             segmentsPredict.put(key, dateAndIdentifierAndOptimizePredict);
             noHistorySegment.put(key, noHistoryIdentifier);
-//            });
+            });
 
         }
         logger.error("executorService awaitTerminationAfterShutdown");
@@ -511,7 +511,8 @@ public class LinearRegressionScoring {
      * @param isPredict     is predict
      * @return predict value
      */
-    private Double computePredict(OptimizeField optimizeField, String identifier, Map<String, Object> segment, String date, boolean isPredict) {
+    private Double computePredict(OptimizeField optimizeField, String identifier,
+                                  Map<String, Object> segment, String date, boolean isPredict) {
         Long ruleId = this.coreOptimizationRule.getId();
         CoreLearner coreLearner = coreLearnerModelService.getOneCoreLeaner(ruleId, identifier, optimizeField, segment);
         if (coreLearner == null || coreLearner.getId() == null || coreLearner.getOptimizationRuleId() == null) {
@@ -548,7 +549,8 @@ public class LinearRegressionScoring {
                                             String date,
                                             CoreOptimizationRule coreOptimizationRule) {
         List<String> metrics = coreLearnerModelService.getMetricsFromCoreLeaner(coreLearner);
-        Double value = dataTrainingService.getObjectiveFromDB(identifier, segment, metrics, optimizeField, coreOptimizationRule, date);
+        Double value = dataTrainingService.getObjectiveFromDB(
+                identifier, segment, metrics, optimizeField, coreOptimizationRule, date);
         return value == null ? MyConstant.NULL_PREDICT_VALUE : value;
     }
 
