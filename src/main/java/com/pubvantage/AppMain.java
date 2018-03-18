@@ -158,7 +158,7 @@ public class AppMain {
         response.type("application/json");
         try {
             String predictPrams = request.body();
-            PredictionProcessParamsV2 predictionProcessParams = new PredictionProcessParamsV2(predictPrams);
+            PredictionProcessParams predictionProcessParams = new PredictionProcessParams(predictPrams);
             boolean isValidParams = predictionProcessParams.validates();
             if (!isValidParams) {
                 LearnerResponse predictResponse = new LearnerResponse(HttpStatus.SC_BAD_REQUEST, MessageConstant.INVALID_PARAM, null);

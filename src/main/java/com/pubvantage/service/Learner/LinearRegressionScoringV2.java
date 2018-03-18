@@ -49,7 +49,7 @@ public class LinearRegressionScoringV2 {
 
         ExecutorService executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadLeaner());
         Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict = generatePredictValue(
-                executorService, this.listDate, this.listSegments);
+                executorService, this.listDate);
         if (executorService.isShutdown()) {
             Map<String, Map<String, Map<String, Map<String, Double>>>> predictTransform = transformStructure(
                     segmentsPredict, this.listDate, this.listSegments);
@@ -370,11 +370,11 @@ public class LinearRegressionScoringV2 {
     }
 
     private Map<String, Map<String, Map<String, Map<String, Double>>>>
-    generatePredictValue(ExecutorService executorService, List<String> listDate, List<Object> listSegments) {
+    generatePredictValue(ExecutorService executorService, List<String> listDate) {
         Long ruleId = this.coreOptimizationRule.getId();
         this.listSegments = coreLearnerModelService.getDistinctSegmentsByRuleId(ruleId);
         Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict = new ConcurrentHashMap<>();
-        if (listSegments == null)
+        if (this.listSegments == null)
             return new ConcurrentHashMap<>();
         for (Object segment : listSegments) {
             Map<String, Object> segmentMap = null;

@@ -2,10 +2,7 @@ package com.pubvantage.restparams;
 
 import com.google.gson.Gson;
 import com.pubvantage.AppMain;
-import com.pubvantage.entity.Condition;
 import org.apache.log4j.Logger;
-
-import java.util.List;
 
 public class PredictionProcessParams {
     private static Logger logger = Logger.getLogger(AppMain.class.getName());
@@ -26,20 +23,6 @@ public class PredictionProcessParams {
         return requestParam.getOptimizationRuleId();
     }
 
-    public List<String> getIdentifiers() {
-        if (requestParam == null)
-            return null;
-
-        return requestParam.getIdentifiers();
-    }
-
-    public Condition getConditions() {
-        if (requestParam == null)
-            return null;
-
-        return requestParam.getConditions();
-    }
-
     public String getToken() {
         if (requestParam == null)
             return null;
@@ -50,8 +33,6 @@ public class PredictionProcessParams {
     public boolean validates() {
         return null != requestParam
                 && null != requestParam.getOptimizationRuleId()
-                && null != requestParam.getIdentifiers()
-                && null != requestParam.getConditions()
                 && null != requestParam.getToken();
     }
 }
