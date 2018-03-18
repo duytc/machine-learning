@@ -523,10 +523,7 @@ public class LinearRegressionScoring {
             return getObjectiveFromDatabase(coreLearner, optimizeField, identifier, segment, date, this.coreOptimizationRule);
         }
 
-        FactorValues factorValues = new FactorValues();
-        factorValues.setIsPredictive(true);
-        ConditionConverter conditionConverter = new ConditionConverter(identifier, factorValues, coreLearner,
-                this.coreOptimizationRule, date, isPredict);
+        ConditionConverter conditionConverter = new ConditionConverter(coreLearner);
         org.apache.spark.ml.linalg.Vector conditionVector = conditionConverter.buildVector();
         if (conditionVector == null) {
             return PREDICTION_DEFAULT_VALUE;
@@ -556,7 +553,6 @@ public class LinearRegressionScoring {
     }
 
     /**
-     *
      * @param predict predict vale
      * @return 0 if predict value ids negative
      */
