@@ -45,10 +45,8 @@ public class LinearRegressionScoring {
 
     /**
      * predict score then save to database
-     *
-     * @return
      */
-    public Map<String, Map<String, Map<String, Map<String, Double>>>> predict() {
+    public void predict() {
         addFutureDate(this.listDate);
 
         ExecutorService executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadLeaner());
@@ -64,7 +62,6 @@ public class LinearRegressionScoring {
 
             saveScore(standardizedScore, this.coreOptimizationRule, futureDate);
         }
-        return null;
     }
 
     /**
@@ -220,7 +217,7 @@ public class LinearRegressionScoring {
 
     /**
      * @param invertedDivideMaxByEachAvgValueTotal total avg data
-     * @param divideMaxByEachAvgValue
+     * @param divideMaxByEachAvgValue              divideMaxByEachAvgValue
      * @return avg data of identifier if optimize goal is Min
      */
     private Map<String, Map<String, Double>> getInvertedAvgNegative
@@ -281,7 +278,7 @@ public class LinearRegressionScoring {
     }
 
     /**
-     * @param avgMap avg data
+     * @param avgMap                 avg data
      * @param maxAvgNegativeOptimize max avg value of identifier
      * @return divide each value by max avg value
      */
@@ -314,7 +311,6 @@ public class LinearRegressionScoring {
     }
 
     /**
-     *
      * @param avgMap avg data
      * @return max value of each group identifiers in a segment
      */
@@ -344,7 +340,6 @@ public class LinearRegressionScoring {
     }
 
     /**
-     *
      * @param avgMap avg data
      * @return score
      */
@@ -368,7 +363,6 @@ public class LinearRegressionScoring {
     }
 
     /**
-     *
      * @param segmentMap predict data
      * @return total data
      */
@@ -393,9 +387,8 @@ public class LinearRegressionScoring {
     }
 
     /**
-     *
      * @param segmentMap segment data
-     * @param totalMap total data
+     * @param totalMap   total data
      * @return average score
      */
     private Map<String, Map<String, Double>> getAvg(Map<String, Map<String, Double>> segmentMap, Map<String, Double> totalMap) {
@@ -418,10 +411,9 @@ public class LinearRegressionScoring {
     }
 
     /**
-     *
-     * @param segmentsPredict
-     * @param listDate
-     * @param listSegments
+     * @param segmentsPredict predict data
+     * @param listDate        list of dates
+     * @param listSegments    list of segments
      * @return date to out position
      */
     private Map<String, Map<String, Map<String, Map<String, Double>>>> transformStructure(
@@ -512,14 +504,12 @@ public class LinearRegressionScoring {
     }
 
     /**
-     *
-     * @param optimizeField
-     * @param identifier
-     * @param segment
-     * @param date
-     * @param isPredict
-     * @return
-     * ret
+     * @param optimizeField optimize field
+     * @param identifier    identifier
+     * @param segment       segment group
+     * @param date          date
+     * @param isPredict     is predict
+     * @return predict value
      */
     private Double computePredict(OptimizeField optimizeField, String identifier, Map<String, Object> segment, String date, boolean isPredict) {
         Long ruleId = this.coreOptimizationRule.getId();
@@ -565,6 +555,11 @@ public class LinearRegressionScoring {
         return value == null ? MyConstant.NULL_PREDICT_VALUE : value;
     }
 
+    /**
+     *
+     * @param predict predict vale
+     * @return 0 if predict value ids negative
+     */
     private double handleNegativePredictValue(Double predict) {
         return predict < 0 ? 0 : predict;
     }
