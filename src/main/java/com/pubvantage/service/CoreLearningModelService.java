@@ -1,6 +1,5 @@
 package com.pubvantage.service;
 
-import com.google.gson.JsonObject;
 import com.pubvantage.dao.CoreLearnerDao;
 import com.pubvantage.dao.CoreLearnerDaoInterface;
 import com.pubvantage.dao.CoreLearningModelDao;
@@ -120,24 +119,6 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
     }
 
     @Override
-    public List<CoreLearner> findListByRuleId(Long optimizeRuleId) {
-        Session session = null;
-        List<CoreLearner> coreLearnerList = null;
-        try {
-            session = HibernateUtil.getSessionFactory().openSession();
-            coreLearnerList = coreLearnerDao.findListByRuleId(session, optimizeRuleId);
-            session.clear();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        } finally {
-            if (session != null) {
-                session.close();
-            }
-        }
-        return coreLearnerList;
-    }
-
-    @Override
     public List<Object> getDistinctSegmentsByRuleId(Long optimizationRuleId) {
         Session session = null;
         List<Object> coreLearnerList = null;
@@ -213,5 +194,17 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
             }
         }
         return optimizeFieldList;
+    }
+
+    @Override
+    public List<String> getMetricsFromCoreLeaner(CoreLearner coreLearner) {
+        List<String> list = new ArrayList<>();
+        MathModel mathModel = JsonUtil.jsonToObject(coreLearner.getMathModel(), MathModel.class);
+        if (mathModel != null && mathModel.getCoefficients() != null && !mathModel.getCoefficients().isEmpty()) {
+            for (Map.Entry<String, Double> entry : mathModel.getCoefficients().entrySet()) {
+                list.add(entry.getKey());
+            }
+        }
+        return list;
     }
 }

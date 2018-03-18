@@ -1,6 +1,7 @@
 package com.pubvantage.dao;
 
 import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.OptimizeField;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
@@ -20,4 +21,11 @@ public interface SparkDataTrainingDaoInterface {
 
 
     List<Double> getVectorData(List<String> metrics, CoreOptimizationRule optimizationRule, String dateValue);
+
+    Double getObjectiveFromDB(String identifier,
+                              Map<String, Object> segment,
+                              List<String> metrics,
+                              OptimizeField optimizeField,
+                              CoreOptimizationRule optimizationRule,
+                              String dateValue);
 }

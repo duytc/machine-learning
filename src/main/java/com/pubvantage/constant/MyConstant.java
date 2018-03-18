@@ -31,6 +31,11 @@ public class MyConstant {
     public static String SCORE_IS_PREDICT = "is_predict";
 
     public static String SCORE_TABLE_NAME_PRE = "__optimization_rule_score_";
+    public static double NULL_PREDICT_VALUE = -Double.MAX_VALUE;
+    public static double DEFAULT_SCORE_VALUE = 0.5d;
+    public static String GLOBAL_KEY = "NULL";
+
+
 
 
 }

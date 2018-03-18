@@ -25,7 +25,6 @@ public class ScoreDao implements ScoreDaoInterface {
         String dateField = optimizationRule.getDateField();
         List<String> paramString = ConvertUtil.concatParamUpdateQuery(columns);
         try {
-
             stringBuilder.append("UPDATE ")
                     .append(MyConstant.SCORE_TABLE_NAME_PRE)
                     .append(optimizeRuleId)
@@ -43,13 +42,18 @@ public class ScoreDao implements ScoreDaoInterface {
                 String key = optimizeEntry.getKey();
                 if (MyConstant.SCORE.equals(key)) continue;
                 OptimizeField optimizeField = JsonUtil.jsonToObject(key, OptimizeField.class);
-                query.setParameter(optimizeField.getField(), optimizeEntry.getValue());
+                if (MyConstant.NULL_PREDICT_VALUE == optimizeEntry.getValue()) {
+                    query.setParameter(optimizeField.getField(), null);
+                } else {
+                    query.setParameter(optimizeField.getField(), optimizeEntry.getValue());
+                }
             }
             query.setParameter(MyConstant.SCORE, values.get(MyConstant.SCORE));
             query.setParameter(MyConstant.SCORE_IS_PREDICT, values.get(MyConstant.SCORE_IS_PREDICT));
             return query.executeUpdate();
 
         } catch (Exception e) {
+            logger.error(e.getCause(), e);
             return -1;
         }
     }
@@ -80,13 +84,20 @@ public class ScoreDao implements ScoreDaoInterface {
                 String key = entry.getKey();
                 if (MyConstant.SCORE.equals(key)) continue;
                 OptimizeField optimizeField = JsonUtil.jsonToObject(key, OptimizeField.class);
-                query.setParameter(optimizeField.getField(), entry.getValue());
+                if (MyConstant.NULL_PREDICT_VALUE == entry.getValue()) {
+                    query.setParameter(optimizeField.getField(), null);
+
+                } else {
+                    query.setParameter(optimizeField.getField(), entry.getValue());
+                }
+
             }
             query.setParameter(MyConstant.SCORE, values.get(MyConstant.SCORE));
             query.setParameter(MyConstant.SCORE_IS_PREDICT, values.get(MyConstant.SCORE_IS_PREDICT));
             return query.executeUpdate();
 
         } catch (Exception e) {
+            logger.error(e.getCause(), e);
             return -1;
         }
 
@@ -106,9 +117,13 @@ public class ScoreDao implements ScoreDaoInterface {
                     .append(optimizeRuleId).append(" WHERE ")
                     .append(MyConstant.SCORE_IDENTIFIER)
                     .append(" = :identifier AND ")
-                    .append(" ").append(MyConstant.SCORE_SEGMENT_VALUES)
-                    .append(" = :segment_values AND ")
-                    .append("DATE_FORMAT(")
+                    .append(" ").append(MyConstant.SCORE_SEGMENT_VALUES);
+            if (values.get(MyConstant.SCORE_SEGMENT_VALUES) == null) {
+                stringBuilder.append(" IS NULL AND ");
+            } else {
+                stringBuilder.append(" = :segment_values AND ");
+            }
+            stringBuilder.append("DATE_FORMAT(")
                     .append(dateField)
                     .append(", '")
                     .append(MyConstant.DATE_FORMAT)
@@ -117,7 +132,9 @@ public class ScoreDao implements ScoreDaoInterface {
                     .append(values.get(dateField)).append("'");
             Query query = session.createSQLQuery(stringBuilder.toString());
             query.setParameter("identifier", values.get(MyConstant.SCORE_IDENTIFIER));
-            query.setParameter("segment_values", values.get(MyConstant.SCORE_SEGMENT_VALUES));
+            if (values.get(MyConstant.SCORE_SEGMENT_VALUES) != null) {
+                query.setParameter("segment_values", values.get(MyConstant.SCORE_SEGMENT_VALUES));
+            }
 
             List<Object[]> list = query.list();
             if (list != null && !list.isEmpty()) {

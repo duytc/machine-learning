@@ -1,12 +1,9 @@
 package com.pubvantage.service.score;
 
-import com.google.gson.JsonObject;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.dao.ScoreDao;
 import com.pubvantage.dao.ScoreDaoInterface;
 import com.pubvantage.entity.CoreOptimizationRule;
-import com.pubvantage.entity.CoreReportView;
-import com.pubvantage.service.Learner.ReportViewService;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
 import com.pubvantage.utils.HibernateUtil;
@@ -28,8 +25,6 @@ public class ScoreService implements ScoreServiceInterface {
                           String futureDate) {
         List<String> columns = optimizationRuleService.getColumnsForScoreTable(coreOptimizationRule);
         Map<String, Object> values = new HashMap<>();
-
-
         Session session = null;
         try {
             session = HibernateUtil.getSessionFactory().openSession();
@@ -42,12 +37,12 @@ public class ScoreService implements ScoreServiceInterface {
                 } else {
                     values.put(MyConstant.SCORE_IS_PREDICT, false);
                 }
-
                 String dateField = coreOptimizationRule.getDateField();
                 values.put(dateField, date);
                 Map<String, Map<String, Map<String, Double>>> dateMap = dateEntry.getValue();
                 for (Map.Entry<String, Map<String, Map<String, Double>>> segmentEntry : dateMap.entrySet()) {
                     String segment = segmentEntry.getKey();
+                    segment = MyConstant.GLOBAL_KEY.equals(segment) ? null : segment;
                     values.put(MyConstant.SCORE_SEGMENT_VALUES, segment);
                     Map<String, Map<String, Double>> segmentMap = segmentEntry.getValue();
 
@@ -59,7 +54,6 @@ public class ScoreService implements ScoreServiceInterface {
                             values.put(optimizeEntry.getKey(), optimizeEntry.getValue());
                         }
                         //save
-
                         Map<String, Object> scoreFromDB = scoreDao.findOne(session, columns, values, coreOptimizationRule, optimizeMap);
                         if (scoreFromDB == null || scoreFromDB.get(MyConstant.SCORE_ID) == null) {
                             scoreDao.insertScore(session, columns, values, coreOptimizationRule, optimizeMap);
@@ -67,7 +61,6 @@ public class ScoreService implements ScoreServiceInterface {
                             Long scoreId = Long.parseLong(scoreFromDB.get(MyConstant.SCORE_ID).toString());
                             scoreDao.updateScore(session, columns, values, coreOptimizationRule, optimizeMap, scoreId);
                         }
-
                     }
                 }
             }

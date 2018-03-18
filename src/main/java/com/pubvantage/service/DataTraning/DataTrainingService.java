@@ -2,6 +2,7 @@ package com.pubvantage.service.DataTraning;
 
 import com.pubvantage.dao.SparkDataTrainingDao;
 import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.OptimizeField;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +51,17 @@ public class DataTrainingService implements DataTrainingServiceInterface {
     }
 
     @Override
-    public List<Double> getVectorData(List<String> optimizeFieldAndMetrics, CoreOptimizationRule optimizationRule, String dateValue) {
-        return sparkDataTrainingDao.getVectorData(optimizeFieldAndMetrics, optimizationRule,dateValue);
+    public List<Double> getVectorData(List<String> metrics, CoreOptimizationRule optimizationRule, String dateValue) {
+        return sparkDataTrainingDao.getVectorData(metrics, optimizationRule, dateValue);
+    }
+
+    @Override
+    public Double getObjectiveFromDB(String identifier,
+                                     Map<String, Object> segment,
+                                     List<String> metrics,
+                                     OptimizeField optimizeField,
+                                     CoreOptimizationRule optimizationRule,
+                                     String dateValue) {
+        return sparkDataTrainingDao.getObjectiveFromDB(identifier, segment, metrics, optimizeField, optimizationRule, dateValue);
     }
 }

@@ -3,8 +3,10 @@ package com.pubvantage.dao;
 import com.pubvantage.AppMain;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.OptimizeField;
 import com.pubvantage.utils.AppResource;
 import com.pubvantage.utils.ConvertUtil;
+import com.pubvantage.utils.JsonUtil;
 import com.pubvantage.utils.SparkSqlUtil;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -180,4 +182,60 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         }
         return null;
     }
+
+    @Override
+    public Double getObjectiveFromDB(String identifier,
+                                     Map<String, Object> oneSegmentGroup,
+                                     List<String> metrics,
+                                     OptimizeField optimizeField,
+                                     CoreOptimizationRule optimizationRule,
+                                     String dateValue) {
+        Long optimizeRuleId = optimizationRule.getId();
+        String dateField = optimizationRule.getDateField();
+        String tableName = TABLE_NAME_PREFIX + optimizeRuleId;
+        Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
+
+        jdbcDF.createOrReplaceTempView(tableName);
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("SELECT SUM( " + optimizeField.getField() + ") ");
+        stringBuilder.append("FROM ").append(tableName)
+                .append(" WHERE ")
+                .append(ConvertUtil.generateAllIsNoteNull(metrics))
+                .append(" AND ")
+                .append(dateField + " = '" + dateValue + "'").append(" AND ");
+        if (identifier != null) {
+            stringBuilder.append(MyConstant.IDENTIFIER_COLUMN)
+                    .append(" = '").append(identifier).append("'")
+                    .append(" AND ");
+        }
+        if (oneSegmentGroup != null) {
+            for (Map.Entry<String, Object> entry : oneSegmentGroup.entrySet()) {
+                String field = entry.getKey();
+                Object value = entry.getValue();
+                if (value instanceof Date) {
+                    stringBuilder.append("DATE_FORMAT(" + field + ", '" + MyConstant.DATE_FORMAT + "')")
+                            .append(" = '")
+                            .append(value.toString()).append("' AND ");
+                } else if (value instanceof Number) {
+                    stringBuilder.append(field)
+                            .append(" = ")
+                            .append(value).append(" AND ");
+                } else {
+                    stringBuilder.append(field)
+                            .append(" = '")
+                            .append(value).append("' AND ");
+                }
+            }
+        }
+        stringBuilder.append(" 1 = 1").append(" GROUP BY ").append(dateField);
+        Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringBuilder.toString());
+        List<Row> resultList = sqlDF.collectAsList();
+
+        if (resultList != null && !resultList.isEmpty()) {
+            Row row = resultList.get(0);
+            return ConvertUtil.convertObjectToDouble(row.get(0));
+        }
+        return null;
+    }
+
 }
