@@ -34,16 +34,13 @@ public class LinearRegressionScoringV2 {
 
     private CoreOptimizationRule coreOptimizationRule;
     private List<String> listDate;
-    private List<CoreLearner> coreLearnerList;
     List<Object> listSegments;
     private String futureDate;
 
     public LinearRegressionScoringV2(CoreOptimizationRule coreOptimizationRule,
-                                     List<String> listDate,
-                                     List<CoreLearner> coreLearnerList) {
+                                     List<String> listDate) {
         this.coreOptimizationRule = coreOptimizationRule;
         this.listDate = listDate;
-        this.coreLearnerList = coreLearnerList;
     }
 
 

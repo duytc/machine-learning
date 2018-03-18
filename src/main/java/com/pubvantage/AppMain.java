@@ -186,8 +186,7 @@ public class AppMain {
             }
             CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId);
             List<String> listDate = sparkDataTrainingDao.getDistinctDates(optimizationRuleId, optimizationRule.getDateField());
-            List<CoreLearner> coreLearnerList = coreLearnerModelService.findListByRuleId(optimizationRuleId);
-            LinearRegressionScoringV2 regressionScoringV2 = new LinearRegressionScoringV2(optimizationRule, listDate, coreLearnerList);
+            LinearRegressionScoringV2 regressionScoringV2 = new LinearRegressionScoringV2(optimizationRule, listDate);
             Map<String, Map<String, Map<String, Map<String, Double>>>> result = regressionScoringV2.predict();
             return new Gson().toJson("{'message': 'Done'}");
         } catch (Exception e) {
