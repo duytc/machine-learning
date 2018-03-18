@@ -1,9 +1,8 @@
-package com.pubvantage.service.Learner;
+package com.pubvantage.service;
 
 import com.pubvantage.dao.ReportViewDao;
 import com.pubvantage.dao.ReportViewDaoInterface;
 import com.pubvantage.entity.CoreReportView;
-import com.pubvantage.service.ReportViewServiceInterface;
 import com.pubvantage.utils.HibernateUtil;
 import org.apache.log4j.Logger;
 import org.hibernate.Session;

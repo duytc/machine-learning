@@ -10,7 +10,6 @@ import com.pubvantage.dao.SparkDataTrainingDaoInterface;
 import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.entity.CoreReportView;
 import com.pubvantage.entity.OptimizeField;
-import com.pubvantage.service.Learner.ReportViewService;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.HibernateUtil;
 import com.pubvantage.utils.JsonUtil;
