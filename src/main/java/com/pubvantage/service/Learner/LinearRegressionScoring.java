@@ -43,7 +43,11 @@ public class LinearRegressionScoring {
         this.listDate = listDate;
     }
 
-
+    /**
+     * predict score then save to database
+     *
+     * @return
+     */
     public Map<String, Map<String, Map<String, Map<String, Double>>>> predict() {
         addFutureDate(this.listDate);
 
@@ -63,24 +67,37 @@ public class LinearRegressionScoring {
         return null;
     }
 
+    /**
+     * avoid to small score.
+     *
+     * @param scoreData        scored data
+     * @param noHistorySegment some date has no data in database  depend on segment group and identifier
+     * @return standardized Score. each score divide max value
+     */
     private Map<String, Map<String, Map<String, Map<String, Double>>>>
-    standardizeScore(Map<String, Map<String, Map<String, Map<String, Double>>>> scoreTransform,
+    standardizeScore(Map<String, Map<String, Map<String, Map<String, Double>>>> scoreData,
                      Map<String, Map<String, Map<String, Boolean>>> noHistorySegment) {
-        for (Map.Entry<String, Map<String, Map<String, Map<String, Double>>>> dateEntry : scoreTransform.entrySet()) {
+        for (Map.Entry<String, Map<String, Map<String, Map<String, Double>>>> dateEntry : scoreData.entrySet()) {
             String date = dateEntry.getKey();
             Map<String, Map<String, Map<String, Double>>> dateMap = dateEntry.getValue();
             for (Map.Entry<String, Map<String, Map<String, Double>>> segmentEntry : dateMap.entrySet()) {
                 String segment = segmentEntry.getKey();
                 Map<String, Map<String, Double>> segmentMap = segmentEntry.getValue();
                 double maxScore = getMaxScore(segmentMap, noHistorySegment.get(segment), date);
-                transformScore(maxScore, segmentMap, noHistorySegment.get(segment), date);
+                divideScoreByMaxValue(maxScore, segmentMap, noHistorySegment.get(segment), date);
             }
         }
-        return scoreTransform;
+        return scoreData;
     }
 
-    private void transformScore(double maxScore, Map<String, Map<String, Double>> segmentMap,
-                                Map<String, Map<String, Boolean>> noHistorySegment, String date) {
+    /**
+     * @param maxScore         max score of identifiers
+     * @param segmentMap       score data
+     * @param noHistorySegment some date has no data in database  depend on segment group and identifier
+     * @param date             current date
+     */
+    private void divideScoreByMaxValue(double maxScore, Map<String, Map<String, Double>> segmentMap,
+                                       Map<String, Map<String, Boolean>> noHistorySegment, String date) {
         for (Map.Entry<String, Map<String, Double>> entry : segmentMap.entrySet()) {
             String identifier = entry.getKey();
             Map<String, Boolean> noHistoryDate = noHistorySegment.get(identifier);
@@ -94,6 +111,12 @@ public class LinearRegressionScoring {
         }
     }
 
+    /**
+     * @param segmentMap       score data
+     * @param noHistorySegment some date has no data in database  depend on segment group and identifier
+     * @param date             date
+     * @return max score in score data of date
+     */
     private double getMaxScore(Map<String, Map<String, Double>> segmentMap,
                                Map<String, Map<String, Boolean>> noHistorySegment, String date) {
         double max = -Double.MAX_VALUE;
@@ -111,6 +134,11 @@ public class LinearRegressionScoring {
         return max;
     }
 
+    /**
+     * add future date to listDate. The day after the latest date in data training
+     *
+     * @param listDate list of date in data training
+     */
     private void addFutureDate(List<String> listDate) {
         try {
             if (listDate == null || listDate.isEmpty()) {
@@ -139,6 +167,11 @@ public class LinearRegressionScoring {
         }
     }
 
+    /**
+     * @param predictTransform predict data
+     * @param noHistorySegment some date has no data in database  depend on segment group and identifier
+     * @return score data
+     */
     private Map<String, Map<String, Map<String, Map<String, Double>>>>
     computeScore(Map<String, Map<String, Map<String, Map<String, Double>>>> predictTransform,
                  Map<String, Map<String, Map<String, Boolean>>> noHistorySegment) {
@@ -153,10 +186,13 @@ public class LinearRegressionScoring {
                 Map<String, Double> totalMap = getTotal(segmentMap);
                 Map<String, Map<String, Double>> avgMap = getAvg(segmentMap, totalMap);
                 Map<String, Double> maxAvgNegativeOptimize = getMaxAvgForNegativeOptimizeField(avgMap);
-                Map<String, Map<String, Double>> invertMapNegative_1 = getInvertMapNegativeOptimizeField_1(avgMap, maxAvgNegativeOptimize);
-                Map<String, Double> invertedTotalNegative = getInvertedTotal(invertMapNegative_1);
-                Map<String, Map<String, Double>> invertedAvgNegative_2 = getInvertedAvgNegative_2(invertedTotalNegative, invertMapNegative_1);
-                Map<String, Double> scoreMap = getScore(invertedAvgNegative_2);
+                Map<String, Map<String, Double>> divideMaxByEachAvgValue = divideMaxByEachAvgValue(
+                        avgMap, maxAvgNegativeOptimize);
+                Map<String, Double> invertedDivideMaxByEachAvgValueTotal = getDivideMaxByEachAvgValueTotal(
+                        divideMaxByEachAvgValue);
+                Map<String, Map<String, Double>> invertedAvgNegative = getInvertedAvgNegative(
+                        invertedDivideMaxByEachAvgValueTotal, divideMaxByEachAvgValue);
+                Map<String, Double> scoreMap = multiOptimizeFieldWeight(invertedAvgNegative);
 
                 Map<String, Map<String, Boolean>> noHistoryIdentifier = noHistorySegment.get(segment);
 
@@ -170,22 +206,29 @@ public class LinearRegressionScoring {
                     }
                     optimizeMap.put(MyConstant.SCORE, scoreMap.get(identifier));
                 }
-
             }
         }
         return predictTransform;
     }
 
+    /**
+     * @return default predict value if there is no data correspond date, segment, identifier in data base
+     */
     private Double getScoreForNoHistoryData() {
         return MyConstant.DEFAULT_SCORE_VALUE;
     }
 
-    private Map<String, Map<String, Double>> getInvertedAvgNegative_2
-            (Map<String, Double> invertedTotalMap,
-             Map<String, Map<String, Double>> invertMapNegative_1) {
+    /**
+     * @param invertedDivideMaxByEachAvgValueTotal total avg data
+     * @param divideMaxByEachAvgValue
+     * @return avg data of identifier if optimize goal is Min
+     */
+    private Map<String, Map<String, Double>> getInvertedAvgNegative
+    (Map<String, Double> invertedDivideMaxByEachAvgValueTotal,
+     Map<String, Map<String, Double>> divideMaxByEachAvgValue) {
         Map<String, Map<String, Double>> avgMap = new HashMap<>();
 
-        for (Map.Entry<String, Map<String, Double>> identifierEntry : invertMapNegative_1.entrySet()) {
+        for (Map.Entry<String, Map<String, Double>> identifierEntry : divideMaxByEachAvgValue.entrySet()) {
             String identifier = identifierEntry.getKey();
             Map<String, Double> optimizeAvgMap = identifierEntry.getValue();
             Map<String, Double> avgOptimize = new HashMap<>();
@@ -199,7 +242,7 @@ public class LinearRegressionScoring {
                 if (MyConstant.NULL_PREDICT_VALUE == avg) continue;
 
                 if (MyConstant.MIN.equals(goal)) {
-                    double total = invertedTotalMap.get(optimize);
+                    double total = invertedDivideMaxByEachAvgValueTotal.get(optimize);
                     double newAvg = total == 0 ? 0 : avg / total;
                     avgOptimize.put(optimize, newAvg);
                 }
@@ -209,9 +252,13 @@ public class LinearRegressionScoring {
         return avgMap;
     }
 
-    private Map<String, Double> getInvertedTotal(Map<String, Map<String, Double>> getInvertMapNegativeOptimizeField) {
+    /**
+     * @param divideMaxByEachAvgValue data after divide max value by each value of identifier
+     * @return total data of each identifier
+     */
+    private Map<String, Double> getDivideMaxByEachAvgValueTotal(Map<String, Map<String, Double>> divideMaxByEachAvgValue) {
         Map<String, Double> totalMap = new HashMap<>();
-        for (Map.Entry<String, Map<String, Double>> identifierEntry : getInvertMapNegativeOptimizeField.entrySet()) {
+        for (Map.Entry<String, Map<String, Double>> identifierEntry : divideMaxByEachAvgValue.entrySet()) {
             Map<String, Double> invertedOptimizeAvgMap = identifierEntry.getValue();
             for (Map.Entry<String, Double> optimizeEntry : invertedOptimizeAvgMap.entrySet()) {
                 String optimize = optimizeEntry.getKey();
@@ -233,7 +280,14 @@ public class LinearRegressionScoring {
         return totalMap;
     }
 
-    private Map<String, Map<String, Double>> getInvertMapNegativeOptimizeField_1(Map<String, Map<String, Double>> avgMap, Map<String, Double> maxAvgForNegativeOptimizeField) {
+    /**
+     * @param avgMap avg data
+     * @param maxAvgNegativeOptimize max avg value of identifier
+     * @return divide each value by max avg value
+     */
+
+    private Map<String, Map<String, Double>> divideMaxByEachAvgValue(Map<String, Map<String, Double>> avgMap,
+                                                                     Map<String, Double> maxAvgNegativeOptimize) {
         Map<String, Map<String, Double>> invertMap = new HashMap<>();
         for (Map.Entry<String, Map<String, Double>> identifierEntry : avgMap.entrySet()) {
             String identifier = identifierEntry.getKey();
@@ -249,7 +303,7 @@ public class LinearRegressionScoring {
 
                 invertedOptimizeMap.put(optimize, avg);
                 if (MyConstant.MIN.equals(goal)) {
-                    double maxAvg = maxAvgForNegativeOptimizeField.get(optimize);
+                    double maxAvg = maxAvgNegativeOptimize.get(optimize);
                     double invertedValue = avg == 0 ? 0 : maxAvg / avg;
                     invertedOptimizeMap.put(optimize, invertedValue);
                 }
@@ -259,6 +313,11 @@ public class LinearRegressionScoring {
         return invertMap;
     }
 
+    /**
+     *
+     * @param avgMap avg data
+     * @return max value of each group identifiers in a segment
+     */
     private Map<String, Double> getMaxAvgForNegativeOptimizeField(Map<String, Map<String, Double>> avgMap) {
         Map<String, Double> maxAvgMap = new HashMap<>();
         for (Map.Entry<String, Map<String, Double>> identifierEntry : avgMap.entrySet()) {
@@ -284,7 +343,12 @@ public class LinearRegressionScoring {
         return maxAvgMap;
     }
 
-    private Map<String, Double> getScore(Map<String, Map<String, Double>> avgMap) {
+    /**
+     *
+     * @param avgMap avg data
+     * @return score
+     */
+    private Map<String, Double> multiOptimizeFieldWeight(Map<String, Map<String, Double>> avgMap) {
         Map<String, Double> scoreMap = new HashMap<>();
         for (Map.Entry<String, Map<String, Double>> identifierEntry : avgMap.entrySet()) {
             String identifier = identifierEntry.getKey();
@@ -303,6 +367,11 @@ public class LinearRegressionScoring {
         return scoreMap;
     }
 
+    /**
+     *
+     * @param segmentMap predict data
+     * @return total data
+     */
     private Map<String, Double> getTotal(Map<String, Map<String, Double>> segmentMap) {
         Map<String, Double> totalMap = new HashMap<>();
         for (Map.Entry<String, Map<String, Double>> identifierEntry : segmentMap.entrySet()) {
@@ -323,6 +392,12 @@ public class LinearRegressionScoring {
         return totalMap;
     }
 
+    /**
+     *
+     * @param segmentMap segment data
+     * @param totalMap total data
+     * @return average score
+     */
     private Map<String, Map<String, Double>> getAvg(Map<String, Map<String, Double>> segmentMap, Map<String, Double> totalMap) {
         Map<String, Map<String, Double>> identifierAvgMap = new HashMap<>();
         for (Map.Entry<String, Map<String, Double>> identifierEntry : segmentMap.entrySet()) {
@@ -342,6 +417,13 @@ public class LinearRegressionScoring {
         return identifierAvgMap;
     }
 
+    /**
+     *
+     * @param segmentsPredict
+     * @param listDate
+     * @param listSegments
+     * @return date to out position
+     */
     private Map<String, Map<String, Map<String, Map<String, Double>>>> transformStructure(
             Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict,
             List<String> listDate,
@@ -429,6 +511,16 @@ public class LinearRegressionScoring {
         this.scoreService.saveScore(scoreMap, optimizationRule, futureDate);
     }
 
+    /**
+     *
+     * @param optimizeField
+     * @param identifier
+     * @param segment
+     * @param date
+     * @param isPredict
+     * @return
+     * ret
+     */
     private Double computePredict(OptimizeField optimizeField, String identifier, Map<String, Object> segment, String date, boolean isPredict) {
         Long ruleId = this.coreOptimizationRule.getId();
         CoreLearner coreLearner = coreLearnerModelService.getOneCoreLeaner(ruleId, identifier, optimizeField, segment);
