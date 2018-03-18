@@ -16,7 +16,6 @@ import com.pubvantage.learner.Params.SegmentFieldGroup;
 import com.pubvantage.service.CoreLearningModelService;
 import com.pubvantage.service.CoreLearningModelServiceInterface;
 import com.pubvantage.service.DataTraning.DataTrainingService;
-import com.pubvantage.service.Learner.LinearRegressionScoring;
 import com.pubvantage.service.Learner.LinearRegressionScoringV2;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
@@ -82,14 +81,14 @@ public class AppMain {
         port(PORT);
         threadPool(MAX_THREADS, MIN_THREADS, TIME_OUT_MILLIS);
         learningProcessAction();
-        predictScoreActionV2();
+        predictScoreAction();
     }
 
     /**
      * listen and process learning request
      */
-    private static void predictScoreActionV2() {
-        post("api/v2/scores", AppMain::activeScoreProcessV2);
+    private static void predictScoreAction() {
+        post("api/v2/scores", AppMain::activeScoreProcess);
     }
 
     /**
@@ -155,7 +154,7 @@ public class AppMain {
     }
 
 
-    private static String activeScoreProcessV2(Request request, Response response) {
+    private static String activeScoreProcess(Request request, Response response) {
         response.type("application/json");
         try {
             String predictPrams = request.body();
