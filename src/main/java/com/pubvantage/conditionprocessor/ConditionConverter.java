@@ -46,7 +46,7 @@ public class ConditionConverter {
         this.isPredict = isPredict;
     }
 
-    public Vector buildVectorV2() {
+    public Vector buildVector() {
         List<String> metrics = coreLearnerModelService.getMetricsFromCoreLeaner(coreLearner);
         double[] doubleValue = new double[metrics.size()];
         if (!isPredict) {
@@ -60,42 +60,6 @@ public class ConditionConverter {
                 String fieldName = metrics.get(index);
                 Double metricPredictValue = metricsPredictiveValues.get(fieldName);
                 doubleValue[index] = metricPredictValue == null ? 0D : metricPredictValue;
-            }
-        }
-        return Vectors.dense(doubleValue);
-    }
-
-    /**
-     * Build vector that is the input of linear regression model
-     *
-     * @return input vector for linear regression model
-     */
-    public Vector buildVector() {
-        List<String> metrics = coreLearnerModelService.getMetricsFromCoreLeaner(coreLearner);
-        // prepare array of double value for vector
-        LinkedHashMap<String, Double> metricsPredictiveValues = getMetricsPredictionValues(coreLearner);
-
-        double[] doubleValue = new double[metrics.size()];
-        if (factorValues != null) {
-            for (int index = 0; index < metrics.size(); index++) {
-                String fieldName = metrics.get(index);
-
-                if (factorValues.getIsPredictive()) {
-                    Double metricPredictValue = metricsPredictiveValues.get(fieldName);
-                    doubleValue[index] = metricPredictValue == null ? 0D : metricPredictValue;
-                } else {
-                    JsonObject values = factorValues.getValues().get(identifier);
-                    if (values != null || values.isJsonNull()) {
-                        JsonElement value = values.get(fieldName);
-                        if (value == null || value.isJsonNull()) {
-                            Double metricPredictValue = metricsPredictiveValues.get(fieldName);
-                            doubleValue[index] = metricPredictValue == null ? 0D : metricPredictValue;
-                        } else {
-                            doubleValue[index] = value.getAsDouble();
-                        }
-
-                    }
-                }
             }
         }
         return Vectors.dense(doubleValue);

@@ -527,7 +527,7 @@ public class LinearRegressionScoring {
         factorValues.setIsPredictive(true);
         ConditionConverter conditionConverter = new ConditionConverter(identifier, factorValues, coreLearner,
                 this.coreOptimizationRule, date, isPredict);
-        org.apache.spark.ml.linalg.Vector conditionVector = conditionConverter.buildVectorV2();
+        org.apache.spark.ml.linalg.Vector conditionVector = conditionConverter.buildVector();
         if (conditionVector == null) {
             return PREDICTION_DEFAULT_VALUE;
         }
