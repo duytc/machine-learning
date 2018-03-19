@@ -81,14 +81,18 @@ public class ScoreDao implements ScoreDaoInterface {
             query.setParameter(MyConstant.SCORE_IDENTIFIER, values.get(MyConstant.SCORE_IDENTIFIER));
             query.setParameter(MyConstant.SCORE_SEGMENT_VALUES, values.get(MyConstant.SCORE_SEGMENT_VALUES));
             for (Map.Entry<String, Double> entry : optimizeMap.entrySet()) {
-                String key = entry.getKey();
-                if (MyConstant.SCORE.equals(key)) continue;
-                OptimizeField optimizeField = JsonUtil.jsonToObject(key, OptimizeField.class);
-                if (MyConstant.NULL_PREDICT_VALUE == entry.getValue()) {
-                    query.setParameter(optimizeField.getField(), null);
+                try {
+                    String key = entry.getKey();
+                    if (MyConstant.SCORE.equals(key)) continue;
+                    OptimizeField optimizeField = JsonUtil.jsonToObject(key, OptimizeField.class);
+                    if (MyConstant.NULL_PREDICT_VALUE == entry.getValue()) {
+                        query.setParameter(optimizeField.getField(), null);
 
-                } else {
-                    query.setParameter(optimizeField.getField(), entry.getValue());
+                    } else {
+                        query.setParameter(optimizeField.getField(), entry.getValue());
+                    }
+                } catch (Exception e) {
+
                 }
 
             }
