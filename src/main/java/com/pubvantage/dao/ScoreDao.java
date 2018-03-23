@@ -23,6 +23,7 @@ public class ScoreDao implements ScoreDaoInterface {
         StringBuilder stringBuilder = new StringBuilder();
         Long optimizeRuleId = optimizationRule.getId();
         String dateField = optimizationRule.getDateField();
+        String noSpaceDateField = ConvertUtil.removeSpace(dateField);
         List<String> paramString = ConvertUtil.concatParamUpdateQuery(columns);
         try {
             stringBuilder.append("UPDATE ")
@@ -35,7 +36,7 @@ public class ScoreDao implements ScoreDaoInterface {
                     .append(" = ")
                     .append(scoreId);
             Query query = session.createSQLQuery(stringBuilder.toString());
-            query.setParameter(dateField, values.get(dateField));
+            query.setParameter(noSpaceDateField, values.get(dateField));
             query.setParameter(MyConstant.SCORE_IDENTIFIER, values.get(MyConstant.SCORE_IDENTIFIER));
             query.setParameter(MyConstant.SCORE_SEGMENT_VALUES, values.get(MyConstant.SCORE_SEGMENT_VALUES));
             addOptimizeParamForQuery(query, optimizeMap);
@@ -68,7 +69,7 @@ public class ScoreDao implements ScoreDaoInterface {
         StringBuilder stringBuilder = new StringBuilder();
         Long optimizeRuleId = optimizationRule.getId();
         String dateField = optimizationRule.getDateField();
-
+        String noSpaceDateField = ConvertUtil.removeSpace(dateField);
         try {
 
             stringBuilder.append("INSERT INTO ")
@@ -81,7 +82,7 @@ public class ScoreDao implements ScoreDaoInterface {
             stringBuilder.append(")");
             Query query = session.createSQLQuery(stringBuilder.toString());
             query.setParameter(MyConstant.SCORE_ID, 0);
-            query.setParameter(dateField, values.get(dateField));
+            query.setParameter(noSpaceDateField, values.get(dateField));
             query.setParameter(MyConstant.SCORE_IDENTIFIER, values.get(MyConstant.SCORE_IDENTIFIER));
             query.setParameter(MyConstant.SCORE_SEGMENT_VALUES, values.get(MyConstant.SCORE_SEGMENT_VALUES));
             addOptimizeParamForQuery(query, optimizeMap);
@@ -101,6 +102,7 @@ public class ScoreDao implements ScoreDaoInterface {
                                        CoreOptimizationRule optimizationRule, Map<String, Double> optimizeMap) {
         Long optimizeRuleId = optimizationRule.getId();
         String dateField = optimizationRule.getDateField();
+        String noSpaceDateField = ConvertUtil.removeSpace(dateField);
         StringBuilder stringBuilder = new StringBuilder();
         try {
             stringBuilder.append("SELECT ")
@@ -117,7 +119,7 @@ public class ScoreDao implements ScoreDaoInterface {
                 stringBuilder.append(" = :segment_values AND ");
             }
             stringBuilder.append("DATE_FORMAT(")
-                    .append(dateField)
+                    .append(noSpaceDateField)
                     .append(", '")
                     .append(MyConstant.DATE_FORMAT)
                     .append("')")

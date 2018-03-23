@@ -74,7 +74,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
             }
 
             stringBuilder.append(" 1 = 1");
-            stringBuilder.append(" GROUP BY " + dateField);
+            stringBuilder.append(" GROUP BY " + ConvertUtil.removeSpace(dateField));
         }
         return AppMain.sparkSession.sql(stringBuilder.toString());
     }
@@ -189,6 +189,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
                                      String dateValue) {
         Long optimizeRuleId = optimizationRule.getId();
         String dateField = optimizationRule.getDateField();
+        String noSpaceDateField = ConvertUtil.removeSpace(dateField);
         String tableName = TABLE_NAME_PREFIX + optimizeRuleId;
         Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
 
@@ -199,7 +200,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
                 .append(" WHERE ")
                 .append(ConvertUtil.generateAllIsNoteNull(metrics))
                 .append(" AND ")
-                .append(dateField + " = '" + dateValue + "'").append(" AND ");
+                .append(noSpaceDateField + " = '" + dateValue + "'").append(" AND ");
         if (identifier != null) {
             stringBuilder.append(MyConstant.IDENTIFIER_COLUMN)
                     .append(" = '").append(identifier).append("'")
@@ -224,7 +225,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
                 }
             }
         }
-        stringBuilder.append(" 1 = 1").append(" GROUP BY ").append(dateField);
+        stringBuilder.append(" 1 = 1").append(" GROUP BY ").append(noSpaceDateField);
         Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringBuilder.toString());
         List<Row> resultList = sqlDF.collectAsList();
 

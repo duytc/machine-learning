@@ -29,6 +29,7 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
         try {
             session = HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
+
             for (CoreLearner aModelList : modelList) {
                 if (aModelList == null) {
                     continue;
