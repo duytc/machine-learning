@@ -6,6 +6,7 @@ import com.pubvantage.dao.ScoreDaoInterface;
 import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
+import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.HibernateUtil;
 import org.apache.log4j.Logger;
 import org.hibernate.Session;
@@ -23,7 +24,8 @@ public class ScoreService implements ScoreServiceInterface {
     public void saveScore(Map<String, Map<String, Map<String, Map<String, Double>>>> scoreMap,
                           CoreOptimizationRule coreOptimizationRule,
                           String futureDate) {
-        List<String> columns = optimizationRuleService.getColumnsForScoreTable(coreOptimizationRule);
+        List<String> columnsSpace = optimizationRuleService.getColumnsForScoreTable(coreOptimizationRule);
+        List<String> columns = ConvertUtil.removeSpace(columnsSpace);
         Map<String, Object> values = new HashMap<>();
         Session session = null;
         try {
@@ -38,7 +40,7 @@ public class ScoreService implements ScoreServiceInterface {
                     values.put(MyConstant.SCORE_IS_PREDICT, false);
                 }
                 String dateField = coreOptimizationRule.getDateField();
-                values.put(dateField, date);
+                values.put(ConvertUtil.removeSpace(dateField), date);
                 Map<String, Map<String, Map<String, Double>>> dateMap = dateEntry.getValue();
                 for (Map.Entry<String, Map<String, Map<String, Double>>> segmentEntry : dateMap.entrySet()) {
                     String segment = segmentEntry.getKey();

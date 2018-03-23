@@ -38,16 +38,7 @@ public class ScoreDao implements ScoreDaoInterface {
             query.setParameter(dateField, values.get(dateField));
             query.setParameter(MyConstant.SCORE_IDENTIFIER, values.get(MyConstant.SCORE_IDENTIFIER));
             query.setParameter(MyConstant.SCORE_SEGMENT_VALUES, values.get(MyConstant.SCORE_SEGMENT_VALUES));
-            for (Map.Entry<String, Double> optimizeEntry : optimizeMap.entrySet()) {
-                String key = optimizeEntry.getKey();
-                if (MyConstant.SCORE.equals(key)) continue;
-                OptimizeField optimizeField = JsonUtil.jsonToObject(key, OptimizeField.class);
-                if (MyConstant.NULL_PREDICT_VALUE == optimizeEntry.getValue()) {
-                    query.setParameter(optimizeField.getField(), null);
-                } else {
-                    query.setParameter(optimizeField.getField(), optimizeEntry.getValue());
-                }
-            }
+            addOptimizeParamForQuery(query, optimizeMap);
             query.setParameter(MyConstant.SCORE, values.get(MyConstant.SCORE));
             query.setParameter(MyConstant.SCORE_IS_PREDICT, values.get(MyConstant.SCORE_IS_PREDICT));
             return query.executeUpdate();
@@ -58,6 +49,19 @@ public class ScoreDao implements ScoreDaoInterface {
         }
     }
 
+    private void addOptimizeParamForQuery(Query query, Map<String, Double> optimizeMap){
+        for (Map.Entry<String, Double> optimizeEntry : optimizeMap.entrySet()) {
+            String key = optimizeEntry.getKey();
+            if (MyConstant.SCORE.equals(key)) continue;
+            OptimizeField optimizeField = JsonUtil.jsonToObject(key, OptimizeField.class);
+            String optimizeFieldNoSpace = ConvertUtil.removeSpace(optimizeField.getField());
+            if (MyConstant.NULL_PREDICT_VALUE == optimizeEntry.getValue()) {
+                query.setParameter(optimizeFieldNoSpace, null);
+            } else {
+                query.setParameter(optimizeFieldNoSpace, optimizeEntry.getValue());
+            }
+        }
+    }
     @Override
     public int insertScore(Session session, List<String> columns, Map<String, Object> values,
                            CoreOptimizationRule optimizationRule, Map<String, Double> optimizeMap) {
@@ -80,22 +84,7 @@ public class ScoreDao implements ScoreDaoInterface {
             query.setParameter(dateField, values.get(dateField));
             query.setParameter(MyConstant.SCORE_IDENTIFIER, values.get(MyConstant.SCORE_IDENTIFIER));
             query.setParameter(MyConstant.SCORE_SEGMENT_VALUES, values.get(MyConstant.SCORE_SEGMENT_VALUES));
-            for (Map.Entry<String, Double> entry : optimizeMap.entrySet()) {
-                try {
-                    String key = entry.getKey();
-                    if (MyConstant.SCORE.equals(key)) continue;
-                    OptimizeField optimizeField = JsonUtil.jsonToObject(key, OptimizeField.class);
-                    if (MyConstant.NULL_PREDICT_VALUE == entry.getValue()) {
-                        query.setParameter(optimizeField.getField(), null);
-
-                    } else {
-                        query.setParameter(optimizeField.getField(), entry.getValue());
-                    }
-                } catch (Exception e) {
-
-                }
-
-            }
+            addOptimizeParamForQuery(query, optimizeMap);
             query.setParameter(MyConstant.SCORE, values.get(MyConstant.SCORE));
             query.setParameter(MyConstant.SCORE_IS_PREDICT, values.get(MyConstant.SCORE_IS_PREDICT));
             return query.executeUpdate();

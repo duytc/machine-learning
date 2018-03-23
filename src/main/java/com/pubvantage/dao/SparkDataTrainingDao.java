@@ -104,7 +104,8 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
      * @return
      */
     @Override
-    public List<Map<String, Object>> getAllUniqueValuesForOneSegmentFieldGroup(Long optimizationRuleId, String identifier, List<String> oneSegmentFieldGroup) {
+    public List<Map<String, Object>> getAllUniqueValuesForOneSegmentFieldGroup(
+            Long optimizationRuleId, String identifier, List<String> oneSegmentFieldGroup) {
         String segments = String.join(",", oneSegmentFieldGroup);
         String tableName = TABLE_NAME_PREFIX + optimizationRuleId;
         Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
@@ -131,13 +132,14 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
         jdbcDF.createOrReplaceTempView(tableName);
 
-        String stringQuery = "SELECT DISTINCT " + dateField + " FROM " + tableName + " ORDER BY " + dateField;
+        String noSpaceDateField = ConvertUtil.removeSpace(dateField);
+        String stringQuery = "SELECT DISTINCT " + noSpaceDateField + " FROM " + tableName + " ORDER BY " + noSpaceDateField;
         Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringQuery);
         List<Row> resultList = sqlDF.collectAsList();
         List<String> listData = new ArrayList<>();
         for (Row row : resultList) {
             Date date = row.getDate(0);
-            String dateString = new SimpleDateFormat("yyyy-MM-dd").format(date);
+            String dateString = new SimpleDateFormat(MyConstant.DATE_FORMAT_JAVA).format(date);
             listData.add(dateString);
         }
         return listData;
@@ -153,17 +155,12 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
 
         jdbcDF.createOrReplaceTempView(tableName);
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("SELECT").append(" " + dateField + ", ");
+        stringBuilder.append("SELECT").append(" " + ConvertUtil.removeSpace(dateField) + ", ");
         stringBuilder.append(ConvertUtil.joinListString(ConvertUtil.buildListSUMQuery(metrics), ", "));
         stringBuilder.append("FROM ").append(tableName)
                 .append(" WHERE ")
-                .append(ConvertUtil.generateAllIsNoteNull(metrics))
+                .append(ConvertUtil.generateAllIsNoteNull(ConvertUtil.buildListSUMQuery(metrics)))
                 .append(" AND ");
-//        stringBuilder.append("DATE_FORMAT(" + dateField + ", '" + MyConstant.DATE_FORMAT + "')")
-//                .append(" = '")
-//                .append(dateValue)
-//                .append("' AND ");
-
         stringBuilder.append(" 1 = 1").append(" GROUP BY ").append(dateField);
 
         Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringBuilder.toString());
@@ -197,7 +194,7 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
 
         jdbcDF.createOrReplaceTempView(tableName);
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("SELECT SUM( " + optimizeField.getField() + ") ");
+        stringBuilder.append("SELECT SUM( " + ConvertUtil.removeSpace(optimizeField.getField()) + ") ");
         stringBuilder.append("FROM ").append(tableName)
                 .append(" WHERE ")
                 .append(ConvertUtil.generateAllIsNoteNull(metrics))
