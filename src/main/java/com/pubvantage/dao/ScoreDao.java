@@ -99,7 +99,7 @@ public class ScoreDao implements ScoreDaoInterface {
             stringBuilder.append(")");
             Query query = session.createSQLQuery(stringBuilder.toString());
             query.setParameter(MyConstant.SCORE_ID, 0);
-            query.setParameter(noSpaceDateField, values.get(dateField));
+            query.setParameter(noSpaceDateField, values.get(noSpaceDateField));
             query.setParameter(MyConstant.SCORE_IDENTIFIER, values.get(MyConstant.SCORE_IDENTIFIER));
             query.setParameter(MyConstant.SCORE_SEGMENT_VALUES, values.get(MyConstant.SCORE_SEGMENT_VALUES));
             addOptimizeParamForQuery(query, optimizeMap);
