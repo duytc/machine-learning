@@ -51,6 +51,20 @@ public class CoreLearnerDao extends AbstractGenericDao<CoreLearner> implements C
     }
 
     @Override
+    public boolean deleteAllByRuleId(Session session, Long optimizationRuleId) {
+        try {
+            String string = "DELETE FROM CoreLearner WHERE optimizationRuleId = :optimizationRuleId";
+            Query query = session.createQuery(string);
+            query.setParameter("optimizationRuleId", optimizationRuleId);
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return false;
+    }
+
+    @Override
     public List<Object> getDistinctSegmentsByRuleId(Session session, Long optimizationRuleId) {
         try {
             String string = "SELECT DISTINCT segment_values FROM core_learner WHERE optimization_rule_id = :optimizationRuleId";

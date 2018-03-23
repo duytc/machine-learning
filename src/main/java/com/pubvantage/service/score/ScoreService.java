@@ -31,7 +31,10 @@ public class ScoreService implements ScoreServiceInterface {
         try {
             session = HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
-
+            boolean deleteAll = scoreDao.deleteAll(session, coreOptimizationRule.getId());
+            if (!deleteAll) {
+                throw new Exception("__optimization_rule_score_ fail");
+            }
             for (Map.Entry<String, Map<String, Map<String, Map<String, Double>>>> dateEntry : scoreMap.entrySet()) {
                 String date = dateEntry.getKey();
                 if (futureDate.equals(date)) {
@@ -56,13 +59,7 @@ public class ScoreService implements ScoreServiceInterface {
                             values.put(optimizeEntry.getKey(), optimizeEntry.getValue());
                         }
                         //save
-                        Map<String, Object> scoreFromDB = scoreDao.findOne(session, columns, values, coreOptimizationRule, optimizeMap);
-                        if (scoreFromDB == null || scoreFromDB.get(MyConstant.SCORE_ID) == null) {
-                            scoreDao.insertScore(session, columns, values, coreOptimizationRule, optimizeMap);
-                        } else {
-                            Long scoreId = Long.parseLong(scoreFromDB.get(MyConstant.SCORE_ID).toString());
-                            scoreDao.updateScore(session, columns, values, coreOptimizationRule, optimizeMap, scoreId);
-                        }
+                        scoreDao.insertScore(session, columns, values, coreOptimizationRule, optimizeMap);
                     }
                 }
             }

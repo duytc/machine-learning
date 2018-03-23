@@ -13,6 +13,8 @@ public interface CoreLearnerDaoInterface extends GenericDaoInterface<CoreLearner
 
     List<CoreLearner> findListByRuleId(Session session, Long optimizationRuleId);
 
+    boolean deleteAllByRuleId(Session session, Long optimizationRuleId);
+
     List<Object> getDistinctSegmentsByRuleId(Session session, Long optimizationRuleId);
 
     List<SegmentAndIdentifier> getDistinctIdentifiersByRuleId(Session session, Long optimizationRuleId);

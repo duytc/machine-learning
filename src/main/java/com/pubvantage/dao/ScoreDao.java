@@ -18,6 +18,22 @@ public class ScoreDao implements ScoreDaoInterface {
     private static Logger logger = Logger.getLogger(ScoreService.class.getName());
 
     @Override
+    public boolean deleteAll(Session session, Long ruleId) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("DELETE FROM ")
+                .append(MyConstant.SCORE_TABLE_NAME_PRE)
+                .append(ruleId);
+        try {
+            Query query = session.createSQLQuery(stringBuilder.toString());
+            query.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            logger.error(e.getCause(), e);
+        }
+        return false;
+    }
+
+    @Override
     public int updateScore(Session session, List<String> columns, Map<String, Object> values,
                            CoreOptimizationRule optimizationRule, Map<String, Double> optimizeMap, Long scoreId) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -50,7 +66,7 @@ public class ScoreDao implements ScoreDaoInterface {
         }
     }
 
-    private void addOptimizeParamForQuery(Query query, Map<String, Double> optimizeMap){
+    private void addOptimizeParamForQuery(Query query, Map<String, Double> optimizeMap) {
         for (Map.Entry<String, Double> optimizeEntry : optimizeMap.entrySet()) {
             String key = optimizeEntry.getKey();
             if (MyConstant.SCORE.equals(key)) continue;
@@ -63,6 +79,7 @@ public class ScoreDao implements ScoreDaoInterface {
             }
         }
     }
+
     @Override
     public int insertScore(Session session, List<String> columns, Map<String, Object> values,
                            CoreOptimizationRule optimizationRule, Map<String, Double> optimizeMap) {

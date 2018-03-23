@@ -20,6 +20,7 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
     private CoreLearningModelDaoInterface coreLearningModelDAO = new CoreLearningModelDao();
     private CoreLearnerDaoInterface coreLearnerDao = new CoreLearnerDao();
 
+
     @Override
     public void saveListLearnerModel(List<CoreLearner> modelList) {
         if (modelList == null || modelList.isEmpty()) {
@@ -29,6 +30,16 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
         try {
             session = HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
+
+            CoreLearner first = modelList.get(0);
+            boolean deleteAll = false;
+            if (first != null && first.getOptimizationRuleId() != null) {
+                deleteAll = coreLearnerDao.deleteAllByRuleId(session, first.getOptimizationRuleId());
+            }
+
+            if (!deleteAll) {
+                return;
+            }
 
             for (CoreLearner aModelList : modelList) {
                 if (aModelList == null) {
