@@ -78,7 +78,8 @@ public class LinearRegressionDataProcess {
             return null;
         }
         String dateField = this.getDateField(optimizationRuleId);
-        Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRuleId, identifier, objectiveAndFields, uniqueValue, oneSegmentGroup, dateField);
+        Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRuleId, identifier,
+                objectiveAndFields, uniqueValue, oneSegmentGroup, dateField);
         this.metricsPredictiveValues = createMetricsPredictiveValues(dataSet);
         Dataset<Row> vectorDataSet = null;
         if (dataSet != null) {
@@ -109,8 +110,9 @@ public class LinearRegressionDataProcess {
         if (metrics != null) {
             objectiveAndFields.addAll(metrics);
         }
-        this.objectiveAndFields = objectiveAndFields;
-        return objectiveAndFields;
+        this.objectiveAndFields = ConvertUtil.removeSpace(objectiveAndFields);
+
+        return this.objectiveAndFields;
     }
 
     private boolean checkOptimizeFieldIsNumber(Long optimizeRuleId, String optimizeFieldName) {

@@ -219,4 +219,21 @@ public class ConvertUtil {
         DateFormat dateFormat = new SimpleDateFormat(format);
         return dateFormat.format(date);
     }
+
+    public static List<String> removeSpace(List<String> list) {
+        List<String> noSpaceList = new ArrayList<>();
+        for (String field : list) {
+            StringBuilder stringBuilder = new StringBuilder();
+            for (char ch : field.toCharArray()) {
+                if (ch != ' ') {
+                    stringBuilder.append(ch);
+                } else {
+                    stringBuilder.append('_');
+                }
+            }
+
+            noSpaceList.add(stringBuilder.toString());
+        }
+        return noSpaceList;
+    }
 }
