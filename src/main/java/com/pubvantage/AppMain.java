@@ -156,6 +156,7 @@ public class AppMain {
 
     private static String activeScoreProcess(Request request, Response response) {
         response.type("application/json");
+        Long optimizationRuleId = null;
         try {
             String predictPrams = request.body();
             PredictionProcessParams predictionProcessParams = new PredictionProcessParams(predictPrams);
@@ -165,7 +166,8 @@ public class AppMain {
                 response.status(HttpStatus.SC_BAD_REQUEST);
                 return new Gson().toJson(predictResponse);
             }
-            Long optimizationRuleId = predictionProcessParams.getOptimizationRuleId();
+            optimizationRuleId = predictionProcessParams.getOptimizationRuleId();
+            optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, false);
             String token = predictionProcessParams.getToken();
             Authentication authentication = new Authentication(optimizationRuleId, token);
             boolean isValid = authentication.authenticate();
@@ -178,9 +180,12 @@ public class AppMain {
             List<String> listDate = sparkDataTrainingDao.getDistinctDates(optimizationRuleId, optimizationRule.getDateField());
             LinearRegressionScoring regressionScoringV2 = new LinearRegressionScoring(optimizationRule, listDate);
             regressionScoringV2.predict();
+
+            optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, true);
             return new Gson().toJson("{'message': 'Done'}");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+            optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, true);
         }
         LearnerResponse predictResponse = new LearnerResponse(HttpStatus.SC_NOT_FOUND, MessageConstant.INTERNAL_ERROR, null);
         response.status(HttpStatus.SC_NOT_FOUND);
@@ -196,7 +201,7 @@ public class AppMain {
      */
     private static String activeLearningProcess(Request request, Response response) {
         response.type("application/json");
-
+        Long optimizationRuleId = null;
         try {
 
             //extract data from request
@@ -221,7 +226,8 @@ public class AppMain {
             }
 
             //get data then convert and learn
-            Long optimizationRuleId = learningProcessParams.getOptimizationRuleId();
+            optimizationRuleId = learningProcessParams.getOptimizationRuleId();
+            optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, false);
             CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId);
 
             JsonArray dataResponseArray = new JsonArray();
@@ -237,9 +243,11 @@ public class AppMain {
                     MessageConstant.LEARN_SUCCESS, dataResponseArray);
             response.status(HttpStatus.SC_OK);
 
+            optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, true);
             return new Gson().toJson(learnerResponse);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
+            optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, true);
         }
         LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_NOT_FOUND,
                 MessageConstant.INTERNAL_ERROR, null);

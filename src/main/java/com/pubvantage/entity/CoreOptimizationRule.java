@@ -42,10 +42,13 @@ public class CoreOptimizationRule {
     @Column(name = "token")
     private String token;
 
+    @Column(name = "finish_loading")
+    private Boolean finishLoading;
+
     public CoreOptimizationRule() {
     }
 
-    public CoreOptimizationRule(Long reportViewId, Long publisherId, String name, String dateField, String dateRange, String identifierFields, String optimizeFields, String segmentFields, Date createdDate, String token) {
+    public CoreOptimizationRule(Long reportViewId, Long publisherId, String name, String dateField, String dateRange, String identifierFields, String optimizeFields, String segmentFields, Date createdDate, String token, Boolean finishLoading) {
         this.reportViewId = reportViewId;
         this.publisherId = publisherId;
         this.name = name;
@@ -56,6 +59,7 @@ public class CoreOptimizationRule {
         this.segmentFields = segmentFields;
         this.createdDate = createdDate;
         this.token = token;
+        this.finishLoading = finishLoading;
     }
 
     public Long getId() {
@@ -145,6 +149,10 @@ public class CoreOptimizationRule {
     public void setToken(String token) {
         this.token = token;
     }
+
+    public Boolean getFinishLoading() { return finishLoading; }
+
+    public void setFinishLoading(Boolean finishLoading) { this.finishLoading = finishLoading; }
 
     @Override
     public String toString() {

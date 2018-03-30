@@ -23,4 +23,5 @@ public interface OptimizationRuleServiceInterface {
 
     CoreOptimizationRule findById(Long optimizationRuleId);
 
+    void setLoadingForOptimizationRule(Long optimizationRuleId, boolean finishLoading);
 }

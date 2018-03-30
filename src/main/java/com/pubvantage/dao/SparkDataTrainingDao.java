@@ -138,9 +138,13 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         List<Row> resultList = sqlDF.collectAsList();
         List<String> listData = new ArrayList<>();
         for (Row row : resultList) {
-            Date date = row.getDate(0);
-            String dateString = new SimpleDateFormat(MyConstant.DATE_FORMAT_JAVA).format(date);
-            listData.add(dateString);
+            try {
+                Date date = row.getDate(0);
+                String dateString = new SimpleDateFormat(MyConstant.DATE_FORMAT_JAVA).format(date);
+                listData.add(dateString);
+            } catch (Exception e) {
+                
+            }
         }
         return listData;
     }

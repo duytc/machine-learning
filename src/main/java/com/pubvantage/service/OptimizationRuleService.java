@@ -15,6 +15,7 @@ import com.pubvantage.utils.HibernateUtil;
 import com.pubvantage.utils.JsonUtil;
 import org.apache.log4j.Logger;
 import org.apache.spark.sql.Row;
+import org.hibernate.Query;
 import org.hibernate.Session;
 
 import java.util.ArrayList;
@@ -158,5 +159,33 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
             }
         }
         return optimizationRule;
+    }
+
+    @Override
+    public void setLoadingForOptimizationRule(Long optimizationRuleId, boolean finishLoading) {
+        Session session = null;
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
+            session.beginTransaction();
+            StringBuilder $builder = new StringBuilder();
+            $builder
+                    .append("UPDATE CoreOptimizationRule SET finishLoading = ")
+                    .append(finishLoading)
+                    .append(" WHERE id = ")
+                    .append(optimizationRuleId);
+            Query query = session.createQuery($builder.toString());
+            query.executeUpdate();
+            session.clear();
+            session.getTransaction().commit();
+        } catch (Exception e) {
+            if (null != session && null != session.getTransaction()) {
+                session.getTransaction().rollback();
+            }
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
     }
 }
