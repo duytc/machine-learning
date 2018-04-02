@@ -232,11 +232,32 @@ public class ConvertUtil {
         return stringBuilder.toString();
     }
 
+    /**
+     * @param list ["days 2", "sum 1"]
+     * @return ["days_2", "sum_1"]
+     */
+
     public static List<String> removeSpace(List<String> list) {
         List<String> noSpaceList = new ArrayList<>();
         for (String field : list) {
             noSpaceList.add(removeSpace(field));
         }
         return noSpaceList;
+    }
+    /**
+     * @param avgString avg(xxx)
+     * @return xxx
+     */
+    public static String removeAvg(String avgString) {
+        if (avgString == null || avgString.length() < 4) return "";
+        return avgString.substring(4, avgString.length() - 1);
+    }
+
+    public static List<String> removeAvg(List<String> listAvg){
+        List<String> plain = new ArrayList<>();
+        for (String item: listAvg) {
+            plain.add(removeAvg(item));
+        }
+        return plain;
     }
 }

@@ -27,10 +27,7 @@ import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class LinearRegressionDataProcess {
     private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
@@ -173,27 +170,32 @@ public class LinearRegressionDataProcess {
     }
 
     private JsonObject createMetricsPredictiveValues(Dataset<Row> trainingDataSet) {
-
-        double[] forecastFactorValues = new double[this.objectiveAndFields.size()];
-        //forecast  number value factor. (avg)
-        Dataset<Row> avgDataSet = avgNumberedData(trainingDataSet, this.objectiveAndFields);
         List<String> objectiveAndFields = this.objectiveAndFields;
+        double[] forecastFactorValues = new double[objectiveAndFields.size()];
+        //forecast  number value factor. (avg)
+        Dataset<Row> avgDataSet = avgNumberedData(trainingDataSet, objectiveAndFields);
 
         List<Row> data = avgDataSet.collectAsList();
+        String[] orderedFields = avgDataSet.columns();
         for (Row row : data) {
-            int numberTypeFactorIndex = -1;
-            for (int col = 0; col < objectiveAndFields.size(); col++) {
-                numberTypeFactorIndex++;
-                if (row.get(numberTypeFactorIndex) instanceof Number) {
-                    forecastFactorValues[col] = ConvertUtil.convertObjectToDouble(row.get(numberTypeFactorIndex).toString());
+            for (int col = 0; col < orderedFields.length; col++) {
+                String fieldName = orderedFields[col];
+                if (row.getAs(fieldName) instanceof Number) {
+                    forecastFactorValues[col] = ConvertUtil.convertObjectToDouble(row.get(col).toString());
+                } else {
+                    forecastFactorValues[col] = 0;
                 }
             }
         }
 
         JsonObject forecast = new JsonObject();
-        //skip objective index 0
-        for (int col = 1; col < objectiveAndFields.size(); col++) {
-            forecast.addProperty(objectiveAndFields.get(col), ConvertUtil.convertObjectToDecimal(forecastFactorValues[col]));
+        List<String> fields = Arrays.asList(orderedFields);
+        fields = ConvertUtil.removeAvg(fields);
+        for (int col = 0; col < fields.size(); col++) {
+            String fieldName = fields.get(col);
+            if (this.optimizeField.getField().equals(fieldName))
+                continue;
+            forecast.addProperty(fieldName, ConvertUtil.convertObjectToDecimal(forecastFactorValues[col]));
         }
         return forecast;
     }
