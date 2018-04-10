@@ -3,79 +3,59 @@ package com.pubvantage.dao;
 import com.pubvantage.AppMain;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.CoreOptimizationRule;
-import com.pubvantage.entity.OptimizeField;
-import com.pubvantage.utils.AppResource;
+import com.pubvantage.entity.prediction.PredictDataWrapper;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.JsonUtil;
 import com.pubvantage.utils.SparkSqlUtil;
+import org.apache.log4j.Logger;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
-
-import static org.apache.spark.sql.functions.col;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
     private SparkSqlUtil sqlUtil;
-    private Properties userConfig;
-
+    private static Logger logger = Logger.getLogger(SparkDataTrainingDao.class.getName());
     private String TABLE_NAME_PREFIX = "__data_training_";
 
     public SparkDataTrainingDao() {
         sqlUtil = SparkSqlUtil.getInstance();
-        AppResource appResource = new AppResource();
-        userConfig = appResource.getUserConfiguration();
     }
 
+
+    /**
+     * Get data set for training: Not use group by DATE and SUM in case 2 or many rows has same value due to some dimension fields are not chosen
+     * Example: url is a dimension but it's not chosen as a segment. May be there are some row different from other by url only
+     * => Handled by UR api
+     */
     @Override
-    public Dataset<Row> getDataSet(Long optimizationRuleId,
-                                   String identifier,
-                                   List<String> objectiveAndFields,
-                                   Map<String, Object> uniqueValue,
-                                   List<String> oneSegmentGroup,
-                                   String dateField) {
-
-        String tableName = TABLE_NAME_PREFIX + optimizationRuleId;
+    public Dataset<Row> getDataSet(CoreOptimizationRule optimizationRule, String identifier, List<String> objectiveAndFields) {
+        String tableName = TABLE_NAME_PREFIX + optimizationRule.getId();
         Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
-
         jdbcDF.createOrReplaceTempView(tableName);
+
+        String sumString = ConvertUtil.joinListString(objectiveAndFields, ", ");
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("SELECT ");
-        stringBuilder.append(ConvertUtil.joinListString(ConvertUtil.buildListSUMQuery(objectiveAndFields), ", "));
-        stringBuilder.append(" FROM ").append(tableName)
+        stringBuilder.append("SELECT ")
+                .append(sumString)
+                .append(" FROM ")
+                .append(tableName)
                 .append(" WHERE ")
                 .append(ConvertUtil.generateAllIsNoteNull(objectiveAndFields))
                 .append(" ");
 
         if (identifier != null) {
-            stringBuilder.append(" AND ");
-            stringBuilder.append(MyConstant.IDENTIFIER_COLUMN)
-                    .append(" = '").append(identifier).append("'")
-                    .append(" AND ");
-            if (oneSegmentGroup != null) {
-                for (String field : oneSegmentGroup) {
-                    Object value = uniqueValue.get(field);
-                    if (value instanceof Date) {
-                        stringBuilder.append("DATE_FORMAT(" + field + ", '" + MyConstant.DATE_FORMAT + "')")
-                                .append(" = '")
-                                .append(value.toString()).append("' AND ");
-                    } else if (value instanceof Number) {
-                        stringBuilder.append(field)
-                                .append(" = ")
-                                .append(value).append(" AND ");
-                    } else {
-                        stringBuilder.append(field)
-                                .append(" = '")
-                                .append(value).append("' AND ");
-                    }
-
-                }
-            }
-
-            stringBuilder.append(" 1 = 1");
-            stringBuilder.append(" GROUP BY " + ConvertUtil.removeSpace(dateField));
+            stringBuilder.append(" AND ")
+                    .append(MyConstant.IDENTIFIER_COLUMN)
+                    .append(" = '")
+                    .append(identifier)
+                    .append("'");
         }
+
         return AppMain.sparkSession.sql(stringBuilder.toString());
     }
 
@@ -95,37 +75,6 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         return sqlDF.collectAsList();
     }
 
-    /**
-     * consider avoid use collectAsList() if data is big. it cause out of memory.
-     *
-     * @param optimizationRuleId
-     * @param identifier
-     * @param oneSegmentFieldGroup
-     * @return
-     */
-    @Override
-    public List<Map<String, Object>> getAllUniqueValuesForOneSegmentFieldGroup(
-            Long optimizationRuleId, String identifier, List<String> oneSegmentFieldGroup) {
-        String segments = String.join(",", oneSegmentFieldGroup);
-        String tableName = TABLE_NAME_PREFIX + optimizationRuleId;
-        Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
-        jdbcDF.createOrReplaceTempView(tableName);
-
-        String stringQuery = "SELECT DISTINCT " + segments + " FROM " + tableName + " WHERE identifier = '" + identifier + "'";
-        Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringQuery);
-        List<Row> resultList = sqlDF.collectAsList();
-        List<Map<String, Object>> listData = new ArrayList<>();
-
-        for (Row row : resultList) {
-            Map<String, Object> map = new LinkedHashMap<>();
-            for (String field : oneSegmentFieldGroup) {
-                map.put(field, row.getAs(field));
-            }
-            listData.add(map);
-        }
-        return listData;
-    }
-
     @Override
     public List<String> getDistinctDates(Long optimizationRuleId, String dateField) {
         String tableName = TABLE_NAME_PREFIX + optimizationRuleId;
@@ -143,54 +92,22 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
                 String dateString = new SimpleDateFormat(MyConstant.DATE_FORMAT_JAVA).format(date);
                 listData.add(dateString);
             } catch (Exception e) {
-                
+                logger.error(e.getLocalizedMessage(), e);
             }
         }
         return listData;
     }
 
+    /**
+     * We use Group by and (SUM or AVG)  here but do not use when got training data
+     * Handled by UR api
+     */
     @Override
-    public List<Double> getVectorData(List<String> metrics, CoreOptimizationRule optimizationRule, String dateValue) {
-        Long optimizeRuleId = optimizationRule.getId();
-        String dateField = optimizationRule.getDateField();
-
-        String tableName = TABLE_NAME_PREFIX + optimizeRuleId;
-        Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
-
-        jdbcDF.createOrReplaceTempView(tableName);
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("SELECT").append(" " + ConvertUtil.removeSpace(dateField) + ", ");
-        stringBuilder.append(ConvertUtil.joinListString(ConvertUtil.buildListSUMQuery(metrics), ", "));
-        stringBuilder.append("FROM ").append(tableName)
-                .append(" WHERE ")
-                .append(ConvertUtil.generateAllIsNoteNull(ConvertUtil.buildListSUMQuery(metrics)))
-                .append(" AND ");
-        stringBuilder.append(" 1 = 1").append(" GROUP BY ").append(dateField);
-
-        Dataset<Row> sqlDF = AppMain.sparkSession.sql(stringBuilder.toString());
-        Dataset<Row> filteredDataSet = sqlDF.filter(col(dateField).equalTo(dateValue));
-        List<Row> resultList = filteredDataSet.collectAsList();
-
-        if (resultList != null && !resultList.isEmpty()) {
-            List<Double> listData = new ArrayList<>();
-            Row row = resultList.get(0);
-            for (int i = 1; i < row.length(); i++) {
-                //skip 0 is date field
-                Double value = ConvertUtil.convertObjectToDouble(row.get(i));
-                listData.add(value);
-            }
-            return listData;
-        }
-        return null;
-    }
-
-    @Override
-    public Double getObjectiveFromDB(String identifier,
-                                     Map<String, Object> oneSegmentGroup,
+    public Double getObjectiveFromDB(PredictDataWrapper predictDataWrapper,
                                      List<String> metrics,
-                                     OptimizeField optimizeField,
-                                     CoreOptimizationRule optimizationRule,
-                                     String dateValue) {
+                                     List<String> dimensions,
+                                     CoreOptimizationRule optimizationRule) {
+
         Long optimizeRuleId = optimizationRule.getId();
         String dateField = optimizationRule.getDateField();
         String noSpaceDateField = ConvertUtil.removeSpace(dateField);
@@ -199,33 +116,39 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
 
         jdbcDF.createOrReplaceTempView(tableName);
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("SELECT SUM( " + ConvertUtil.removeSpace(optimizeField.getField()) + ") ");
-        stringBuilder.append("FROM ").append(tableName)
+        stringBuilder.append("SELECT SUM( ")
+                .append(ConvertUtil.removeSpace(predictDataWrapper.getOptimizeField().getField()))
+                .append(") ")
+                .append("FROM ").append(tableName)
                 .append(" WHERE ")
                 .append(ConvertUtil.generateAllIsNoteNull(metrics))
                 .append(" AND ")
-                .append(noSpaceDateField + " = '" + dateValue + "'").append(" AND ");
-        if (identifier != null) {
-            stringBuilder.append(MyConstant.IDENTIFIER_COLUMN)
-                    .append(" = '").append(identifier).append("'")
+                .append(noSpaceDateField)
+                .append(" = '")
+                .append(predictDataWrapper.getDate())
+                .append("'")
+                .append(" AND ");
+        if (predictDataWrapper.getIdentifier() != null) {
+            stringBuilder
+                    .append(MyConstant.IDENTIFIER_COLUMN)
+                    .append(" = '")
+                    .append(predictDataWrapper.getIdentifier())
+                    .append("'")
                     .append(" AND ");
         }
-        if (oneSegmentGroup != null) {
-            for (Map.Entry<String, Object> entry : oneSegmentGroup.entrySet()) {
-                String field = entry.getKey();
-                Object value = entry.getValue();
-                if (value instanceof Date) {
-                    stringBuilder.append("DATE_FORMAT(" + field + ", '" + MyConstant.DATE_FORMAT + "')")
-                            .append(" = '")
-                            .append(value.toString()).append("' AND ");
-                } else if (value instanceof Number) {
-                    stringBuilder.append(field)
-                            .append(" = ")
-                            .append(value).append(" AND ");
-                } else {
-                    stringBuilder.append(field)
-                            .append(" = '")
-                            .append(value).append("' AND ");
+        Map<String, String> segmentGroup = JsonUtil.jsonToMap(predictDataWrapper.getSegmentJson());
+        if (segmentGroup != null) {
+            if (segmentGroup.isEmpty()) {
+                // user choose no segment
+                stringBuilder.append(" (");
+                stringBuilder.append(ConvertUtil.generateAllIsGlobal(dimensions, MyConstant.SQL_OR));
+                stringBuilder.append(" )");
+                stringBuilder.append(" AND ");
+            } else {
+                for (Map.Entry<String, String> entry : segmentGroup.entrySet()) {
+                    String field = entry.getKey();
+                    Object value = entry.getValue();
+                    stringBuilder.append(field).append(" = '").append(value).append("' AND ");
                 }
             }
         }

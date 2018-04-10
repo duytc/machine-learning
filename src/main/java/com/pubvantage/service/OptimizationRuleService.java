@@ -3,10 +3,7 @@ package com.pubvantage.service;
 
 import com.jsoniter.JsonIterator;
 import com.pubvantage.constant.MyConstant;
-import com.pubvantage.dao.CoreAutoOptimizationConfigDao;
-import com.pubvantage.dao.OptimizationRuleDao;
-import com.pubvantage.dao.SparkDataTrainingDao;
-import com.pubvantage.dao.SparkDataTrainingDaoInterface;
+import com.pubvantage.dao.*;
 import com.pubvantage.entity.CoreOptimizationRule;
 import com.pubvantage.entity.CoreReportView;
 import com.pubvantage.entity.OptimizeField;
@@ -23,11 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class OptimizationRuleService implements OptimizationRuleServiceInterface {
+public class OptimizationRuleService extends AbstractGenericService<CoreOptimizationRule> implements OptimizationRuleServiceInterface {
     private CoreAutoOptimizationConfigDao coreAutoOptimizationConfigDao = new CoreAutoOptimizationConfigDao();
     private static Logger logger = Logger.getLogger(OptimizationRuleService.class.getName());
-    private OptimizationRuleDao optimizationRuleDao = new OptimizationRuleDao();
-    private ReportViewServiceInterface viewService = new ReportViewService();
+    private ReportViewServiceInterface reportViewService = new ReportViewService();
     private SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
 
     @Override
@@ -50,12 +46,6 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
     }
 
     @Override
-    public List<OptimizeField> getOptimizeFields(Long optimizationRuleId) {
-        CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
-        return getOptimizeFields(optimizationRule);
-    }
-
-    @Override
     public List<OptimizeField> getOptimizeFields(CoreOptimizationRule optimizationRule) {
         List<HashMap<String, String>> map = JsonUtil.jsonArrayObjectsToListMap(optimizationRule.getOptimizeFields());
         List<OptimizeField> optimizeFieldList = new ArrayList<>();
@@ -68,44 +58,6 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
 
         });
         return optimizeFieldList;
-    }
-
-    /**
-     * get only number metrics (but not implement yet)
-     *
-     * @param optimizationRuleId optimize rule
-     * @return list metrics
-     */
-    @Override
-    public List<String> getMetrics(Long optimizationRuleId) {
-        CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
-        CoreReportView reportView = viewService.findById(optimizationRule.getReportViewId());
-        String jsonFieldType = reportView.getFieldTypes();
-        List<String> metrics = JsonUtil.jsonArrayStringToJavaList(reportView.getMetrics());
-        Map<String, String> fieldType = JsonUtil.jsonToMap(jsonFieldType);
-        return filterNumberTypeMetric(metrics, fieldType);
-    }
-
-    @Override
-    public String getDateField(Long optimizationRuleId) {
-        CoreOptimizationRule optimizationRule = this.findById(optimizationRuleId);
-        if (optimizationRule != null) {
-            return optimizationRule.getDateField();
-        }
-        return null;
-    }
-
-    private List<String> filterNumberTypeMetric(List<String> metrics, Map<String, String> fieldType) {
-        List<String> filteredMetrics = new ArrayList<>();
-        if (metrics != null && fieldType != null) {
-            for (String metric : metrics) {
-                String type = fieldType.get(metric);
-                if (MyConstant.DECIMAL_TYPE.equals(type) || MyConstant.NUMBER_TYPE.equals(type)) {
-                    filteredMetrics.add(metric);
-                }
-            }
-        }
-        return filteredMetrics;
     }
 
     @Override
@@ -138,27 +90,19 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
         return isValid;
     }
 
+
     @Override
-    public CoreOptimizationRule findById(Long optimizationRuleId) {
-        Session session = null;
-        CoreOptimizationRule optimizationRule = null;
-        try {
-            session = HibernateUtil.getSessionFactory().openSession();
-            session.beginTransaction();
-            optimizationRule = optimizationRuleDao.findById(optimizationRuleId, session);
-            session.clear();
-            session.getTransaction().commit();
-        } catch (Exception e) {
-            if (null != session && null != session.getTransaction()) {
-                session.getTransaction().rollback();
-            }
-            logger.error(e.getMessage(), e);
-        } finally {
-            if (session != null) {
-                session.close();
-            }
-        }
-        return optimizationRule;
+    public boolean checkOptimizeFieldIsDigit(CoreOptimizationRule optimizationRule, OptimizeField optimizeField) {
+        if (optimizeField == null) return false;
+        if (optimizationRule == null || optimizationRule.getReportViewId() == null) return false;
+
+        CoreReportView reportView = reportViewService.findById(optimizationRule.getReportViewId(), new ReportViewDao());
+        if (reportView == null || reportView.getId() == null) return false;
+
+        String jsonFieldType = reportView.getFieldTypes();
+        Map<String, String> fieldType = JsonUtil.jsonToMap(jsonFieldType);
+        String optimizeType = fieldType.get(optimizeField.getField());
+        return MyConstant.DECIMAL_TYPE.equals(optimizeType) || MyConstant.NUMBER_TYPE.equals(optimizeType);
     }
 
     @Override
@@ -167,13 +111,11 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
         try {
             session = HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
-            StringBuilder $builder = new StringBuilder();
-            $builder
-                    .append("UPDATE CoreOptimizationRule SET finishLoading = ")
-                    .append(finishLoading)
-                    .append(" WHERE id = ")
-                    .append(optimizationRuleId);
-            Query query = session.createQuery($builder.toString());
+            String builder = "UPDATE CoreOptimizationRule SET finishLoading = " +
+                    finishLoading +
+                    " WHERE id = " +
+                    optimizationRuleId;
+            Query query = session.createQuery(builder);
             query.executeUpdate();
             session.clear();
             session.getTransaction().commit();
@@ -188,4 +130,23 @@ public class OptimizationRuleService implements OptimizationRuleServiceInterface
             }
         }
     }
+
+    @Override
+    public List<String> getSegments(CoreOptimizationRule optimizationRule) {
+        String jsonSegments = optimizationRule.getSegmentFields();
+        return JsonUtil.jsonArrayStringToJavaList(jsonSegments);
+    }
+
+    @Override
+    public List<String> getDimensions(CoreOptimizationRule optimizationRule) {
+        CoreReportView reportView = reportViewService.findById(optimizationRule.getReportViewId(), new ReportViewDao());
+        return reportViewService.getDimensions(reportView);
+    }
+
+    @Override
+    public List<String> getNoSpaceDimensions(CoreOptimizationRule optimizationRule) {
+        CoreReportView reportView = reportViewService.findById(optimizationRule.getReportViewId(), new ReportViewDao());
+        return reportViewService.getNoSpaceDimensions(reportView);
+    }
+
 }

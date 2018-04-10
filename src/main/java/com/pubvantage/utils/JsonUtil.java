@@ -5,18 +5,15 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import com.jsoniter.JsonIterator;
-import spark.ResponseTransformer;
 
-import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class JsonUtil {
     public static String toJson(Object object) {
         return new Gson().toJson(object);
-    }
-
-    public static ResponseTransformer json() {
-        return JsonUtil::toJson;
     }
 
     public static JsonArray toJsonArray(String[] array) {
@@ -50,16 +47,8 @@ public class JsonUtil {
         return JsonIterator.deserialize(json, Map.class);
     }
 
-    public static <K, V> LinkedHashMap<K, V> jsonToLinkedHashMap(String json) {
-        return JsonIterator.deserialize(json, LinkedHashMap.class);
-    }
-
     public static <T> T jsonToObject(String json, Class<T> type) {
         return JsonIterator.deserialize(json, type);
     }
 
-    public static String getFirstString(String json) {
-        List<String> anyList = JsonIterator.deserialize(json, ArrayList.class);
-        return anyList.get(0);
-    }
 }

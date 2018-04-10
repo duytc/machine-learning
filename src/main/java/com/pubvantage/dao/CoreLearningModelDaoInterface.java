@@ -5,6 +5,5 @@ import org.hibernate.Session;
 
 public interface CoreLearningModelDaoInterface extends GenericDaoInterface<CoreLearningModel> {
 
-    CoreLearningModel findOne(Session session, Long autOptimizationConfigId, String identifier);
 
 }

@@ -1,19 +1,17 @@
 package com.pubvantage.restparams;
 
 import com.google.gson.Gson;
-import com.pubvantage.AppMain;
 import com.pubvantage.service.OptimizationRuleService;
 import com.pubvantage.service.OptimizationRuleServiceInterface;
 import org.apache.log4j.Logger;
 
 public class LearningProcessParams {
 
-    private static Logger logger = Logger.getLogger(AppMain.class.getName());
+    private static Logger logger = Logger.getLogger(LearningProcessParams.class.getName());
 
     private LearnerRequestParam requestParam;
 
     public LearningProcessParams(String stringJson) {
-        // Check string json before call API
         try {
             requestParam = new Gson().fromJson(stringJson, LearnerRequestParam.class);
         } catch (Exception e) {

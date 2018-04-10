@@ -9,12 +9,7 @@ import java.util.Map;
 public interface ScoreDaoInterface {
     boolean deleteAll(Session session, Long ruleId);
 
-    int updateScore(Session session, List<String> columns, Map<String, Object> values,
-                    CoreOptimizationRule optimizationRule, Map<String, Double> optimizeMap, Long scoreId);
-
     int insertScore(Session session, List<String> columns, Map<String, Object> values,
                     CoreOptimizationRule optimizationRule, Map<String, Double> optimizeMap);
 
-    Map<String, Object> findOne(Session session, List<String> columns, Map<String, Object> values,
-                                CoreOptimizationRule optimizationRule, Map<String, Double> optimizeMap);
 }

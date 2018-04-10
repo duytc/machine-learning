@@ -4,6 +4,8 @@ package com.pubvantage.constant;
  * Created by quyendq on 02/03/2018.
  */
 public class MyConstant {
+    public static int DEFAULT_PORT = 8086;
+
     public static String FIELD = "field";
     public static String WEIGHT = "weight";
     public static String GOAL = "goal";
@@ -31,11 +33,20 @@ public class MyConstant {
     public static String SCORE_IS_PREDICT = "is_predict";
 
     public static String SCORE_TABLE_NAME_PRE = "__optimization_rule_score_";
-    public static double NULL_PREDICT_VALUE = -Double.MAX_VALUE;
+    public static double NO_HISTORY_PREDICTION_VALUE = -Double.MAX_VALUE;
+    public static double MODEL_NULL_PREDICTION_VALUE = 0D;
     public static double DEFAULT_SCORE_VALUE = 0.5d;
     public static String GLOBAL_KEY = "NULL";
+    public static String GLOBAL_DIMENSION_VALUE = "global";
+    public static String NO_SEGMENT = "NO_SEGMENT";
 
     public static String NULL_COEFFICIENT = "null";
+
+    // convert data set
+    public static String INDEX = " Index";
+
+    public static String SQL_OR = "OR";
+    public static String SQL_AND = "AND";
 
 
 }

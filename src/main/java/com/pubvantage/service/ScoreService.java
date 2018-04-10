@@ -1,11 +1,9 @@
-package com.pubvantage.service.score;
+package com.pubvantage.service;
 
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.dao.ScoreDao;
 import com.pubvantage.dao.ScoreDaoInterface;
 import com.pubvantage.entity.CoreOptimizationRule;
-import com.pubvantage.service.OptimizationRuleService;
-import com.pubvantage.service.OptimizationRuleServiceInterface;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.HibernateUtil;
 import org.apache.log4j.Logger;
@@ -31,10 +29,12 @@ public class ScoreService implements ScoreServiceInterface {
         try {
             session = HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
+
             boolean deleteAll = scoreDao.deleteAll(session, coreOptimizationRule.getId());
             if (!deleteAll) {
-                throw new Exception("__optimization_rule_score_ fail");
+                throw new Exception("Delete learner model fail");
             }
+            //loop by date
             for (Map.Entry<String, Map<String, Map<String, Map<String, Double>>>> dateEntry : scoreMap.entrySet()) {
                 String date = dateEntry.getKey();
                 if (futureDate.equals(date)) {
@@ -45,12 +45,13 @@ public class ScoreService implements ScoreServiceInterface {
                 String dateField = coreOptimizationRule.getDateField();
                 values.put(ConvertUtil.removeSpace(dateField), date);
                 Map<String, Map<String, Map<String, Double>>> dateMap = dateEntry.getValue();
+                //loop by segment
                 for (Map.Entry<String, Map<String, Map<String, Double>>> segmentEntry : dateMap.entrySet()) {
                     String segment = segmentEntry.getKey();
                     segment = MyConstant.GLOBAL_KEY.equals(segment) ? null : segment;
                     values.put(MyConstant.SCORE_SEGMENT_VALUES, segment);
                     Map<String, Map<String, Double>> segmentMap = segmentEntry.getValue();
-
+                    //loop by identifier
                     for (Map.Entry<String, Map<String, Double>> identifierEntry : segmentMap.entrySet()) {
                         String identifier = identifierEntry.getKey();
                         values.put(MyConstant.SCORE_IDENTIFIER, identifier);

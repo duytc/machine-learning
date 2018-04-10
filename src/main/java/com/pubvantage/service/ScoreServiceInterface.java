@@ -1,4 +1,4 @@
-package com.pubvantage.service.score;
+package com.pubvantage.service;
 
 import com.pubvantage.entity.CoreOptimizationRule;
 

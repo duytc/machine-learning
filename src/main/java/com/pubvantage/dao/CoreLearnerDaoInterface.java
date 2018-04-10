@@ -1,23 +1,25 @@
 package com.pubvantage.dao;
 
 import com.pubvantage.entity.CoreLearner;
-import com.pubvantage.entity.SegmentAndIOptimizeField;
-import com.pubvantage.entity.SegmentAndIdentifier;
+import com.pubvantage.entity.OptimizeField;
 import org.hibernate.Session;
 
 import java.util.List;
-import java.util.Map;
 
 public interface CoreLearnerDaoInterface extends GenericDaoInterface<CoreLearner> {
-    List<CoreLearner> findList(Session session, Long autOptimizationConfigId, String identifier);
+    // TODO able to refactor getList optimize field
+    List<CoreLearner> getList(Session session, Long autOptimizationConfigId, String identifier, String segmentGroup);
 
-    List<CoreLearner> findListByRuleId(Session session, Long optimizationRuleId);
+    List<String> getDistinctIdentifiers(Session session, Long optimizationRuleId, String segmentGroup);
+
+    List<String> getIdentifiersBySegmentGroup(Session session, Long optimizationRuleId, String segmentGroup);
+
+    String getTextSegmentConvertedRule(Session session, Long optimizationRuleId, String segmentGroup, String identifier);
+
+    List<String> getDistinctSegmentValues(Session session, Long optimizationRuleId);
+
+    List<OptimizeField> getOptimizeFields(Session session, Long optimizationRuleId);
 
     boolean deleteAllByRuleId(Session session, Long optimizationRuleId);
 
-    List<Object> getDistinctSegmentsByRuleId(Session session, Long optimizationRuleId);
-
-    List<SegmentAndIdentifier> getDistinctIdentifiersByRuleId(Session session, Long optimizationRuleId);
-
-    List<SegmentAndIOptimizeField> getDistinctOptimizeByRuleIdAndIdentifier(Session session, String identifier, Long optimizationRuleId);
 }

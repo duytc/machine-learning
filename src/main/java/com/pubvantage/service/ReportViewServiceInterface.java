@@ -2,7 +2,19 @@ package com.pubvantage.service;
 
 import com.pubvantage.entity.CoreReportView;
 
-public interface ReportViewServiceInterface {
+import java.util.List;
+import java.util.Map;
 
-    CoreReportView findById(Long reportViewId);
+public interface ReportViewServiceInterface extends GenericServiceInterface<CoreReportView> {
+
+    Map<String, String> getFieldsType(CoreReportView reportView);
+
+    List<String> getDigitMetrics(CoreReportView reportView, String optimizeFieldName);
+
+    List<String> getDimensions(CoreReportView reportView);
+
+    List<String> getNoSpaceDigitMetrics(CoreReportView reportView, String optimizeFieldName);
+
+    List<String> getNoSpaceDimensions(CoreReportView reportView);
+
 }

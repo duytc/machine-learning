@@ -1,11 +1,11 @@
 package com.pubvantage.utils;
 
 import com.pubvantage.constant.MyConstant;
-import com.pubvantage.entity.FactorDataType;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -64,23 +64,6 @@ public class ConvertUtil {
     }
 
     /**
-     * @param inputType input string
-     * @return check if inputType is Number
-     */
-    public static boolean isTextOrDate(String inputType) {
-        return FactorDataType.TEXT.equals(inputType) || FactorDataType.DATE.equals(inputType);
-    }
-
-    /**
-     * @param inputType input string
-     * @return check if inputType is Number
-     */
-    public static boolean isNumberFactor(String inputType) {
-        return FactorDataType.NUMBER.equals(inputType) || FactorDataType.DECIMAL.equals(inputType);
-    }
-
-
-    /**
      * @param unsortedMap unsorted map
      * @param <K>         type of key
      * @param <V>         type of value
@@ -119,26 +102,39 @@ public class ConvertUtil {
      */
     public static String generateAllIsNoteNull(String[] listFactors) {
         String concatString = String.join(" IS NOT NULL AND ", listFactors);
-        String string2 = concatString + " IS NOT NULL";
 
-        return string2;
+        return concatString + " IS NOT NULL";
     }
 
     public static String generateAllIsNoteNull(List<String> list) {
         String concatString = String.join(" IS NOT NULL AND ", list);
-        String string2 = concatString + " IS NOT NULL";
 
-        return string2;
+        return concatString + " IS NOT NULL";
     }
 
+    /**
+     * @param list list of dimensions. Example: [a, b]
+     * @param type AND or OR
+     * @return Example: a = 'Global' AND b = 'Global'
+     */
+    public static String generateAllIsGlobal(List<String> list, String type) {
+        if (list == null || list.isEmpty()) return "";
+        return String.join(" = '" +
+                MyConstant.GLOBAL_DIMENSION_VALUE + "' " + type + " ", list) +
+                " = '" + MyConstant.GLOBAL_DIMENSION_VALUE + "' ";
+    }
+
+    /**
+     *
+     * @param set Example: [a,b]
+     * @return [null, [a], [b], [a,b]]
+     */
     public static List<List<String>> generateSubsets(List<String> set) {
         List<List<String>> result = new ArrayList<>();
         result.add(null);
         int size = set.size();
         for (int i = 1; i < (1 << size); i++) {
             List<String> subSet = new ArrayList<>();
-            //skip empty set so start from 1
-            System.out.print("{ ");
             // Print current subset
             for (int j = 0; j < size; j++) {
                 // (1<<j) is a number with jth bit 1
@@ -147,15 +143,11 @@ public class ConvertUtil {
                 // are present in the subset and which
                 // are not
                 if ((i & (1 << j)) > 0) {
-                    System.out.print(set.get(j) + " ");
                     subSet.add(set.get(j));
                 }
             }
-            System.out.println("}");
             result.add(subSet);
         }
-        //for run global
-
         return result;
     }
 
@@ -177,25 +169,8 @@ public class ConvertUtil {
         return result;
     }
 
-    public static String mapValueToString(Map<String, Object> map) {
-        List<String> list = new ArrayList<>();
-        map.forEach((key, value) -> list.add(value.toString()));
-        return joinListString(list, "-");
-    }
-
-    public static <V extends Comparable<V>> boolean valuesEquals(Map<?, V> map1, Map<?, V> map2) {
-        List<V> values1 = new ArrayList<>(map1.values());
-        List<V> values2 = new ArrayList<>(map2.values());
-        Collections.sort(values1);
-        Collections.sort(values2);
-        return values1.equals(values2);
-    }
-
     public static String buildInsertValueQuery(List<String> columns) {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(":");
-        stringBuilder.append(joinListString(columns, ",:"));
-        return stringBuilder.toString();
+        return ":" + joinListString(columns, ",:");
     }
 
     public static List<String> concatParamUpdateQuery(List<String> field) {
@@ -215,11 +190,21 @@ public class ConvertUtil {
         return dt;
     }
 
+    /**
+     *
+     * @param date a date value
+     * @param format date format
+     * @return string value of date
+     */
     public static String dateToString(Date date, String format) {
         DateFormat dateFormat = new SimpleDateFormat(format);
         return dateFormat.format(date);
     }
 
+    /**
+     * @param field Example: days 2
+     * @return days_2
+     */
     public static String removeSpace(String field) {
         StringBuilder stringBuilder = new StringBuilder();
         for (char ch : field.toCharArray()) {
@@ -244,6 +229,21 @@ public class ConvertUtil {
         }
         return noSpaceList;
     }
+
+    /**
+     * This use for label of column need to  convert text to digit
+     * @param list  ["a", "b"]
+     * @param index "Index"
+     * @return ["a Index", "b Index"]
+     */
+    public static List<String> concatIndex(List<String> list, String index) {
+        List<String> newList = new ArrayList<>();
+        for (String item : list) {
+            newList.add(item + index);
+        }
+        return newList;
+    }
+
     /**
      * @param avgString avg(xxx)
      * @return xxx
@@ -253,11 +253,81 @@ public class ConvertUtil {
         return avgString.substring(4, avgString.length() - 1);
     }
 
-    public static List<String> removeAvg(List<String> listAvg){
+    public static List<String> removeAvg(List<String> listAvg) {
         List<String> plain = new ArrayList<>();
-        for (String item: listAvg) {
+        for (String item : listAvg) {
             plain.add(removeAvg(item));
         }
         return plain;
+    }
+
+    /**
+     *
+     * @param segmentData Example: { country: ["VN", "global"], domain: ["a.com", "global"]
+     * @return [{country: "VN", domain: "a.com"}, {country: "global", domain: "a.com"}, ...]
+     */
+    public static List<Map<String, String>> generateAllSegmentPair(Map<String, List<String>> segmentData) {
+        if (segmentData == null) return null;
+        List<String> segmentFields = new ArrayList<>(segmentData.keySet());
+        int size = segmentFields.size();
+        List<Map<String, String>> listSegmentGroup = new ArrayList<>();
+        Map<String, String> stepMap = new HashMap<>();
+        backTrack(0, size, segmentData, segmentFields, stepMap, listSegmentGroup);
+
+        return listSegmentGroup;
+    }
+
+    private static void backTrack(int step,
+                                  int size,
+                                  Map<String, List<String>> segmentData,
+                                  List<String> segmentFields,
+                                  Map<String, String> stepMap,
+                                  List<Map<String, String>> listSegmentGroup) {
+        if (step == size) {
+            Map<String, String> copy = new HashMap<>(stepMap);
+            listSegmentGroup.add(copy);
+            return;
+        }
+        String segmentField = segmentFields.get(step);
+        List<String> segmentValues = segmentData.get(segmentField);
+        for (String value : segmentValues) {
+            stepMap.put(segmentField, value);
+            backTrack(step + 1, size, segmentData, segmentFields, stepMap, listSegmentGroup);
+            stepMap.put(segmentField, null);
+        }
+    }
+
+    /**
+     * add future date to listDate. The day after the latest date in data training
+     *
+     * @param listDate list of date in data training
+     */
+    public static String addFutureDate(List<String> listDate) {
+        try {
+            if (listDate == null || listDate.isEmpty()) {
+                Date today = new Date();
+                Date nextDay = ConvertUtil.nextDay(today);
+                String nextDayString = ConvertUtil.dateToString(nextDay, MyConstant.DATE_FORMAT_JAVA);
+                listDate = new ArrayList<>();
+                listDate.add(nextDayString);
+                return nextDayString;
+            }
+
+            java.util.Collections.sort(listDate);
+            String latestDate = listDate.get(listDate.size() - 1);
+            Date date1 = new SimpleDateFormat(MyConstant.DATE_FORMAT_JAVA).parse(latestDate);
+            Date nextDay = ConvertUtil.nextDay(date1);
+            String nextDayString = ConvertUtil.dateToString(nextDay, MyConstant.DATE_FORMAT_JAVA);
+            listDate.add(nextDayString);
+            return nextDayString;
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+            Date today = new Date();
+            Date nextDay = ConvertUtil.nextDay(today);
+            String nextDayString = ConvertUtil.dateToString(nextDay, MyConstant.DATE_FORMAT_JAVA);
+            listDate.add(nextDayString);
+            return nextDayString;
+        }
     }
 }

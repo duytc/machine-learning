@@ -1,82 +1,217 @@
-package com.pubvantage.service.Learner;
+package com.pubvantage.prediction;
 
-import com.pubvantage.AppMain;
-import com.pubvantage.conditionprocessor.ConditionConverter;
 import com.pubvantage.constant.MyConstant;
-import com.pubvantage.entity.*;
-import com.pubvantage.service.CoreLearningModelService;
-import com.pubvantage.service.CoreLearningModelServiceInterface;
-import com.pubvantage.service.DataTraning.DataTrainingService;
-import com.pubvantage.service.DataTraning.DataTrainingServiceInterface;
-import com.pubvantage.service.score.ScoreService;
-import com.pubvantage.service.score.ScoreServiceInterface;
-import com.pubvantage.utils.ConfigLoaderUtil;
-import com.pubvantage.utils.ConvertUtil;
+import com.pubvantage.entity.CoreLearner;
+import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.OptimizeField;
+import com.pubvantage.entity.PredictListData;
+import com.pubvantage.entity.prediction.IdentifierPredictWrapper;
+import com.pubvantage.entity.prediction.PredictDataWrapper;
+import com.pubvantage.entity.prediction.SegmentPredictWrapper;
+import com.pubvantage.service.*;
 import com.pubvantage.utils.JsonUtil;
-import com.pubvantage.utils.ThreadUtil;
 import org.apache.log4j.Logger;
 import org.apache.spark.ml.regression.LinearRegressionModel;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class LinearRegressionScoring {
-    private static Logger logger = Logger.getLogger(AppMain.class.getName());
+    private static Logger logger = Logger.getLogger(LinearRegressionScoring.class.getName());
     private static final double PREDICTION_DEFAULT_VALUE = 0d;
     private CoreLearningModelServiceInterface coreLearnerModelService = new CoreLearningModelService();
     private ScoreServiceInterface scoreService = new ScoreService();
     private DataTrainingServiceInterface dataTrainingService = new DataTrainingService();
-
+    private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
     private CoreOptimizationRule coreOptimizationRule;
-    private List<String> listDate;
-    private List<Object> listSegments;
-    private String futureDate;
     private Map<String, Map<String, Map<String, Boolean>>> noHistorySegment = new ConcurrentHashMap<>();
 
-    public LinearRegressionScoring(CoreOptimizationRule coreOptimizationRule,
-                                   List<String> listDate) {
+    public LinearRegressionScoring(CoreOptimizationRule coreOptimizationRule) {
         this.coreOptimizationRule = coreOptimizationRule;
-        this.listDate = listDate;
     }
 
     /**
      * predict score then save to database
      */
-    public void predict() {
-        addFutureDate(this.listDate);
+    public void predict() throws Exception {
+        // Contain dates, optimization fields, rule id
+        PredictListData predictListData = coreLearnerModelService.getPredictData(coreOptimizationRule);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(ConfigLoaderUtil.getExecuteServiceThreadLeaner());
-        Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict = generatePredictValue(
-                executorService, this.listDate);
-        if (executorService.isShutdown()) {
-            Map<String, Map<String, Map<String, Map<String, Double>>>> predictTransform = transformStructure(
-                    segmentsPredict, this.listDate, this.listSegments);
-            Map<String, Map<String, Map<String, Map<String, Double>>>> scoreData = computeScore(
-                    predictTransform, noHistorySegment);
-            Map<String, Map<String, Map<String, Map<String, Double>>>> standardizedScore = standardizeScore(
-                    scoreData, noHistorySegment);
+        Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict = generatePrediction(predictListData);
+        Map<String, Map<String, Map<String, Map<String, Double>>>> predictTransform = transformStructure(
+                segmentsPredict, predictListData.getListDate(), predictListData.getSegmentGroups());
+        Map<String, Map<String, Map<String, Map<String, Double>>>> scoreData = computeScore(predictTransform, noHistorySegment);
+        Map<String, Map<String, Map<String, Map<String, Double>>>> standardizedScore = standardizeScore(scoreData, noHistorySegment);
 
-            saveScore(standardizedScore, this.coreOptimizationRule, futureDate);
-        }
+        saveScore(standardizedScore, this.coreOptimizationRule, predictListData.getFutureDate());
     }
 
     /**
-     * avoid to small score.
+     * @param predictListData Contains data need for prediction
+     * @return predicted data
+     */
+    private Map<String, Map<String, Map<String, Map<String, Double>>>> generatePrediction(PredictListData predictListData) throws Exception {
+        Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict = new HashMap<>();
+
+        for (String segmentJson : predictListData.getSegmentGroupJson()) {
+            SegmentPredictWrapper segmentPredictWrapper = generateSegmentGroupPredict(segmentJson, predictListData);
+            segmentsPredict.put(segmentJson, segmentPredictWrapper.getDateAndIdentifierAndOptimizePredict());
+            noHistorySegment.put(segmentJson, segmentPredictWrapper.getNoHistoryIdentifier());
+        }
+
+        return segmentsPredict;
+    }
+
+
+    /**
+     * @param listDate list of dates
+     * @param i        index
+     * @return return true if i is last index -> i is index of future date in list date
+     */
+    private boolean isPredict(List<String> listDate, int i) {
+        return listDate != null && i == listDate.size() - 1;
+    }
+
+    /**
+     * @param jsonSegmentGroup Example {country: US, domain: a.com} in Json type
+     * @param predictListData  data need for prediction  @return prediction data for one segment group
+     */
+    private SegmentPredictWrapper generateSegmentGroupPredict(
+            String jsonSegmentGroup,
+            PredictListData predictListData) throws Exception {
+        List<String> listIdentifier = coreLearnerModelService.getDistinctIdentifiers(predictListData.getRuleId(), jsonSegmentGroup);
+        predictListData.setIdentifiers(listIdentifier);
+
+        Map<String, Map<String, Map<String, Double>>> dateIdentifierOptimizePredict = new HashMap<>();
+        Map<String, Map<String, Boolean>> noHistoryIdentifier = new HashMap<>();
+
+        for (String identifier : listIdentifier) {
+            IdentifierPredictWrapper identifierPredictWrapper = generateIdentifierPredict(jsonSegmentGroup, identifier, predictListData);
+            dateIdentifierOptimizePredict.put(identifier, identifierPredictWrapper.getDateOptimizePredict());
+            noHistoryIdentifier.put(identifier, identifierPredictWrapper.getNoHistoryDate());
+        }
+        return new SegmentPredictWrapper(dateIdentifierOptimizePredict, noHistoryIdentifier);
+    }
+
+    /**
+     * @param jsonSegmentGroup Example: {country: US, domain: a.com} in json type
+     * @param identifier       identifier
+     * @param predictListData  data need for prediction   @return prediction data for one identifier
+     */
+    private IdentifierPredictWrapper generateIdentifierPredict(String jsonSegmentGroup,
+                                                               String identifier,
+                                                               PredictListData predictListData) throws Exception {
+        List<String> listDate = predictListData.getListDate();
+        List<OptimizeField> listOptimizeField = predictListData.getOptimizeFields();
+
+        Map<String, Map<String, Double>> dateOptimizePredict = new LinkedHashMap<>();
+        Map<String, Boolean> noHistoryDate = new LinkedHashMap<>();
+
+        // loop by date
+        for (int i = 0; i < listDate.size(); i++) {
+            String date = listDate.get(i);
+            Map<String, Double> optimizeFieldPredictValues = new LinkedHashMap<>();
+            boolean isPredict = isPredict(listDate, i);
+            //loop by optimize field
+            for (OptimizeField optimizeField : listOptimizeField) {
+                PredictDataWrapper dataWrapper = new PredictDataWrapper(optimizeField, identifier, jsonSegmentGroup, date, isPredict, predictListData.getRuleId());
+                Double predictValue = getPredictionValue(dataWrapper);
+
+                optimizeFieldPredictValues.put(JsonUtil.toJson(optimizeField), predictValue);
+
+                if (MyConstant.NO_HISTORY_PREDICTION_VALUE == predictValue) {
+                    noHistoryDate.put(date, true);
+                }
+            }
+            dateOptimizePredict.put(date, optimizeFieldPredictValues);
+        }
+        return new IdentifierPredictWrapper(dateOptimizePredict, noHistoryDate);
+    }
+
+    private Double getPredictionValue(PredictDataWrapper predictDataWrapper) throws Exception {
+        CoreLearner coreLearner = coreLearnerModelService.getOneCoreLeaner(
+                predictDataWrapper.getOptimizeRuleId(),
+                predictDataWrapper.getIdentifier(),
+                predictDataWrapper.getOptimizeField(),
+                predictDataWrapper.getSegmentJson());
+        if (coreLearner == null) {
+            throw new Exception("Missing Model. Optimize Rule Id:" + predictDataWrapper.getOptimizeRuleId() +
+                    " Identifier: " + predictDataWrapper.getIdentifier() +
+                    "Optimize field: " + predictDataWrapper.getOptimizeField().getField());
+        }
+
+        if (!predictDataWrapper.getIsPredict()) {
+            //no need to predict. get real optimization field value in data base
+            return getObjectiveFromDatabase(coreLearner, predictDataWrapper, this.coreOptimizationRule);
+        }
+
+        String convertedRuleJson = coreLearnerModelService
+                .getTextSegmentConvertedRule(
+                        predictDataWrapper.getOptimizeRuleId(),
+                        predictDataWrapper.getSegmentJson(),
+                        predictDataWrapper.getIdentifier());
+        Map<String, List<String>> convertedRule = JsonUtil.jsonToMap(convertedRuleJson);
+
+        VectorBuilder vectorBuilder = new VectorBuilder(coreLearner, convertedRule, JsonUtil.jsonToMap(predictDataWrapper.getSegmentJson()));
+        org.apache.spark.ml.linalg.Vector conditionVector = vectorBuilder.buildVector();
+        if (conditionVector == null) {
+            // TODO need check prediction default value. May be it make score become bad
+            return PREDICTION_DEFAULT_VALUE;
+        }
+        double predict;
+        try {
+            LinearRegressionModel linearRegressionModel = LinearRegressionModel.load(coreLearner.getModelPath());
+            predict = linearRegressionModel.predict(conditionVector);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            throw new Exception("Cant find learning model in " + coreLearner.getModelPath());
+        }
+
+        if (Double.isNaN(predict)) {
+            return PREDICTION_DEFAULT_VALUE;
+        }
+        return handleNegativePredictValue(predict);
+    }
+
+    private Double getObjectiveFromDatabase(CoreLearner coreLearner,
+                                            PredictDataWrapper predictDataWrapper,
+                                            CoreOptimizationRule optimizationRule) {
+
+        List<String> metrics = coreLearnerModelService.getMetricsFromCoreLeaner(coreLearner);
+        List<String> dimensions = optimizationRuleService.getNoSpaceDimensions(optimizationRule);
+        dimensions.remove(optimizationRule.getDateField());
+        Double value = dataTrainingService.getRealObjectiveValueFromDB(predictDataWrapper, metrics, dimensions, optimizationRule);
+        return value == null ? MyConstant.NO_HISTORY_PREDICTION_VALUE : value;
+    }
+
+    /**
+     * @param predict predict vale
+     * @return 0 if predict value ids negative
+     */
+    private double handleNegativePredictValue(Double predict) {
+        // TODO which is best value that doesn't have bad effect to score
+        return predict < 0 ? 0 : predict;
+    }
+
+
+    /**
+     * Avoid to small score.
      *
      * @param scoreData        scored data
-     * @param noHistorySegment some date has no data in database  depend on segment group and identifier
+     * @param noHistorySegment some date has no data in database depend on segment group and identifier
      * @return standardized Score. each score divide max value
      */
     private Map<String, Map<String, Map<String, Map<String, Double>>>>
     standardizeScore(Map<String, Map<String, Map<String, Map<String, Double>>>> scoreData,
                      Map<String, Map<String, Map<String, Boolean>>> noHistorySegment) {
+
         for (Map.Entry<String, Map<String, Map<String, Map<String, Double>>>> dateEntry : scoreData.entrySet()) {
             String date = dateEntry.getKey();
             Map<String, Map<String, Map<String, Double>>> dateMap = dateEntry.getValue();
+
             for (Map.Entry<String, Map<String, Map<String, Double>>> segmentEntry : dateMap.entrySet()) {
                 String segment = segmentEntry.getKey();
                 Map<String, Map<String, Double>> segmentMap = segmentEntry.getValue();
@@ -131,38 +266,6 @@ public class LinearRegressionScoring {
         return max;
     }
 
-    /**
-     * add future date to listDate. The day after the latest date in data training
-     *
-     * @param listDate list of date in data training
-     */
-    private void addFutureDate(List<String> listDate) {
-        try {
-            if (listDate == null || listDate.isEmpty()) {
-                Date today = new Date();
-                Date nextDay = ConvertUtil.nextDay(today);
-                String nextDayString = ConvertUtil.dateToString(nextDay, MyConstant.DATE_FORMAT_JAVA);
-                listDate = new ArrayList<>();
-                listDate.add(nextDayString);
-                this.futureDate = nextDayString;
-                return;
-            }
-            java.util.Collections.sort(listDate);
-            String latestDate = listDate.get(listDate.size() - 1);
-            Date date1 = new SimpleDateFormat(MyConstant.DATE_FORMAT_JAVA).parse(latestDate);
-            Date nextDay = ConvertUtil.nextDay(date1);
-            String nextDayString = ConvertUtil.dateToString(nextDay, MyConstant.DATE_FORMAT_JAVA);
-            listDate.add(nextDayString);
-            this.futureDate = nextDayString;
-        } catch (ParseException e) {
-            e.printStackTrace();
-            Date today = new Date();
-            Date nextDay = ConvertUtil.nextDay(today);
-            String nextDayString = ConvertUtil.dateToString(nextDay, MyConstant.DATE_FORMAT_JAVA);
-            listDate.add(nextDayString);
-            this.futureDate = nextDayString;
-        }
-    }
 
     /**
      * @param predictTransform predict data
@@ -173,6 +276,7 @@ public class LinearRegressionScoring {
     computeScore(Map<String, Map<String, Map<String, Map<String, Double>>>> predictTransform,
                  Map<String, Map<String, Map<String, Boolean>>> noHistorySegment) {
 
+        // TODO Need to refactor
         for (Map.Entry<String, Map<String, Map<String, Map<String, Double>>>> dateEntry : predictTransform.entrySet()) {
             String date = dateEntry.getKey();
             Map<String, Map<String, Map<String, Double>>> dateMap = dateEntry.getValue();
@@ -182,13 +286,12 @@ public class LinearRegressionScoring {
 
                 Map<String, Double> totalMap = getTotal(segmentMap);
                 Map<String, Map<String, Double>> avgMap = getAvg(segmentMap, totalMap);
+
                 Map<String, Double> maxAvgNegativeOptimize = getMaxAvgForNegativeOptimizeField(avgMap);
-                Map<String, Map<String, Double>> divideMaxByEachAvgValue = divideMaxByEachAvgValue(
-                        avgMap, maxAvgNegativeOptimize);
-                Map<String, Double> invertedDivideMaxByEachAvgValueTotal = getDivideMaxByEachAvgValueTotal(
-                        divideMaxByEachAvgValue);
-                Map<String, Map<String, Double>> invertedAvgNegative = getInvertedAvgNegative(
-                        invertedDivideMaxByEachAvgValueTotal, divideMaxByEachAvgValue);
+                Map<String, Map<String, Double>> divideMaxByEachAvgValue = divideMaxByEachAvgValue(avgMap, maxAvgNegativeOptimize);
+                Map<String, Double> invertedDivideMaxByEachAvgValueTotal = getDivideMaxByEachAvgValueTotal(divideMaxByEachAvgValue);
+
+                Map<String, Map<String, Double>> invertedAvgNegative = getInvertedAvgNegative(invertedDivideMaxByEachAvgValueTotal, divideMaxByEachAvgValue);
                 Map<String, Double> scoreMap = multiOptimizeFieldWeight(invertedAvgNegative);
 
                 Map<String, Map<String, Boolean>> noHistoryIdentifier = noHistorySegment.get(segment);
@@ -236,7 +339,7 @@ public class LinearRegressionScoring {
                 Double avg = optimizeEntry.getValue();
                 avgOptimize.put(optimize, avg);
 
-                if (MyConstant.NULL_PREDICT_VALUE == avg) continue;
+                if (MyConstant.NO_HISTORY_PREDICTION_VALUE == avg) continue;
 
                 if (MyConstant.MIN.equals(goal)) {
                     double total = invertedDivideMaxByEachAvgValueTotal.get(optimize);
@@ -262,7 +365,7 @@ public class LinearRegressionScoring {
                 OptimizeField optimizeField = JsonUtil.jsonToObject(optimize, OptimizeField.class);
                 String goal = optimizeField.getGoal();
                 Double value = optimizeEntry.getValue();
-                if (MyConstant.NULL_PREDICT_VALUE == value) continue;
+                if (MyConstant.NO_HISTORY_PREDICTION_VALUE == value) continue;
 
                 if (MyConstant.MIN.equals(goal)) {
                     if (totalMap.get(optimize) == null) {
@@ -296,7 +399,7 @@ public class LinearRegressionScoring {
                 OptimizeField optimizeField = JsonUtil.jsonToObject(optimize, OptimizeField.class);
                 String goal = optimizeField.getGoal();
                 Double avg = optimizeEntry.getValue();
-                if (MyConstant.NULL_PREDICT_VALUE == avg) continue;
+                if (MyConstant.NO_HISTORY_PREDICTION_VALUE == avg) continue;
 
                 invertedOptimizeMap.put(optimize, avg);
                 if (MyConstant.MIN.equals(goal)) {
@@ -323,7 +426,7 @@ public class LinearRegressionScoring {
                 OptimizeField optimizeField = JsonUtil.jsonToObject(optimize, OptimizeField.class);
                 String goal = optimizeField.getGoal();
                 Double avg = optimizeEntry.getValue();
-                if (MyConstant.NULL_PREDICT_VALUE == avg) continue;
+                if (MyConstant.NO_HISTORY_PREDICTION_VALUE == avg) continue;
                 if (MyConstant.MIN.equals(goal)) {
                     Double maxAvg = maxAvgMap.get(optimize);
                     if (maxAvg == null) {
@@ -353,7 +456,7 @@ public class LinearRegressionScoring {
                 String optimize = optimizeEntry.getKey();
                 OptimizeField optimizeField = JsonUtil.jsonToObject(optimize, OptimizeField.class);
                 Double avg = optimizeEntry.getValue();
-                if (MyConstant.NULL_PREDICT_VALUE == avg) continue;
+                if (MyConstant.NO_HISTORY_PREDICTION_VALUE == avg) continue;
                 Double weight = optimizeField.getWeight();
                 score += weight * avg;
             }
@@ -373,7 +476,7 @@ public class LinearRegressionScoring {
             for (Map.Entry<String, Double> optimizeEntry : optimizeMap.entrySet()) {
                 String optimize = optimizeEntry.getKey();
                 Double predictValue = optimizeEntry.getValue();
-                if (MyConstant.NULL_PREDICT_VALUE == predictValue) continue;
+                if (MyConstant.NO_HISTORY_PREDICTION_VALUE == predictValue) continue;
                 if (totalMap.get(optimize) == null) {
                     totalMap.put(optimize, predictValue);
                 } else {
@@ -400,7 +503,7 @@ public class LinearRegressionScoring {
             for (Map.Entry<String, Double> optimizeEntry : optimizeMap.entrySet()) {
                 String optimize = optimizeEntry.getKey();
                 Double predictValue = optimizeEntry.getValue();
-                if (MyConstant.NULL_PREDICT_VALUE == predictValue) continue;
+                if (MyConstant.NO_HISTORY_PREDICTION_VALUE == predictValue) continue;
                 Double avg = totalMap.get(optimize) == 0 ? 0 : predictValue / totalMap.get(optimize);
                 avgMap.put(optimize, avg);
             }
@@ -419,14 +522,14 @@ public class LinearRegressionScoring {
     private Map<String, Map<String, Map<String, Map<String, Double>>>> transformStructure(
             Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict,
             List<String> listDate,
-            List<Object> listSegments) {
+            List<Map<String, String>> listSegments) {
 
         Map<String, Map<String, Map<String, Map<String, Double>>>> datePredict = new LinkedHashMap<>();
 
         for (String date : listDate) {
             Map<String, Map<String, Map<String, Double>>> segmentPredict = new LinkedHashMap<>();
-            for (Object segment : listSegments) {
-                String keySegment = segment == null ? MyConstant.GLOBAL_KEY : segment.toString();
+            for (Map<String, String> segment : listSegments) {
+                String keySegment = segment == null ? MyConstant.GLOBAL_KEY : JsonUtil.mapToJson(segment);
                 Map<String, Map<String, Map<String, Double>>> mapSegment = segmentsPredict.get(keySegment);
                 Map<String, Map<String, Double>> identifierPredict = new HashMap<>();
                 for (Map.Entry<String, Map<String, Map<String, Double>>> entry2 : mapSegment.entrySet()) {
@@ -443,122 +546,11 @@ public class LinearRegressionScoring {
         return datePredict;
     }
 
-    private Map<String, Map<String, Map<String, Map<String, Double>>>>
-    generatePredictValue(ExecutorService executorService, List<String> listDate) {
-        Long ruleId = this.coreOptimizationRule.getId();
-        this.listSegments = coreLearnerModelService.getDistinctSegmentsByRuleId(ruleId);
-        Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict = new ConcurrentHashMap<>();
-        if (this.listSegments == null)
-            return new ConcurrentHashMap<>();
-        for (Object segment : listSegments) {
-            Map<String, Object> segmentMap = null;
-            if (segment != null) {
-                segmentMap = JsonUtil.jsonToMap(segment.toString());
-            }
-            Map<String, Object> finalSegmentMap = segmentMap;
-
-            executorService.execute(() -> {
-            logger.error("executorService execute");
-            List<String> listIdentifier = coreLearnerModelService.getDistinctIdentifiersBySegment(finalSegmentMap, ruleId);
-            Map<String, Map<String, Map<String, Double>>> dateAndIdentifierAndOptimizePredict = new LinkedHashMap<>();
-            Map<String, Map<String, Boolean>> noHistoryIdentifier = new LinkedHashMap<>();
-
-            for (String identifier : listIdentifier) {
-                List<OptimizeField> listOptimizeField = coreLearnerModelService.getDistinctOptimizeBySegmentAndIdentifier(finalSegmentMap, identifier, ruleId);
-                Map<String, Map<String, Double>> dateAndOptimizePredict = new LinkedHashMap<>();
-                Map<String, Boolean> noHistoryDate = new LinkedHashMap<>();
-
-                for (int i = 0; i < listDate.size(); i++) {
-                    String date = this.listDate.get(i);
-                    Map<String, Double> optimizeFieldPredictValues = new LinkedHashMap<>();
-                    boolean isPredict = false;
-                    if (i == listDate.size() - 1) {
-                        isPredict = true;
-                    }
-                    for (OptimizeField optimizeField : listOptimizeField) {
-                        Double predictValue = computePredict(optimizeField, identifier, finalSegmentMap, date, isPredict);
-                        optimizeFieldPredictValues.put(JsonUtil.toJson(optimizeField), predictValue);
-                        if (MyConstant.NULL_PREDICT_VALUE == predictValue) {
-                            noHistoryDate.put(date, true);
-                        }
-                    }
-                    dateAndOptimizePredict.put(date, optimizeFieldPredictValues);
-                }
-                dateAndIdentifierAndOptimizePredict.put(identifier, dateAndOptimizePredict);
-                noHistoryIdentifier.put(identifier, noHistoryDate);
-            }
-            String key = segment == null ? MyConstant.GLOBAL_KEY : segment.toString();
-            segmentsPredict.put(key, dateAndIdentifierAndOptimizePredict);
-            noHistorySegment.put(key, noHistoryIdentifier);
-            });
-
-        }
-        logger.error("executorService awaitTerminationAfterShutdown");
-        ThreadUtil.awaitTerminationAfterShutdown(executorService);
-        return segmentsPredict;
-    }
 
     private void saveScore(Map<String, Map<String, Map<String, Map<String, Double>>>> scoreMap,
                            CoreOptimizationRule optimizationRule, String futureDate) {
         this.scoreService.saveScore(scoreMap, optimizationRule, futureDate);
     }
 
-    /**
-     * @param optimizeField optimize field
-     * @param identifier    identifier
-     * @param segment       segment group
-     * @param date          date
-     * @param isPredict     is predict
-     * @return predict value
-     */
-    private Double computePredict(OptimizeField optimizeField, String identifier,
-                                  Map<String, Object> segment, String date, boolean isPredict) {
-        Long ruleId = this.coreOptimizationRule.getId();
-        CoreLearner coreLearner = coreLearnerModelService.getOneCoreLeaner(ruleId, identifier, optimizeField, segment);
-        if (coreLearner == null || coreLearner.getId() == null || coreLearner.getOptimizationRuleId() == null) {
-            return 0D;
-        }
 
-        if (!isPredict) {
-            //no need to predict
-            return getObjectiveFromDatabase(coreLearner, optimizeField, identifier, segment, date, this.coreOptimizationRule);
-        }
-
-        ConditionConverter conditionConverter = new ConditionConverter(coreLearner);
-        org.apache.spark.ml.linalg.Vector conditionVector = conditionConverter.buildVector();
-        if (conditionVector == null) {
-            return PREDICTION_DEFAULT_VALUE;
-        }
-        double predict = 0d;
-        try {
-            LinearRegressionModel linearRegressionModel = LinearRegressionModel.load(coreLearner.getModelPath());
-            predict = linearRegressionModel.predict(conditionVector);
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-
-        if (Double.isNaN(predict)) {
-            return PREDICTION_DEFAULT_VALUE;
-        }
-        return handleNegativePredictValue(predict);
-    }
-
-    private Double getObjectiveFromDatabase(CoreLearner coreLearner, OptimizeField optimizeField,
-                                            String identifier,
-                                            Map<String, Object> segment,
-                                            String date,
-                                            CoreOptimizationRule coreOptimizationRule) {
-        List<String> metrics = coreLearnerModelService.getMetricsFromCoreLeaner(coreLearner);
-        Double value = dataTrainingService.getObjectiveFromDB(
-                identifier, segment, metrics, optimizeField, coreOptimizationRule, date);
-        return value == null ? MyConstant.NULL_PREDICT_VALUE : value;
-    }
-
-    /**
-     * @param predict predict vale
-     * @return 0 if predict value ids negative
-     */
-    private double handleNegativePredictValue(Double predict) {
-        return predict < 0 ? 0 : predict;
-    }
 }
