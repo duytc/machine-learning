@@ -185,7 +185,7 @@ public class LinearRegressionTrainingDataProcess {
         for (Row row : data) {
             Map<String, String> segmentMap = new HashMap<>();
             if (segments == null || segments.isEmpty()) {
-                //TODO (Comment) handle null segment (key-value 'NO_SEGMENT'-'NO_SEGMENT')
+                //Handle null segment (key-value 'NO_SEGMENT'-'NO_SEGMENT'). segment value become {} when save in database
                 segmentMap.put(MyConstant.NO_SEGMENT, MyConstant.NO_SEGMENT);
             } else {
                 segmentMap = new HashMap<>();

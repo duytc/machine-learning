@@ -29,7 +29,7 @@ public class CoreLearnerDao extends AbstractGenericDao<CoreLearner> implements C
             logger.error(e.getMessage(), e);
         }
 
-        return new ArrayList<>();
+        return null;
     }
 
 

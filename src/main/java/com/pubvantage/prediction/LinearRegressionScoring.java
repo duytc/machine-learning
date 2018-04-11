@@ -138,7 +138,7 @@ public class LinearRegressionScoring {
                 predictDataWrapper.getOptimizeField(),
                 predictDataWrapper.getSegmentJson());
         if (coreLearner == null) {
-            throw new Exception("Missing Model. Optimize Rule Id:" + predictDataWrapper.getOptimizeRuleId() +
+            throw new Exception("Missing Model. Optimize Rule Id: " + predictDataWrapper.getOptimizeRuleId() +
                     " Identifier: " + predictDataWrapper.getIdentifier() +
                     "Optimize field: " + predictDataWrapper.getOptimizeField().getField());
         }
