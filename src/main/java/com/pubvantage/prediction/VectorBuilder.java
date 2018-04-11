@@ -45,7 +45,7 @@ public class VectorBuilder {
     }
 
     /**
-     * value = index of field in convertedRule list due to 'converted text to digit Frequency rule'
+     * value = index of field in convertedRule list due to 'converting text to digit by Frequency rule'
      * @param convertedRule Example: {country: [global, VN]}
      * @param fieldName     country
      * @param segments      {country: global}
