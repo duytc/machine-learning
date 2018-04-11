@@ -142,8 +142,7 @@ public class LinearRegressionTrainingDataProcess {
         String[] segmentsAndDigitMetrics = new String[mixFields.size()];
         segmentsAndDigitMetrics = mixFields.toArray(segmentsAndDigitMetrics);
 
-//        rowDataSet.show();
-        return rowDataSet.select(optimizeFieldName, segmentsAndDigitMetrics);
+        return rowDataSet.select(ConvertUtil.removeSpace(optimizeFieldName), segmentsAndDigitMetrics);
     }
 
     /**

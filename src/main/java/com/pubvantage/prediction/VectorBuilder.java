@@ -1,6 +1,5 @@
 package com.pubvantage.prediction;
 
-import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.CoreLearner;
 import com.pubvantage.service.CoreLearningModelService;
 import com.pubvantage.service.CoreLearningModelServiceInterface;
@@ -8,7 +7,6 @@ import com.pubvantage.utils.JsonUtil;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.Vectors;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
