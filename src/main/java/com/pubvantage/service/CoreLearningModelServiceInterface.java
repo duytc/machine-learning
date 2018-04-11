@@ -19,9 +19,6 @@ public interface CoreLearningModelServiceInterface {
 
     List<String> getMetricsFromCoreLeaner(CoreLearner coreLearner);
 
-    String getTextSegmentConvertedRule(Long optimizationRuleId, String segmentGroup, String identifier);
-
-
     List<String> getDistinctIdentifiers(Long optimizationRuleId, String segmentGroup);
 
 

@@ -42,18 +42,12 @@ public class CoreLearner {
     @Column(name = "math_model")
     private String mathModel;
 
-    @Column(name = "text_converted_rule")
-    private String textConvertedRule;
-
-
     public CoreLearner() {
     }
 
-    public String getTextConvertedRule() {
-        return textConvertedRule;
-    }
 
-    public CoreLearner(Long optimizationRuleId, String identifier, String segmentValues, String optimizeFields, String modelPath, String metricsPredictiveValues, Date createdDate, Date updatedDate, String mathModel, String textConvertedRule) {
+    public CoreLearner(Long optimizationRuleId, String identifier, String segmentValues, String optimizeFields,
+                       String modelPath, String metricsPredictiveValues, Date createdDate, Date updatedDate, String mathModel) {
         this.optimizationRuleId = optimizationRuleId;
         this.identifier = identifier;
         this.segmentValues = segmentValues;
@@ -63,12 +57,8 @@ public class CoreLearner {
         this.createdDate = createdDate;
         this.updatedDate = updatedDate;
         this.mathModel = mathModel;
-        this.textConvertedRule = textConvertedRule;
     }
 
-    public void setTextConvertedRule(String textConvertedRule) {
-        this.textConvertedRule = textConvertedRule;
-    }
 
     public Long getId() {
         return id;

@@ -360,7 +360,6 @@ public class AppMain {
             coreLearner.setMathModel(linearRegressionLearner.getModelStringData(linearRegressionModel));
             coreLearner.setMetricsPredictiveValues(JsonUtil.mapToJson(prediction));
             coreLearner.setSegmentValues(jsonSegmentGroup);
-            coreLearner.setTextConvertedRule(JsonUtil.mapToJson(linearRegressionLearner.getConvertedRule()));
 
             coreLearnerList.add(coreLearner);
         }

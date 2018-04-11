@@ -12,8 +12,6 @@ public interface CoreLearnerDaoInterface extends GenericDaoInterface<CoreLearner
 
     List<String> getDistinctIdentifiers(Session session, Long optimizationRuleId, String segmentGroup);
 
-    String getTextSegmentConvertedRule(Session session, Long optimizationRuleId, String segmentGroup, String identifier);
-
     List<String> getDistinctSegmentValues(Session session, Long optimizationRuleId);
 
     List<String> getOptimizeFieldsJson(Session session, Long optimizationRuleId);

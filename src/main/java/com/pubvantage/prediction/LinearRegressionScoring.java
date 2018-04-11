@@ -145,14 +145,7 @@ public class LinearRegressionScoring {
             return getObjectiveFromDatabase(coreLearner, predictDataWrapper, this.coreOptimizationRule);
         }
 
-        String convertedRuleJson = coreLearnerModelService
-                .getTextSegmentConvertedRule(
-                        predictDataWrapper.getOptimizeRuleId(),
-                        predictDataWrapper.getSegmentJson(),
-                        predictDataWrapper.getIdentifier());
-        Map<String, List<String>> convertedRule = JsonUtil.jsonToMap(convertedRuleJson);
-
-        VectorBuilder vectorBuilder = new VectorBuilder(coreLearner, convertedRule, JsonUtil.jsonToMap(predictDataWrapper.getSegmentJson()));
+        VectorBuilder vectorBuilder = new VectorBuilder(coreLearner);
         org.apache.spark.ml.linalg.Vector conditionVector = vectorBuilder.buildVector();
         if (conditionVector == null) {
             throw new Exception("Prediction fail: ConditionVector is null ");

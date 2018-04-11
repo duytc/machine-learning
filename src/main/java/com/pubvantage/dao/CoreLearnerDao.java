@@ -54,24 +54,6 @@ public class CoreLearnerDao extends AbstractGenericDao<CoreLearner> implements C
     }
 
     @Override
-    public String getTextSegmentConvertedRule(Session session, Long optimizationRuleId, String segmentGroup, String identifier) {
-        try {
-            String string = "SELECT DISTINCT textConvertedRule FROM CoreLearner WHERE optimizationRuleId = :optimizationRuleId AND identifier = :identifier AND segmentValues = :segmentGroup";
-            Query query = session.createQuery(string);
-            query.setParameter("optimizationRuleId", optimizationRuleId);
-            query.setParameter("identifier", identifier);
-            query.setParameter("segmentGroup", segmentGroup);
-            List<String> list = query.list();
-            if (list != null && !list.isEmpty()) {
-                return list.get(0);
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-        return null;
-    }
-
-    @Override
     public List<String> getDistinctSegmentValues(Session session, Long optimizationRuleId) {
         try {
             String string = "SELECT DISTINCT segmentValues FROM CoreLearner WHERE optimizationRuleId = :optimizationRuleId";

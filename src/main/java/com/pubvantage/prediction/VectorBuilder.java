@@ -13,13 +13,9 @@ import java.util.Map;
 public class VectorBuilder {
     private CoreLearningModelServiceInterface coreLearnerModelService = new CoreLearningModelService();
     private CoreLearner coreLearner;
-    private Map<String, List<String>> convertedRule;
-    private Map<String, String> segments;
 
-    public VectorBuilder(CoreLearner coreLearner, Map<String, List<String>> convertedRule, Map<String, String> segments) {
+    public VectorBuilder(CoreLearner coreLearner) {
         this.coreLearner = coreLearner;
-        this.convertedRule = convertedRule;
-        this.segments = segments;
     }
 
     /**

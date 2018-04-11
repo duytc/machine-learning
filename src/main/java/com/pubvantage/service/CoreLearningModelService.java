@@ -128,25 +128,6 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
     }
 
     @Override
-    public String getTextSegmentConvertedRule(Long optimizationRuleId, String segmentGroup, String identifier) {
-        Session session = null;
-        try {
-            session = HibernateUtil.getSessionFactory().openSession();
-            String convertedSegmentJson = coreLearnerDao.getTextSegmentConvertedRule(session, optimizationRuleId, segmentGroup, identifier);
-            session.clear();
-
-            return convertedSegmentJson;
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        } finally {
-            if (session != null) {
-                session.close();
-            }
-        }
-        return null;
-    }
-
-    @Override
     public List<String> getDistinctIdentifiers(Long optimizationRuleId, String segmentGroup) {
         Session session = null;
         try {
