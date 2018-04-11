@@ -60,9 +60,12 @@ public class LinearRegressionTrainingDataProcess {
             return null; // missing optimize field or metrics
 
         Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRule, identifier, objectiveAndFields);
+        dataSet.show();
         Dataset<Row> digitDataSet = getDigitDataSet(dataSet);
+        digitDataSet.show();
         Dataset<Row> learnData = this.extractDataToLearn(digitDataSet);
-        this.predictiveValues = createMetricsPredictiveValues(dataSet);
+        learnData.show();
+        this.predictiveValues = createMetricsPredictiveValues(dataSet, this.convertedRule);
         return learnData;
     }
 
@@ -169,15 +172,18 @@ public class LinearRegressionTrainingDataProcess {
 
     /**
      * @param trainingDataSet a data set
+     * @param convertedRule
      * @return prediction data base on each segment group.
      * Each segment group has list value of each field
      */
-    private Map<String, Map<String, Double>> createMetricsPredictiveValues(Dataset<Row> trainingDataSet) {
+    private Map<String, Map<String, Double>> createMetricsPredictiveValues(Dataset<Row> trainingDataSet,
+                                                                           Map<String, List<String>> convertedRule) {
         List<String> segments = optimizationRuleService.getSegments(optimizationRule);
         List<String> objectiveAndFields = this.objectiveAndFields;
 
         //forecast  number value factor. (avg)
         Dataset<Row> avgDataSet = avgNumberedData(trainingDataSet, objectiveAndFields, segments);
+        avgDataSet.show();
         List<Row> data = avgDataSet.collectAsList();
         String[] orderedFields = avgDataSet.columns();
         Map<String, Map<String, Double>> predictionMap = new HashMap<>();
@@ -195,20 +201,35 @@ public class LinearRegressionTrainingDataProcess {
             }
             int segmentCount = segments == null ? 0 : segments.size();
             Map<String, Double> forecastMap = new HashMap<>();
-            for (int col = segmentCount; col < orderedFields.length; col++) {
+            for (int col = 0; col < orderedFields.length; col++) {
                 String fieldKey = orderedFields[col];
                 Double avg = 0D;
-                if (row.getAs(fieldKey) instanceof Number) {
-                    avg = ConvertUtil.convertObjectToDouble(row.get(col).toString());
+                Object segmentValue = row.getAs(fieldKey);
+                if (col < segmentCount) {
+                    //Base on Frequency converting rule. digit value = index
+                    avg = getDigitValueFromConvertedRule(convertedRule, fieldKey, segmentValue);
+                    forecastMap.put(fieldKey, avg);
+                } else {
+                    if (segmentValue instanceof Number) {
+                        avg = ConvertUtil.convertObjectToDouble(row.get(col).toString());
+                    }
+                    forecastMap.put(ConvertUtil.removeAvg(fieldKey), avg);
                 }
-                forecastMap.put(ConvertUtil.removeAvg(fieldKey), avg);
             }
-            // TODO Need to ensure order segments is same {country: VN, domain: a.com}
             String jsonKey = JsonUtil.mapToJson(segmentMap);
             predictionMap.put(jsonKey, forecastMap);
         }
 
         return predictionMap;
+    }
+
+    private Double getDigitValueFromConvertedRule(Map<String, List<String>> convertedRule, String fieldKey, Object segmentValue) {
+        if (convertedRule == null) return null;
+        List<String> convertedVector = convertedRule.get(fieldKey);
+        if (convertedVector == null) return null;
+        int index = convertedVector.indexOf(segmentValue.toString());
+
+        return ConvertUtil.convertObjectToDouble(index);
     }
 
     /**

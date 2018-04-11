@@ -33,12 +33,7 @@ public class VectorBuilder {
             return null;
         for (int index = 0; index < metrics.size(); index++) {
             String fieldName = metrics.get(index);
-            Double valueInPrediction;
-            if (isSegment(this.convertedRule, fieldName)) {
-                valueInPrediction = getSegmentDigitValue(this.convertedRule, fieldName, segments);
-            } else {
-                valueInPrediction = predictiveValues.get(fieldName);
-            }
+            Double valueInPrediction = predictiveValues.get(fieldName);
             doubleValue[index] = valueInPrediction == null ? 0D : valueInPrediction;
         }
         return Vectors.dense(doubleValue);
@@ -46,6 +41,7 @@ public class VectorBuilder {
 
     /**
      * value = index of field in convertedRule list due to 'converting text to digit by Frequency rule'
+     *
      * @param convertedRule Example: {country: [global, VN]}
      * @param fieldName     country
      * @param segments      {country: global}

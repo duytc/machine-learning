@@ -28,6 +28,7 @@ public class LinearRegressionLearner implements LearnerInterface {
     @Override
     public LinearRegressionModel generateModel(SparkSession sparkSession) {
         Dataset<Row> training = linearRegressionDataProcess.getTrainingDataForLinearRegression();
+        training.show(20, false);
         if (training == null) {
             return null;
         }
