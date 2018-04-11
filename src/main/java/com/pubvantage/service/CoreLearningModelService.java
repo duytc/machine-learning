@@ -56,20 +56,14 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
     }
 
     @Override
-    public CoreLearner getOneCoreLeaner(Long optimizationRuleId, String identifier, OptimizeField optimizeField, String segmentGroup) {
+    public CoreLearner getOneCoreLeaner(Long optimizationRuleId, String identifier, String optimizeFieldJson, String segmentGroup) {
         Session session = null;
-
         try {
             session = HibernateUtil.getSessionFactory().openSession();
-            session.beginTransaction();
-            CoreLearner coreLearner = this.checkExist(session, optimizationRuleId, identifier, optimizeField, segmentGroup);
+            CoreLearner coreLearner = coreLearnerDao.getOne(session, optimizationRuleId, identifier, optimizeFieldJson, segmentGroup);
             session.clear();
-            session.getTransaction().commit();
             return coreLearner;
         } catch (Exception e) {
-            if (null != session && null != session.getTransaction()) {
-                session.getTransaction().rollback();
-            }
             logger.error(e.getMessage(), e);
         } finally {
             if (session != null) {
@@ -91,7 +85,7 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
         try {
             session = HibernateUtil.getSessionFactory().openSession();
             predictListData.setRuleId(ruleId);
-            predictListData.setOptimizeFields(coreLearnerDao.getOptimizeFields(session, ruleId));
+            predictListData.setOptimizeFieldsJson(coreLearnerDao.getOptimizeFieldsJson(session, ruleId));
             //date
             List<String> listDate = sparkDataTrainingDao.getDistinctDates(ruleId, optimizationRule.getDateField());
             ConvertUtil.addFutureDate(listDate);
@@ -120,31 +114,6 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
         return list;
     }
 
-    /**
-     * optimizeField is json so cant compare use sql due to json does not keep field order
-     *
-     * @param session            hibernate session
-     * @param optimizationRuleId optimization rule id
-     * @param identifier         identifier
-     * @param optimizeField      optimization field
-     * @return learner model
-     */
-    private CoreLearner checkExist(Session session, Long optimizationRuleId, String identifier, OptimizeField optimizeField, String segmentGroup) {
-        List<CoreLearner> coreLearners = coreLearnerDao.getList(session, optimizationRuleId, identifier, segmentGroup);
-        if (coreLearners != null && !coreLearners.isEmpty()) {
-            for (CoreLearner coreLearner : coreLearners) {
-                String optimizeJson = coreLearner.getOptimizeFields();
-                OptimizeField optimizeFieldDB = JsonUtil.jsonToObject(optimizeJson, OptimizeField.class);
-                if (optimizeField != null &&
-                        optimizeFieldDB != null &&
-                        optimizeField.getField() != null &&
-                        optimizeField.getField().equals(optimizeFieldDB.getField())) {
-                    return coreLearner;
-                }
-            }
-        }
-        return null;
-    }
 
     @Override
     public List<String> getMetricsFromCoreLeaner(CoreLearner coreLearner) {
@@ -167,25 +136,6 @@ public class CoreLearningModelService implements CoreLearningModelServiceInterfa
             session.clear();
 
             return convertedSegmentJson;
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        } finally {
-            if (session != null) {
-                session.close();
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public List<String> getDistinctSegment(Long optimizationRuleId) {
-        Session session = null;
-        try {
-            session = HibernateUtil.getSessionFactory().openSession();
-            List<String> segmentJson = coreLearnerDao.getDistinctSegmentValues(session, optimizationRuleId);
-            session.clear();
-
-            return segmentJson;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         } finally {

@@ -3,6 +3,7 @@ package com.pubvantage.dao;
 import com.pubvantage.AppMain;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.OptimizeField;
 import com.pubvantage.entity.prediction.PredictDataWrapper;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.JsonUtil;
@@ -10,6 +11,7 @@ import com.pubvantage.utils.SparkSqlUtil;
 import org.apache.log4j.Logger;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.json4s.jackson.Json;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -113,11 +115,12 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         String noSpaceDateField = ConvertUtil.removeSpace(dateField);
         String tableName = TABLE_NAME_PREFIX + optimizeRuleId;
         Dataset<Row> jdbcDF = sqlUtil.getDataSet(tableName);
+        OptimizeField optimizeField = JsonUtil.jsonToObject(predictDataWrapper.getOptimizeFieldJson(), OptimizeField.class);
 
         jdbcDF.createOrReplaceTempView(tableName);
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("SELECT SUM( ")
-                .append(ConvertUtil.removeSpace(predictDataWrapper.getOptimizeField().getField()))
+                .append(ConvertUtil.removeSpace(optimizeField.getField()))
                 .append(") ")
                 .append("FROM ").append(tableName)
                 .append(" WHERE ")

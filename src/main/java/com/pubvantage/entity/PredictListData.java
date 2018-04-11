@@ -10,7 +10,7 @@ public class PredictListData {
     private List<Map<String, String>> segmentGroups;
     private List<String> segmentGroupJson;
     private List<String> identifiers;
-    private List<OptimizeField> optimizeFields;
+    private List<String> optimizeFieldsJson;
     private List<String> listDate;
     private Long ruleId;
 
@@ -39,19 +39,6 @@ public class PredictListData {
         this.segmentGroupJson = segmentGroupJson;
     }
 
-    public PredictListData(List<Map<String, String>> segmentGroups,
-                           List<String> segmentGroupJson,
-                           List<String> identifiers,
-                           List<OptimizeField> optimizeFields,
-                           List<String> listDate,
-                           Long ruleId) {
-        this.segmentGroups = segmentGroups;
-        this.segmentGroupJson = segmentGroupJson;
-        this.identifiers = identifiers;
-        this.optimizeFields = optimizeFields;
-        this.listDate = listDate;
-        this.ruleId = ruleId;
-    }
 
     public Long getRuleId() {
         return ruleId;
@@ -70,12 +57,13 @@ public class PredictListData {
         this.identifiers = identifiers;
     }
 
-    public List<OptimizeField> getOptimizeFields() {
-        return optimizeFields;
+
+    public List<String> getOptimizeFieldsJson() {
+        return optimizeFieldsJson;
     }
 
-    public void setOptimizeFields(List<OptimizeField> optimizeFields) {
-        this.optimizeFields = optimizeFields;
+    public void setOptimizeFieldsJson(List<String> optimizeFieldsJson) {
+        this.optimizeFieldsJson = optimizeFieldsJson;
     }
 
     public List<String> getListDate() {

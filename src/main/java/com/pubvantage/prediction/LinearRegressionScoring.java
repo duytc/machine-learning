@@ -37,7 +37,6 @@ public class LinearRegressionScoring {
      * predict score then save to database
      */
     public void predict() throws Exception {
-        // Contain dates, optimization fields, rule id
         PredictListData predictListData = coreLearnerModelService.getPredictData(coreOptimizationRule);
 
         Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict = generatePrediction(predictListData);
@@ -79,9 +78,7 @@ public class LinearRegressionScoring {
      * @param jsonSegmentGroup Example {country: US, domain: a.com} in Json type
      * @param predictListData  data need for prediction  @return prediction data for one segment group
      */
-    private SegmentPredictWrapper generateSegmentGroupPredict(
-            String jsonSegmentGroup,
-            PredictListData predictListData) throws Exception {
+    private SegmentPredictWrapper generateSegmentGroupPredict(String jsonSegmentGroup,PredictListData predictListData) throws Exception {
         List<String> listIdentifier = coreLearnerModelService.getDistinctIdentifiers(predictListData.getRuleId(), jsonSegmentGroup);
         predictListData.setIdentifiers(listIdentifier);
 
@@ -105,7 +102,7 @@ public class LinearRegressionScoring {
                                                                String identifier,
                                                                PredictListData predictListData) throws Exception {
         List<String> listDate = predictListData.getListDate();
-        List<OptimizeField> listOptimizeField = predictListData.getOptimizeFields();
+        List<String> listOptimizeFieldJson = predictListData.getOptimizeFieldsJson();
 
         Map<String, Map<String, Double>> dateOptimizePredict = new LinkedHashMap<>();
         Map<String, Boolean> noHistoryDate = new LinkedHashMap<>();
@@ -116,11 +113,11 @@ public class LinearRegressionScoring {
             Map<String, Double> optimizeFieldPredictValues = new LinkedHashMap<>();
             boolean isPredict = isPredict(listDate, i);
             //loop by optimize field
-            for (OptimizeField optimizeField : listOptimizeField) {
-                PredictDataWrapper dataWrapper = new PredictDataWrapper(optimizeField, identifier, jsonSegmentGroup, date, isPredict, predictListData.getRuleId());
+            for (String optimizeFieldJson : listOptimizeFieldJson) {
+                PredictDataWrapper dataWrapper = new PredictDataWrapper(optimizeFieldJson, identifier, jsonSegmentGroup, date, isPredict, predictListData.getRuleId());
                 Double predictValue = getPredictionValue(dataWrapper);
 
-                optimizeFieldPredictValues.put(JsonUtil.toJson(optimizeField), predictValue);
+                optimizeFieldPredictValues.put(optimizeFieldJson, predictValue);
 
                 if (MyConstant.NO_HISTORY_PREDICTION_VALUE == predictValue) {
                     noHistoryDate.put(date, true);
@@ -135,12 +132,12 @@ public class LinearRegressionScoring {
         CoreLearner coreLearner = coreLearnerModelService.getOneCoreLeaner(
                 predictDataWrapper.getOptimizeRuleId(),
                 predictDataWrapper.getIdentifier(),
-                predictDataWrapper.getOptimizeField(),
+                predictDataWrapper.getOptimizeFieldJson(),
                 predictDataWrapper.getSegmentJson());
         if (coreLearner == null) {
             throw new Exception("Missing Model. Optimize Rule Id: " + predictDataWrapper.getOptimizeRuleId() +
                     " Identifier: " + predictDataWrapper.getIdentifier() +
-                    "Optimize field: " + predictDataWrapper.getOptimizeField().getField());
+                    "Optimize field: " + predictDataWrapper.getOptimizeFieldJson());
         }
 
         if (!predictDataWrapper.getIsPredict()) {
@@ -158,8 +155,7 @@ public class LinearRegressionScoring {
         VectorBuilder vectorBuilder = new VectorBuilder(coreLearner, convertedRule, JsonUtil.jsonToMap(predictDataWrapper.getSegmentJson()));
         org.apache.spark.ml.linalg.Vector conditionVector = vectorBuilder.buildVector();
         if (conditionVector == null) {
-            // TODO need check prediction default value. May be it make score become bad
-            return PREDICTION_DEFAULT_VALUE;
+            throw new Exception("Prediction fail: ConditionVector is null ");
         }
         double predict;
         try {

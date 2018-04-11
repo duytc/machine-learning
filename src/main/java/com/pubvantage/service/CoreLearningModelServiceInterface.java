@@ -11,7 +11,9 @@ public interface CoreLearningModelServiceInterface {
 
     void saveListLearnerModel(List<CoreLearner> modelList, CoreOptimizationRule optimizationRule);
 
-    CoreLearner getOneCoreLeaner(Long optimizationRule, String identifier, OptimizeField optimizeField, String segmentGroup);
+    CoreLearner getOneCoreLeaner(Long optimizationRule, String identifier,
+                                 String optimizeFieldJson,
+                                 String segmentGroup);
 
     PredictListData getPredictData(CoreOptimizationRule optimizationRule);
 
@@ -19,7 +21,6 @@ public interface CoreLearningModelServiceInterface {
 
     String getTextSegmentConvertedRule(Long optimizationRuleId, String segmentGroup, String identifier);
 
-    List<String> getDistinctSegment(Long optimizationRuleId);
 
     List<String> getDistinctIdentifiers(Long optimizationRuleId, String segmentGroup);
 

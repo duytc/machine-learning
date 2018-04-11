@@ -1,27 +1,20 @@
 package com.pubvantage.entity.prediction;
 
-import com.pubvantage.entity.OptimizeField;
-
-import java.util.Map;
-
 public class PredictDataWrapper {
-    private OptimizeField optimizeField;
+    private String optimizeFieldJson;
     private String identifier;
     private String segmentJson;
     private String date;
     private boolean isPredict;
     private Long optimizeRuleId;
 
+
     public PredictDataWrapper() {
     }
 
-    public PredictDataWrapper(OptimizeField optimizeField,
-                              String identifier,
-                              String segmentJson,
-                              String date,
-                              boolean isPredict,
-                              Long optimizeRuleId) {
-        this.optimizeField = optimizeField;
+    public PredictDataWrapper(String optimizeFieldJson, String identifier, String segmentJson, String date,
+                              boolean isPredict, Long optimizeRuleId) {
+        this.optimizeFieldJson = optimizeFieldJson;
         this.identifier = identifier;
         this.segmentJson = segmentJson;
         this.date = date;
@@ -29,6 +22,13 @@ public class PredictDataWrapper {
         this.optimizeRuleId = optimizeRuleId;
     }
 
+    public String getOptimizeFieldJson() {
+        return optimizeFieldJson;
+    }
+
+    public void setOptimizeFieldJson(String optimizeFieldJson) {
+        this.optimizeFieldJson = optimizeFieldJson;
+    }
 
     public String getSegmentJson() {
         return segmentJson;
@@ -46,13 +46,6 @@ public class PredictDataWrapper {
         isPredict = predict;
     }
 
-    public OptimizeField getOptimizeField() {
-        return optimizeField;
-    }
-
-    public void setOptimizeField(OptimizeField optimizeField) {
-        this.optimizeField = optimizeField;
-    }
 
     public String getIdentifier() {
         return identifier;
