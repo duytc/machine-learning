@@ -35,9 +35,10 @@ public class LinearRegressionTrainingDataProcess {
     private CoreReportView reportView;
 
     private Map<String, List<String>> convertedRule = null;
-    private String[] vectorColumns = null;
-    private String objective = null;
-    private Dataset<Row> fullDf = null;
+    private String[] vectorColumns;
+    private String objective;
+    private List<String> segments;
+    private List<String> digitMetrics;
 
     public LinearRegressionTrainingDataProcess() {
     }
@@ -55,10 +56,10 @@ public class LinearRegressionTrainingDataProcess {
             return null; // missing optimize field or metrics
 
         Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRule, identifier, objectiveAndFields);
-        List<String> segments = optimizationRuleService.getSegments(optimizationRule);
+        segments = optimizationRuleService.getSegments(optimizationRule);
         dataSet = convertTextToDigit(dataSet, segments);
 
-        Dataset<Row> oneHotVectorDf = getOneHotVectorDataSet(dataSet);
+        Dataset<Row> oneHotVectorDf = getOneHotVectorDataSet(dataSet, segments);
 
         Dataset<Row> selectedDataSet = oneHotVectorDf.select(ConvertUtil.removeSpace(this.objective), this.vectorColumns);
 
@@ -104,6 +105,8 @@ public class LinearRegressionTrainingDataProcess {
      * @return data set has [label, features] structure so that it can be used by Machine Learning model
      */
     private Dataset<Row> extractDataToLearn(Dataset<Row> digitDataSet) {
+        System.out.println("extractDataToLearn");
+        digitDataSet.show();
         String features = "features";
         VectorAssembler assembler = new VectorAssembler()
                 .setInputCols(this.vectorColumns)
@@ -116,16 +119,16 @@ public class LinearRegressionTrainingDataProcess {
 
     /**
      * @param rowDataSet a data set
+     * @param segments   segments
      * @return data set contains optimizeField value, digit segments values and digit metrics value
      */
-    private Dataset<Row> getOneHotVectorDataSet(Dataset<Row> rowDataSet) {
-        List<String> segments = optimizationRuleService.getSegments(optimizationRule);
+    private Dataset<Row> getOneHotVectorDataSet(Dataset<Row> rowDataSet, List<String> segments) {
         String[] inputColumns = ConvertUtil.concatIndexToArray(segments, MyConstant.INDEX);
         String[] outputColumns = ConvertUtil.concatIndexToArray(segments, MyConstant.VECTOR);
         Dataset<Row> oneHotVectorDf = applyOneHotVector(rowDataSet, inputColumns, outputColumns);
 
         String optimizeFieldName = this.optimizeField.getField();
-        List<String> digitMetrics = reportViewService.getNoSpaceDigitMetrics(getReportView(), optimizeFieldName);
+        digitMetrics = reportViewService.getNoSpaceDigitMetrics(getReportView(), optimizeFieldName);
         List<String> mixFields = new ArrayList<>(ConvertUtil.concatIndex(segments, MyConstant.VECTOR));
         mixFields.addAll(digitMetrics);
 
@@ -172,7 +175,6 @@ public class LinearRegressionTrainingDataProcess {
     }
 
 
-
     /**
      * @param trainingDataSet a data set
      * @param convertedRule
@@ -180,7 +182,7 @@ public class LinearRegressionTrainingDataProcess {
      * Each segment group has list value of each field
      */
     private Map<String, Map<String, double[]>> createMetricsPredictiveValues(Dataset<Row> trainingDataSet,
-                                                                           Map<String, List<String>> convertedRule) {
+                                                                             Map<String, List<String>> convertedRule) {
         trainingDataSet.show();
 
         List<String> segments = optimizationRuleService.getSegments(optimizationRule);
@@ -344,6 +346,16 @@ public class LinearRegressionTrainingDataProcess {
             reportView = reportViewService.findById(optimizationRule.getReportViewId(), new ReportViewDao());
         return reportView;
     }
+
+    public List<String> getSegments() {
+        return segments;
+    }
+
+
+    public List<String> getDigitMetrics() {
+        return digitMetrics;
+    }
+
 
     public Map<String, List<String>> getConvertedRule() {
         return convertedRule;

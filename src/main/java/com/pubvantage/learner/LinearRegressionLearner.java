@@ -63,6 +63,8 @@ public class LinearRegressionLearner implements LearnerInterface {
     @Override
     public String getModelStringData(LinearRegressionModel linearRegressionModel) {
         List<String> objectiveAndFields = linearRegressionDataProcess.getObjectiveAndFields();
+        List<String> digitMetrics = linearRegressionDataProcess.getDigitMetrics();
+        List<String> segments = linearRegressionDataProcess.getSegments();
         JsonObject jsonObject = new JsonObject();
         //coefficient
         Vector vec = linearRegressionModel.coefficients();
@@ -72,7 +74,8 @@ public class LinearRegressionLearner implements LearnerInterface {
         int coefficientsLength = coefficientsArray.length;
         for (int i = coefficientsLength - 1; i >= 0; i--) {
             int distance = coefficientsLength - 1 - i;
-            String fieldName = getFieldName(distance, objectiveAndFields);
+            String fieldName = getFieldName(distance, objectiveAndFields, digitMetrics, segments);
+
             if (Double.isNaN(coefficientsArray[i])) {
                 coefficient.addProperty(fieldName, MyConstant.NULL_COEFFICIENT);
             } else {
@@ -90,8 +93,11 @@ public class LinearRegressionLearner implements LearnerInterface {
         return jsonObject.toString();
     }
 
-    private String getFieldName(int distance, List<String> objectiveAndFields) {
+    private String getFieldName(int distance, List<String> objectiveAndFields, List<String> digitMetrics, List<String> segments) {
         if (objectiveAndFields == null) return null;
+
+        if (distance >= digitMetrics.size()) return MyConstant.SEGMENT_KEY;
+
         int size = objectiveAndFields.size();
         int index = size - 1 - distance;
         if (index > 0) {
