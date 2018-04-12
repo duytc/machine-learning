@@ -148,7 +148,8 @@ public class LinearRegressionScoring {
         VectorBuilder vectorBuilder = new VectorBuilder(coreLearner);
         org.apache.spark.ml.linalg.Vector conditionVector = vectorBuilder.buildVector();
         if (conditionVector == null) {
-            throw new Exception("Prediction fail: ConditionVector is null ");
+            return PREDICTION_DEFAULT_VALUE;
+//            throw new Exception("Prediction fail: ConditionVector is null ");
         }
         double predict;
         try {
