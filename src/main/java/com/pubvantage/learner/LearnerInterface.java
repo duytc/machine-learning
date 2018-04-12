@@ -13,5 +13,4 @@ public interface LearnerInterface {
 
     String getModelStringData(LinearRegressionModel linearRegressionModel);
 
-    Map<String, List<String>> getConvertedRule();
 }

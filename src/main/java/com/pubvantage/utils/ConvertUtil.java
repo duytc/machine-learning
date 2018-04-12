@@ -353,4 +353,20 @@ public class ConvertUtil {
             return nextDayString;
         }
     }
+
+    /**
+     *
+     * @param list list of Double values
+     * @return array of double values
+     */
+    public static double[] listDoubleToArray(List<Double> list) {
+        if (list == null) return null;
+        double[] doubles = new double[list.size()];
+        int index = -1;
+        for (Double value : list) {
+            index++;
+            doubles[index] = value;
+        }
+        return doubles;
+    }
 }

@@ -1,26 +1,17 @@
 package com.pubvantage.learner;
 
 import com.google.gson.JsonObject;
-import com.pubvantage.AppMain;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.FilePathUtil;
-import org.apache.spark.ml.feature.*;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.regression.LinearRegression;
 import org.apache.spark.ml.regression.LinearRegressionModel;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.Metadata;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public class LinearRegressionLearner implements LearnerInterface {
     private static final double REG_PARAM = 0.3;
@@ -36,7 +27,6 @@ public class LinearRegressionLearner implements LearnerInterface {
     @Override
     public LinearRegressionModel generateModel(SparkSession sparkSession) {
         Dataset<Row> training = linearRegressionDataProcess.getTrainingDataForLinearRegression();
-        training.show(20, false);
         LinearRegression lr = new LinearRegression()
                 .setMaxIter(MAX_ITER)
                 .setRegParam(REG_PARAM)
@@ -105,10 +95,6 @@ public class LinearRegressionLearner implements LearnerInterface {
             return objectiveAndFields.get(index);
         }
         return MyConstant.SEGMENT_KEY;
-    }
-
-    public Map<String, List<String>> getConvertedRule() {
-        return this.linearRegressionDataProcess.getConvertedRule();
     }
 
 }

@@ -1,10 +1,8 @@
 package com.pubvantage.prediction;
 
 import com.pubvantage.constant.MyConstant;
-import com.pubvantage.entity.CoreLearner;
-import com.pubvantage.entity.CoreOptimizationRule;
-import com.pubvantage.entity.OptimizeField;
-import com.pubvantage.entity.PredictListData;
+import com.pubvantage.dao.ReportViewDao;
+import com.pubvantage.entity.*;
 import com.pubvantage.entity.prediction.IdentifierPredictWrapper;
 import com.pubvantage.entity.prediction.PredictDataWrapper;
 import com.pubvantage.entity.prediction.SegmentPredictWrapper;
@@ -22,6 +20,7 @@ public class LinearRegressionScoring {
     private static Logger logger = Logger.getLogger(LinearRegressionScoring.class.getName());
     private static final double PREDICTION_DEFAULT_VALUE = 0d;
     private CoreLearningModelServiceInterface coreLearnerModelService = new CoreLearningModelService();
+    private ReportViewServiceInterface reportViewService = new ReportViewService();
     private ScoreServiceInterface scoreService = new ScoreService();
     private DataTrainingServiceInterface dataTrainingService = new DataTrainingService();
     private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
@@ -77,7 +76,7 @@ public class LinearRegressionScoring {
      * @param jsonSegmentGroup Example {country: US, domain: a.com} in Json type
      * @param predictListData  data need for prediction  @return prediction data for one segment group
      */
-    private SegmentPredictWrapper generateSegmentGroupPredict(String jsonSegmentGroup,PredictListData predictListData) throws Exception {
+    private SegmentPredictWrapper generateSegmentGroupPredict(String jsonSegmentGroup, PredictListData predictListData) throws Exception {
         List<String> listIdentifier = coreLearnerModelService.getDistinctIdentifiers(predictListData.getRuleId(), jsonSegmentGroup);
         predictListData.setIdentifiers(listIdentifier);
 
@@ -144,7 +143,7 @@ public class LinearRegressionScoring {
             return getObjectiveFromDatabase(coreLearner, predictDataWrapper, this.coreOptimizationRule);
         }
 
-        VectorBuilder vectorBuilder = new VectorBuilder(coreLearner);
+        VectorBuilder vectorBuilder = new VectorBuilder(coreLearner, this.coreOptimizationRule);
         org.apache.spark.ml.linalg.Vector conditionVector = vectorBuilder.buildVector();
         if (conditionVector == null) {
             return PREDICTION_DEFAULT_VALUE;
@@ -169,10 +168,12 @@ public class LinearRegressionScoring {
                                             PredictDataWrapper predictDataWrapper,
                                             CoreOptimizationRule optimizationRule) {
 
-        List<String> metrics = coreLearnerModelService.getMetricsFromCoreLeaner(coreLearner);
+        OptimizeField optimizeField = JsonUtil.jsonToObject(coreLearner.getOptimizeFields(), OptimizeField.class);
+        CoreReportView reportView = reportViewService.findById(optimizationRule.getReportViewId(), new ReportViewDao());
+        List<String> digitMetrics = reportViewService.getNoSpaceDigitMetrics(reportView, optimizeField.getField());
         List<String> dimensions = optimizationRuleService.getNoSpaceDimensions(optimizationRule);
         dimensions.remove(optimizationRule.getDateField());
-        Double value = dataTrainingService.getRealObjectiveValueFromDB(predictDataWrapper, metrics, dimensions, optimizationRule);
+        Double value = dataTrainingService.getRealObjectiveValueFromDB(predictDataWrapper, digitMetrics, dimensions, optimizationRule);
         return value == null ? MyConstant.NO_HISTORY_PREDICTION_VALUE : value;
     }
 

@@ -34,7 +34,6 @@ public class LinearRegressionTrainingDataProcess {
     private Map<String, Map<String, double[]>> predictiveValues;
     private CoreReportView reportView;
 
-    private Map<String, List<String>> convertedRule = null;
     private String[] vectorColumns;
     private String objective;
     private List<String> segments;
@@ -50,7 +49,7 @@ public class LinearRegressionTrainingDataProcess {
         this.optimizeField = optimizeField;
     }
 
-    public Dataset<Row> getTrainingDataForLinearRegression() {
+    Dataset<Row> getTrainingDataForLinearRegression() {
         List<String> objectiveAndFields = this.createObjectiveAndFields();
         if (objectiveAndFields == null || objectiveAndFields.size() <= 1)
             return null; // missing optimize field or metrics
@@ -58,15 +57,11 @@ public class LinearRegressionTrainingDataProcess {
         Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRule, identifier, objectiveAndFields);
         segments = optimizationRuleService.getSegments(optimizationRule);
         dataSet = convertTextToDigit(dataSet, segments);
-
         Dataset<Row> oneHotVectorDf = getOneHotVectorDataSet(dataSet, segments);
-
         Dataset<Row> selectedDataSet = oneHotVectorDf.select(ConvertUtil.removeSpace(this.objective), this.vectorColumns);
-
         Dataset<Row> learnData = this.extractDataToLearn(selectedDataSet);
-        learnData.show(false);
 
-        this.predictiveValues = createMetricsPredictiveValues(oneHotVectorDf, this.convertedRule);
+        this.predictiveValues = createMetricsPredictiveValues(oneHotVectorDf);
         return learnData;
     }
 
@@ -105,15 +100,12 @@ public class LinearRegressionTrainingDataProcess {
      * @return data set has [label, features] structure so that it can be used by Machine Learning model
      */
     private Dataset<Row> extractDataToLearn(Dataset<Row> digitDataSet) {
-        System.out.println("extractDataToLearn");
-        digitDataSet.show();
         String features = "features";
         VectorAssembler assembler = new VectorAssembler()
                 .setInputCols(this.vectorColumns)
                 .setOutputCol(features);
 
         Dataset<Row> output = assembler.transform(digitDataSet);
-        output.show(false);
         return output.select(col(this.objective).alias("label"), col(features));
     }
 
@@ -158,7 +150,6 @@ public class LinearRegressionTrainingDataProcess {
      * @return convert text value to digit base on frequency of text values
      */
     private Dataset<Row> convertTextToDigit(Dataset<Row> df, List<String> textFields) {
-        this.convertedRule = new HashMap<>();
         for (String field : textFields) {
             String outputField = field + MyConstant.INDEX;
             StringIndexerModel indexModelCategory = new StringIndexer()
@@ -166,10 +157,6 @@ public class LinearRegressionTrainingDataProcess {
                     .setOutputCol(outputField)
                     .fit(df);
             df = indexModelCategory.transform(df);
-
-            //Save converted rule
-            String[] labels = indexModelCategory.labels();
-            convertedRule.put(field, Arrays.asList(labels));
         }
         return df;
     }
@@ -177,23 +164,17 @@ public class LinearRegressionTrainingDataProcess {
 
     /**
      * @param trainingDataSet a data set
-     * @param convertedRule
      * @return prediction data base on each segment group.
      * Each segment group has list value of each field
      */
-    private Map<String, Map<String, double[]>> createMetricsPredictiveValues(Dataset<Row> trainingDataSet,
-                                                                             Map<String, List<String>> convertedRule) {
-        trainingDataSet.show();
-
+    private Map<String, Map<String, double[]>> createMetricsPredictiveValues(Dataset<Row> trainingDataSet) {
         List<String> segments = optimizationRuleService.getSegments(optimizationRule);
         List<String> objectiveAndFields = this.objectiveAndFields;
 
         //forecast  number value factor. (avg)
         Dataset<Row> avgDataSet = avgNumberedData(trainingDataSet, objectiveAndFields, segments);
-        avgDataSet.show();
 
         avgDataSet = applyIntegratedVector(avgDataSet, segments);
-        avgDataSet.show(false);
 
         List<Row> data = avgDataSet.collectAsList();
         String[] orderedFields = avgDataSet.columns();
@@ -258,14 +239,6 @@ public class LinearRegressionTrainingDataProcess {
         return avgDataSet;
     }
 
-    private Double getDigitValueFromConvertedRule(Map<String, List<String>> convertedRule, String fieldKey, Object segmentValue) {
-        if (convertedRule == null) return null;
-        List<String> convertedVector = convertedRule.get(fieldKey);
-        if (convertedVector == null) return null;
-        int index = convertedVector.indexOf(segmentValue.toString());
-
-        return ConvertUtil.convertObjectToDouble(index);
-    }
 
     /**
      * @param trainingDataSet    training data
@@ -302,9 +275,7 @@ public class LinearRegressionTrainingDataProcess {
         if (firstSegment == null) {
             return trainingDataSet.agg(map);
         }
-        Dataset<Row> dataset = trainingDataSet.groupBy(firstSegment, remainsSegments).agg(map);
-        dataset.show();
-        return dataset;
+        return trainingDataSet.groupBy(firstSegment, remainsSegments).agg(map);
 
     }
 
@@ -337,7 +308,7 @@ public class LinearRegressionTrainingDataProcess {
         return predictiveValues;
     }
 
-    public List<String> getObjectiveAndFields() {
+    List<String> getObjectiveAndFields() {
         return objectiveAndFields;
     }
 
@@ -347,17 +318,13 @@ public class LinearRegressionTrainingDataProcess {
         return reportView;
     }
 
-    public List<String> getSegments() {
+    List<String> getSegments() {
         return segments;
     }
 
 
-    public List<String> getDigitMetrics() {
+    List<String> getDigitMetrics() {
         return digitMetrics;
     }
 
-
-    public Map<String, List<String>> getConvertedRule() {
-        return convertedRule;
-    }
 }

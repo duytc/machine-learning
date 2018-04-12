@@ -1,62 +1,62 @@
 package com.pubvantage.prediction;
 
+import com.pubvantage.dao.ReportViewDao;
 import com.pubvantage.entity.CoreLearner;
-import com.pubvantage.service.CoreLearningModelService;
-import com.pubvantage.service.CoreLearningModelServiceInterface;
+import com.pubvantage.entity.CoreOptimizationRule;
+import com.pubvantage.entity.CoreReportView;
+import com.pubvantage.entity.OptimizeField;
+import com.pubvantage.service.*;
+import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.JsonUtil;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.Vectors;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class VectorBuilder {
-    private CoreLearningModelServiceInterface coreLearnerModelService = new CoreLearningModelService();
-    private CoreLearner coreLearner;
+class VectorBuilder {
+    private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
+    private ReportViewServiceInterface reportViewService = new ReportViewService();
 
-    public VectorBuilder(CoreLearner coreLearner) {
+    private CoreLearner coreLearner;
+    private CoreOptimizationRule optimizationRule;
+
+    VectorBuilder(CoreLearner coreLearner, CoreOptimizationRule optimizationRule) {
         this.coreLearner = coreLearner;
+        this.optimizationRule = optimizationRule;
     }
 
     /**
      * @return Vector data need for prediction
      */
-    public Vector buildVector() {
-        List<String> metrics = coreLearnerModelService.getMetricsFromCoreLeaner(coreLearner);
-        double[] doubleValue = new double[metrics.size()];
-        Map<String, Double> predictiveValues = getPredictionValues(coreLearner);
+    Vector buildVector() {
+        List<String> segments = optimizationRuleService.getSegments(optimizationRule);
+        Map<String, List<Double>> predictiveValues = getPredictionValues(coreLearner);
+
+
+        List<Double> doubleList = new ArrayList<>();
+        for (String segment : segments) {
+            List<Double> values = predictiveValues.get(segment);
+            doubleList.addAll(values);
+        }
+
+        OptimizeField optimizeField = JsonUtil.jsonToObject(coreLearner.getOptimizeFields(), OptimizeField.class);
+        CoreReportView reportView = reportViewService.findById(optimizationRule.getReportViewId(), new ReportViewDao());
+        List<String> metrics = reportViewService.getNoSpaceDigitMetrics(reportView, optimizeField.getField());
+
         if (predictiveValues == null)
             return null;
-        for (int index = 0; index < metrics.size(); index++) {
-            String fieldName = metrics.get(index);
-            Double valueInPrediction = predictiveValues.get(fieldName);
-            doubleValue[index] = valueInPrediction == null ? 0D : valueInPrediction;
+        for (String fieldName : metrics) {
+            List<Double> values = predictiveValues.get(fieldName);
+            doubleList.addAll(values);
         }
+        double[] doubleValue = ConvertUtil.listDoubleToArray(doubleList);
+
         return Vectors.dense(doubleValue);
     }
 
-    /**
-     * value = index of field in convertedRule list due to 'converting text to digit by Frequency rule'
-     *
-     * @param convertedRule Example: {country: [global, VN]}
-     * @param fieldName     country
-     * @param segments      {country: global}
-     * @return index of global in [global, VN]
-     */
-    private Double getSegmentDigitValue(Map<String, List<String>> convertedRule,
-                                        String fieldName, Map<String, String> segments) {
-        List<String> convertedSegmentRule = convertedRule.get(fieldName);
-        String segmentValue = segments.get(fieldName);
-        int index = convertedSegmentRule.indexOf(segmentValue);
-
-        return (double) index;
-    }
-
-    private boolean isSegment(Map<String, List<String>> convertedRule, String fieldName) {
-        return convertedRule != null && convertedRule.get(fieldName) != null;
-    }
-
-    private Map<String, Double> getPredictionValues(CoreLearner coreLearner) {
+    private Map<String, List<Double>> getPredictionValues(CoreLearner coreLearner) {
         return JsonUtil.jsonToMap(coreLearner.getMetricsPredictiveValues());
     }
 }
