@@ -27,7 +27,7 @@ public class LinearRegressionScoring {
     private DataTrainingServiceInterface dataTrainingService = new DataTrainingService();
     private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
     private CoreOptimizationRule coreOptimizationRule;
-    private Map<String, Map<String, Map<String, Boolean>>> noHistorySegment = new ConcurrentHashMap<>();
+    private Map<String, Map<String, Map<String, Boolean>>> noHistorySegment = new HashMap<>();
 
     public LinearRegressionScoring(CoreOptimizationRule coreOptimizationRule) {
         this.coreOptimizationRule = coreOptimizationRule;
