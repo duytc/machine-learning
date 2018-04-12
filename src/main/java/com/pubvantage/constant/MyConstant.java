@@ -44,6 +44,9 @@ public class MyConstant {
 
     // convert data set
     public static String INDEX = " Index";
+    public static String VECTOR = " Vector";
+    public static String VECTOR_INTEGRATED = "VectorIntegrated";
+    public static String SEGMENT_KEY = "segment";
 
     public static String SQL_OR = "OR";
     public static String SQL_AND = "AND";

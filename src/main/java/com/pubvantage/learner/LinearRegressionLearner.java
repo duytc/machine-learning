@@ -1,16 +1,24 @@
 package com.pubvantage.learner;
 
 import com.google.gson.JsonObject;
+import com.pubvantage.AppMain;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.FilePathUtil;
+import org.apache.spark.ml.feature.*;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.regression.LinearRegression;
 import org.apache.spark.ml.regression.LinearRegressionModel;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.Metadata;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -29,9 +37,6 @@ public class LinearRegressionLearner implements LearnerInterface {
     public LinearRegressionModel generateModel(SparkSession sparkSession) {
         Dataset<Row> training = linearRegressionDataProcess.getTrainingDataForLinearRegression();
         training.show(20, false);
-        if (training == null) {
-            return null;
-        }
         LinearRegression lr = new LinearRegression()
                 .setMaxIter(MAX_ITER)
                 .setRegParam(REG_PARAM)
@@ -63,13 +68,16 @@ public class LinearRegressionLearner implements LearnerInterface {
         Vector vec = linearRegressionModel.coefficients();
         double[] coefficientsArray = vec.toArray();
         JsonObject coefficient = new JsonObject();
-        for (int i = 0; i < coefficientsArray.length; i++) {
-            int factorIndex = i + 1;// index 0 is objective
+
+        int coefficientsLength = coefficientsArray.length;
+        for (int i = coefficientsLength - 1; i >= 0; i--) {
+            int distance = coefficientsLength - 1 - i;
+            String fieldName = getFieldName(distance, objectiveAndFields);
             if (Double.isNaN(coefficientsArray[i])) {
-                coefficient.addProperty(objectiveAndFields.get(factorIndex), MyConstant.NULL_COEFFICIENT);
+                coefficient.addProperty(fieldName, MyConstant.NULL_COEFFICIENT);
             } else {
                 double value = ConvertUtil.convertObjectToDecimal(coefficientsArray[i]).doubleValue();
-                coefficient.addProperty(objectiveAndFields.get(factorIndex), value);
+                coefficient.addProperty(fieldName, value);
             }
         }
         jsonObject.add(MyConstant.COEFFICIENT, coefficient);
@@ -80,6 +88,17 @@ public class LinearRegressionLearner implements LearnerInterface {
             jsonObject.addProperty(MyConstant.INTERCEPT, value);
         }
         return jsonObject.toString();
+    }
+
+    private String getFieldName(int distance, List<String> objectiveAndFields) {
+        if (objectiveAndFields == null) return null;
+        int size = objectiveAndFields.size();
+        int index = size - 1 - distance;
+        if (index > 0) {
+            // skip first index of objective
+            return objectiveAndFields.get(index);
+        }
+        return MyConstant.SEGMENT_KEY;
     }
 
     public Map<String, List<String>> getConvertedRule() {

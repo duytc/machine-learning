@@ -1,6 +1,5 @@
 package com.pubvantage.learner;
 
-import com.pubvantage.AppMain;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.dao.ReportViewDao;
 import com.pubvantage.dao.SparkDataTrainingDao;
@@ -14,22 +13,15 @@ import com.pubvantage.service.ReportViewService;
 import com.pubvantage.service.ReportViewServiceInterface;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.JsonUtil;
-import org.apache.spark.api.java.function.FlatMapFunction;
 import org.apache.spark.ml.feature.*;
-import org.apache.spark.ml.linalg.Vector;
-import org.apache.spark.ml.linalg.VectorUDT;
-import org.apache.spark.ml.linalg.Vectors;
+import org.apache.spark.ml.linalg.DenseVector;
+import org.apache.spark.ml.linalg.SparseVector;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.catalyst.encoders.ExpressionEncoder;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.Metadata;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
 
 import java.util.*;
+
+import static org.apache.spark.sql.functions.col;
 
 public class LinearRegressionTrainingDataProcess {
     private OptimizationRuleServiceInterface optimizationRuleService = new OptimizationRuleService();
@@ -39,10 +31,13 @@ public class LinearRegressionTrainingDataProcess {
     private String identifier;
     private OptimizeField optimizeField;
     private List<String> objectiveAndFields;
-    private Map<String, Map<String, Double>> predictiveValues;
+    private Map<String, Map<String, double[]>> predictiveValues;
     private CoreReportView reportView;
 
     private Map<String, List<String>> convertedRule = null;
+    private String[] vectorColumns = null;
+    private String objective = null;
+    private Dataset<Row> fullDf = null;
 
     public LinearRegressionTrainingDataProcess() {
     }
@@ -60,10 +55,17 @@ public class LinearRegressionTrainingDataProcess {
             return null; // missing optimize field or metrics
 
         Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRule, identifier, objectiveAndFields);
-        Dataset<Row> digitDataSet = getDigitDataSet(dataSet);
-        digitDataSet.show();
-        Dataset<Row> learnData = this.extractDataToLearn(digitDataSet);
-        this.predictiveValues = createMetricsPredictiveValues(dataSet, this.convertedRule);
+        List<String> segments = optimizationRuleService.getSegments(optimizationRule);
+        dataSet = convertTextToDigit(dataSet, segments);
+
+        Dataset<Row> oneHotVectorDf = getOneHotVectorDataSet(dataSet);
+
+        Dataset<Row> selectedDataSet = oneHotVectorDf.select(ConvertUtil.removeSpace(this.objective), this.vectorColumns);
+
+        Dataset<Row> learnData = this.extractDataToLearn(selectedDataSet);
+        learnData.show(false);
+
+        this.predictiveValues = createMetricsPredictiveValues(oneHotVectorDf, this.convertedRule);
         return learnData;
     }
 
@@ -102,49 +104,50 @@ public class LinearRegressionTrainingDataProcess {
      * @return data set has [label, features] structure so that it can be used by Machine Learning model
      */
     private Dataset<Row> extractDataToLearn(Dataset<Row> digitDataSet) {
-        StructType schema = new StructType(new StructField[]{
-                new StructField("label", DataTypes.DoubleType, false, Metadata.empty()),
-                new StructField("features", new VectorUDT(), false, Metadata.empty()),
-        });
+        String features = "features";
+        VectorAssembler assembler = new VectorAssembler()
+                .setInputCols(this.vectorColumns)
+                .setOutputCol(features);
 
-        ExpressionEncoder<Row> encoder = RowEncoder.apply(schema);
-
-        return digitDataSet.flatMap((FlatMapFunction<Row, Row>) rowData -> {
-            Double label = Double.parseDouble(rowData.get(0).toString());
-
-            double[] features = new double[rowData.size() - 1];
-            for (int i = 0; i < features.length; i++) {
-                int factorIndex = i + 1;
-                features[i] = Double.parseDouble(rowData.get(factorIndex).toString());
-            }
-
-            Vector featuresVector = Vectors.dense(features);
-            Row rowOutput = RowFactory.create(label, featuresVector);
-
-            ArrayList<Row> list = new ArrayList<>();
-            list.add(rowOutput);
-            return list.iterator();
-        }, encoder);
+        Dataset<Row> output = assembler.transform(digitDataSet);
+        output.show(false);
+        return output.select(col(this.objective).alias("label"), col(features));
     }
 
     /**
      * @param rowDataSet a data set
      * @return data set contains optimizeField value, digit segments values and digit metrics value
      */
-    private Dataset<Row> getDigitDataSet(Dataset<Row> rowDataSet) {
+    private Dataset<Row> getOneHotVectorDataSet(Dataset<Row> rowDataSet) {
         List<String> segments = optimizationRuleService.getSegments(optimizationRule);
-        rowDataSet = convertTextToDigit(rowDataSet, segments);
+        String[] inputColumns = ConvertUtil.concatIndexToArray(segments, MyConstant.INDEX);
+        String[] outputColumns = ConvertUtil.concatIndexToArray(segments, MyConstant.VECTOR);
+        Dataset<Row> oneHotVectorDf = applyOneHotVector(rowDataSet, inputColumns, outputColumns);
 
         String optimizeFieldName = this.optimizeField.getField();
         List<String> digitMetrics = reportViewService.getNoSpaceDigitMetrics(getReportView(), optimizeFieldName);
-        List<String> mixFields = new ArrayList<>(ConvertUtil.concatIndex(segments, MyConstant.INDEX));
+        List<String> mixFields = new ArrayList<>(ConvertUtil.concatIndex(segments, MyConstant.VECTOR));
         mixFields.addAll(digitMetrics);
 
         String[] segmentsAndDigitMetrics = new String[mixFields.size()];
         segmentsAndDigitMetrics = mixFields.toArray(segmentsAndDigitMetrics);
 
-        return rowDataSet.select(ConvertUtil.removeSpace(optimizeFieldName), segmentsAndDigitMetrics);
+        this.vectorColumns = segmentsAndDigitMetrics;
+        this.objective = ConvertUtil.removeSpace(optimizeFieldName);
+
+        return oneHotVectorDf;
     }
+
+    private Dataset<Row> applyOneHotVector(Dataset<Row> rowDataSet, String[] inputColumns, String[] outputColumns) {
+        OneHotEncoderEstimator encoder = new OneHotEncoderEstimator()
+                .setInputCols(inputColumns)
+                .setOutputCols(outputColumns);
+
+        OneHotEncoderModel model = encoder.fit(rowDataSet);
+
+        return model.transform(rowDataSet);
+    }
+
 
     /**
      * @param df         data set
@@ -168,26 +171,34 @@ public class LinearRegressionTrainingDataProcess {
         return df;
     }
 
+
+
     /**
      * @param trainingDataSet a data set
      * @param convertedRule
      * @return prediction data base on each segment group.
      * Each segment group has list value of each field
      */
-    private Map<String, Map<String, Double>> createMetricsPredictiveValues(Dataset<Row> trainingDataSet,
+    private Map<String, Map<String, double[]>> createMetricsPredictiveValues(Dataset<Row> trainingDataSet,
                                                                            Map<String, List<String>> convertedRule) {
+        trainingDataSet.show();
+
         List<String> segments = optimizationRuleService.getSegments(optimizationRule);
         List<String> objectiveAndFields = this.objectiveAndFields;
 
         //forecast  number value factor. (avg)
         Dataset<Row> avgDataSet = avgNumberedData(trainingDataSet, objectiveAndFields, segments);
         avgDataSet.show();
+
+        avgDataSet = applyIntegratedVector(avgDataSet, segments);
+        avgDataSet.show(false);
+
         List<Row> data = avgDataSet.collectAsList();
         String[] orderedFields = avgDataSet.columns();
-        Map<String, Map<String, Double>> predictionMap = new HashMap<>();
+        Map<String, Map<String, double[]>> predictionMap = new HashMap<>();
         for (Row row : data) {
             Map<String, String> segmentMap = new HashMap<>();
-            if (segments == null || segments.isEmpty()) {
+            if (segments.isEmpty()) {
                 //Handle null segment (key-value 'NO_SEGMENT'-'NO_SEGMENT'). segment value become {} when save in database
                 segmentMap.put(MyConstant.NO_SEGMENT, MyConstant.NO_SEGMENT);
             } else {
@@ -197,21 +208,30 @@ public class LinearRegressionTrainingDataProcess {
                     segmentMap.put(segment, segmentValue);
                 }
             }
-            int segmentCount = segments == null ? 0 : segments.size();
-            Map<String, Double> forecastMap = new HashMap<>();
-            for (int col = 0; col < orderedFields.length; col++) {
+            int segmentCount = segments.size();
+            Map<String, double[]> forecastMap = new LinkedHashMap<>();
+            for (int col = 0; col < orderedFields.length - segmentCount; col++) {
                 String fieldKey = orderedFields[col];
-                Double avg = 0D;
+//                Double avg = 0D;
+                double[] doubles = null;
                 Object segmentValue = row.getAs(fieldKey);
                 if (col < segmentCount) {
-                    //Base on Frequency converting rule. digit value = index
-                    avg = getDigitValueFromConvertedRule(convertedRule, fieldKey, segmentValue);
-                    forecastMap.put(fieldKey, avg);
+                    String integratedColName = fieldKey + MyConstant.VECTOR_INTEGRATED;
+                    Object object = row.getAs(integratedColName);
+                    if (object instanceof DenseVector) {
+                        doubles = ((DenseVector) object).toArray();
+                    } else if (object instanceof SparseVector) {
+                        doubles = ((SparseVector) object).toArray();
+                    }
+                    forecastMap.put(fieldKey, doubles);
+
                 } else {
                     if (segmentValue instanceof Number) {
-                        avg = ConvertUtil.convertObjectToDouble(row.get(col).toString());
+                        Double avg = ConvertUtil.convertObjectToDouble(row.get(col).toString());
+                        doubles = new double[1];
+                        doubles[0] = avg;
                     }
-                    forecastMap.put(ConvertUtil.removeAvg(fieldKey), avg);
+                    forecastMap.put(ConvertUtil.removeAvg(fieldKey), doubles);
                 }
             }
             String jsonKey = JsonUtil.mapToJson(segmentMap);
@@ -219,6 +239,21 @@ public class LinearRegressionTrainingDataProcess {
         }
 
         return predictionMap;
+    }
+
+    private Dataset<Row> applyIntegratedVector(Dataset<Row> avgDataSet, List<String> segments) {
+        for (String segment : segments) {
+            String colName = segment + MyConstant.VECTOR_INTEGRATED;
+            String[] arr = new String[1];
+            arr[0] = ConvertUtil.concatMax(segment + MyConstant.VECTOR);
+            VectorAssembler assembler = new VectorAssembler()
+                    .setInputCols(arr)
+                    .setOutputCol(colName);
+
+            avgDataSet = assembler.transform(avgDataSet);
+            avgDataSet = avgDataSet.drop(col(arr[0]));
+        }
+        return avgDataSet;
     }
 
     private Double getDigitValueFromConvertedRule(Map<String, List<String>> convertedRule, String fieldKey, Object segmentValue) {
@@ -247,6 +282,11 @@ public class LinearRegressionTrainingDataProcess {
             if (segments.indexOf(field) < 0)
                 map.put(field, "avg");
         }
+        List<String> vectorLabel = ConvertUtil.concatIndex(segments, MyConstant.VECTOR);
+        for (String label : vectorLabel) {
+            map.put(label, "max");
+        }
+
         String firstSegment = null;
         String[] remainsSegments = new String[0];
 
@@ -260,7 +300,9 @@ public class LinearRegressionTrainingDataProcess {
         if (firstSegment == null) {
             return trainingDataSet.agg(map);
         }
-        return trainingDataSet.groupBy(firstSegment, remainsSegments).agg(map);
+        Dataset<Row> dataset = trainingDataSet.groupBy(firstSegment, remainsSegments).agg(map);
+        dataset.show();
+        return dataset;
 
     }
 
@@ -289,7 +331,7 @@ public class LinearRegressionTrainingDataProcess {
         this.optimizeField = optimizeField;
     }
 
-    public Map<String, Map<String, Double>> getPredictiveValues() {
+    public Map<String, Map<String, double[]>> getPredictiveValues() {
         return predictiveValues;
     }
 

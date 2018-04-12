@@ -125,7 +125,6 @@ public class ConvertUtil {
     }
 
     /**
-     *
      * @param set Example: [a,b]
      * @return [null, [a], [b], [a,b]]
      */
@@ -191,8 +190,7 @@ public class ConvertUtil {
     }
 
     /**
-     *
-     * @param date a date value
+     * @param date   a date value
      * @param format date format
      * @return string value of date
      */
@@ -232,16 +230,36 @@ public class ConvertUtil {
 
     /**
      * This use for label of column need to  convert text to digit
+     *
      * @param list  ["a", "b"]
      * @param index "Index"
      * @return ["a Index", "b Index"]
      */
     public static List<String> concatIndex(List<String> list, String index) {
+        if (list == null) return null;
         List<String> newList = new ArrayList<>();
         for (String item : list) {
             newList.add(item + index);
         }
         return newList;
+    }
+
+    /**
+     * This use for label of column need to  convert text to digit
+     *
+     * @param list        ["a", "b"]
+     * @param indexString "Index"
+     * @return ["a Index", "b Index"]
+     */
+    public static String[] concatIndexToArray(List<String> list, String indexString) {
+        if (list == null) return null;
+        String[] newArray = new String[list.size()];
+        int i = -1;
+        for (String item : list) {
+            i++;
+            newArray[i] = item + indexString;
+        }
+        return newArray;
     }
 
     /**
@@ -253,6 +271,12 @@ public class ConvertUtil {
         return avgString.substring(4, avgString.length() - 1);
     }
 
+
+    public static String concatMax(String string) {
+        if (string == null) return null;
+        return "max(" + string + ")";
+    }
+
     public static List<String> removeAvg(List<String> listAvg) {
         List<String> plain = new ArrayList<>();
         for (String item : listAvg) {
@@ -262,7 +286,6 @@ public class ConvertUtil {
     }
 
     /**
-     *
      * @param segmentData Example: { country: ["VN", "global"], domain: ["a.com", "global"]
      * @return [{country: "VN", domain: "a.com"}, {country: "global", domain: "a.com"}, ...]
      */

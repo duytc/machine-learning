@@ -341,12 +341,12 @@ public class AppMain {
         LinearRegressionModel linearRegressionModel = linearRegressionLearner.generateModel(sparkSession);
         if (linearRegressionModel == null) return null;
 
-        Map<String, Map<String, Double>> predictiveValues = linearRegressionDataProcess.getPredictiveValues();
+        Map<String, Map<String, double[]>> predictiveValues = linearRegressionDataProcess.getPredictiveValues();
         List<CoreLearner> coreLearnerList = new ArrayList<>();
-        for (Map.Entry<String, Map<String, Double>> entry : predictiveValues.entrySet()) {
+        for (Map.Entry<String, Map<String, double[]>> entry : predictiveValues.entrySet()) {
             String jsonSegmentGroup = entry.getKey();
             jsonSegmentGroup = refactorSegmentGroup(jsonSegmentGroup);
-            Map<String, Double> prediction = entry.getValue();
+            Map<String, double[]> prediction = entry.getValue();
 
             CoreLearner coreLearner = new CoreLearner();
             coreLearner.setId(0L);
