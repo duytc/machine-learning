@@ -1,5 +1,6 @@
 package com.pubvantage.learner;
 
+import com.pubvantage.AppMain;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.dao.ReportViewDao;
 import com.pubvantage.dao.SparkDataTrainingDao;
@@ -14,8 +15,7 @@ import com.pubvantage.service.ReportViewServiceInterface;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.JsonUtil;
 import org.apache.spark.api.java.function.FlatMapFunction;
-import org.apache.spark.ml.feature.StringIndexer;
-import org.apache.spark.ml.feature.StringIndexerModel;
+import org.apache.spark.ml.feature.*;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.VectorUDT;
 import org.apache.spark.ml.linalg.Vectors;
@@ -60,11 +60,9 @@ public class LinearRegressionTrainingDataProcess {
             return null; // missing optimize field or metrics
 
         Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRule, identifier, objectiveAndFields);
-        dataSet.show();
         Dataset<Row> digitDataSet = getDigitDataSet(dataSet);
         digitDataSet.show();
         Dataset<Row> learnData = this.extractDataToLearn(digitDataSet);
-        learnData.show();
         this.predictiveValues = createMetricsPredictiveValues(dataSet, this.convertedRule);
         return learnData;
     }

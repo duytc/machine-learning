@@ -17,7 +17,7 @@ import java.util.Map;
 public class LinearRegressionLearner implements LearnerInterface {
     private static final double REG_PARAM = 0.3;
     private static final double ELASTIC_NET_PARAM = 0.8;
-    private static final int MAX_ITER = 10;
+    private static final int MAX_ITER = 500;
 
     private LinearRegressionTrainingDataProcess linearRegressionDataProcess;
 
