@@ -35,7 +35,6 @@ public class LinearRegressionTrainingDataProcess {
     private CoreReportView reportView;
 
     private String[] vectorColumns;
-    private String objective;
     private List<String> segments;
     private List<String> digitMetrics;
 
@@ -58,7 +57,7 @@ public class LinearRegressionTrainingDataProcess {
         segments = optimizationRuleService.getSegments(optimizationRule);
         dataSet = convertTextToDigit(dataSet, segments);
         Dataset<Row> oneHotVectorDf = getOneHotVectorDataSet(dataSet, segments);
-        Dataset<Row> selectedDataSet = oneHotVectorDf.select(ConvertUtil.removeSpace(this.objective), this.vectorColumns);
+        Dataset<Row> selectedDataSet = oneHotVectorDf.select(getNoSpaceOptimizeFieldName(), this.vectorColumns);
         Dataset<Row> learnData = this.extractDataToLearn(selectedDataSet);
 
         this.predictiveValues = createMetricsPredictiveValues(oneHotVectorDf);
@@ -106,7 +105,7 @@ public class LinearRegressionTrainingDataProcess {
                 .setOutputCol(features);
 
         Dataset<Row> output = assembler.transform(digitDataSet);
-        return output.select(col(this.objective).alias("label"), col(features));
+        return output.select(col(getNoSpaceOptimizeFieldName()).alias("label"), col(features));
     }
 
     /**
@@ -119,8 +118,7 @@ public class LinearRegressionTrainingDataProcess {
         String[] outputColumns = ConvertUtil.concatIndexToArray(segments, MyConstant.VECTOR);
         Dataset<Row> oneHotVectorDf = applyOneHotVector(rowDataSet, inputColumns, outputColumns);
 
-        String optimizeFieldName = this.optimizeField.getField();
-        digitMetrics = reportViewService.getNoSpaceDigitMetrics(getReportView(), optimizeFieldName);
+        digitMetrics = reportViewService.getNoSpaceDigitMetrics(getReportView(), getOptimizeFieldName());
         List<String> mixFields = new ArrayList<>(ConvertUtil.concatIndex(segments, MyConstant.VECTOR));
         mixFields.addAll(digitMetrics);
 
@@ -128,7 +126,6 @@ public class LinearRegressionTrainingDataProcess {
         segmentsAndDigitMetrics = mixFields.toArray(segmentsAndDigitMetrics);
 
         this.vectorColumns = segmentsAndDigitMetrics;
-        this.objective = ConvertUtil.removeSpace(optimizeFieldName);
 
         return oneHotVectorDf;
     }
@@ -300,10 +297,6 @@ public class LinearRegressionTrainingDataProcess {
         return optimizeField;
     }
 
-    public void setOptimizeField(OptimizeField optimizeField) {
-        this.optimizeField = optimizeField;
-    }
-
     public Map<String, Map<String, double[]>> getPredictiveValues() {
         return predictiveValues;
     }
@@ -327,4 +320,10 @@ public class LinearRegressionTrainingDataProcess {
         return digitMetrics;
     }
 
+    private String getNoSpaceOptimizeFieldName() {
+        return ConvertUtil.removeSpace(this.optimizeField.getField());
+    }
+    private String getOptimizeFieldName() {
+        return this.optimizeField.getField();
+    }
 }
