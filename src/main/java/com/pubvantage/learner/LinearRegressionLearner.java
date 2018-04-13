@@ -54,7 +54,7 @@ public class LinearRegressionLearner implements LearnerInterface {
     public String getModelStringData(LinearRegressionModel linearRegressionModel) {
         List<String> objectiveAndFields = linearRegressionDataProcess.getObjectiveAndFields();
         List<String> digitMetrics = linearRegressionDataProcess.getDigitMetrics();
-        List<String> segments = linearRegressionDataProcess.getSegments();
+//        List<String> segments = linearRegressionDataProcess.getSegments();
         JsonObject jsonObject = new JsonObject();
         //coefficient
         Vector vec = linearRegressionModel.coefficients();
@@ -64,7 +64,7 @@ public class LinearRegressionLearner implements LearnerInterface {
         int coefficientsLength = coefficientsArray.length;
         for (int i = coefficientsLength - 1; i >= 0; i--) {
             int distance = coefficientsLength - 1 - i;
-            String fieldName = getFieldName(distance, objectiveAndFields, digitMetrics, segments);
+            String fieldName = getFieldName(distance, objectiveAndFields, digitMetrics);
 
             if (Double.isNaN(coefficientsArray[i])) {
                 coefficient.addProperty(fieldName, MyConstant.NULL_COEFFICIENT);
@@ -83,7 +83,7 @@ public class LinearRegressionLearner implements LearnerInterface {
         return jsonObject.toString();
     }
 
-    private String getFieldName(int distance, List<String> objectiveAndFields, List<String> digitMetrics, List<String> segments) {
+    private String getFieldName(int distance, List<String> objectiveAndFields, List<String> digitMetrics) {
         if (objectiveAndFields == null) return null;
 
         if (distance >= digitMetrics.size()) return MyConstant.SEGMENT_KEY;
