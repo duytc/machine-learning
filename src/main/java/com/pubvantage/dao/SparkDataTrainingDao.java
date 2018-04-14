@@ -13,6 +13,7 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.json4s.jackson.Json;
 
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -90,7 +91,9 @@ public class SparkDataTrainingDao implements SparkDataTrainingDaoInterface {
         List<String> listData = new ArrayList<>();
         for (Row row : resultList) {
             try {
-                Date date = row.getDate(0);
+                Object rowValue = row.get(0);
+                Date date = (Date) rowValue;
+
                 String dateString = new SimpleDateFormat(MyConstant.DATE_FORMAT_JAVA).format(date);
                 listData.add(dateString);
             } catch (Exception e) {
