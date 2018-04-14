@@ -5,7 +5,7 @@ import com.pubvantage.entity.OptimizeField;
 
 import java.util.List;
 
-public interface OptimizationRuleServiceInterface extends GenericServiceInterface<CoreOptimizationRule>{
+public interface OptimizationRuleServiceInterface extends GenericServiceInterface<CoreOptimizationRule> {
 
     List<String> getColumnsForScoreTable(CoreOptimizationRule optimizationRule);
 
@@ -21,6 +21,8 @@ public interface OptimizationRuleServiceInterface extends GenericServiceInterfac
     void setLoadingForOptimizationRule(Long optimizationRuleId, boolean finishLoading);
 
     List<String> getSegments(CoreOptimizationRule optimizationRule);
+
+    List<String> getNoSpaceSegments(CoreOptimizationRule optimizationRule);
 
     List<String> getDimensions(CoreOptimizationRule optimizationRule);
 

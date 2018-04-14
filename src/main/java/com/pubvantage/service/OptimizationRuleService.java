@@ -138,6 +138,11 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
     }
 
     @Override
+    public List<String> getNoSpaceSegments(CoreOptimizationRule optimizationRule) {
+        return ConvertUtil.removeSpace(getSegments(optimizationRule));
+    }
+
+    @Override
     public List<String> getDimensions(CoreOptimizationRule optimizationRule) {
         CoreReportView reportView = reportViewService.findById(optimizationRule.getReportViewId(), new ReportViewDao());
         return reportViewService.getDimensions(reportView);

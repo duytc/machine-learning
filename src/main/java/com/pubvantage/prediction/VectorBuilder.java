@@ -31,7 +31,7 @@ class VectorBuilder {
      * @return Vector data need for prediction
      */
     Vector buildVector() {
-        List<String> segments = optimizationRuleService.getSegments(optimizationRule);
+        List<String> segments = optimizationRuleService.getNoSpaceSegments(optimizationRule);
         Map<String, List<Double>> predictiveValues = getPredictionValues(coreLearner);
 
 

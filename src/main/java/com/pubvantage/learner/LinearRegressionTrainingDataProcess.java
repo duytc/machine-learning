@@ -18,6 +18,7 @@ import org.apache.spark.ml.linalg.DenseVector;
 import org.apache.spark.ml.linalg.SparseVector;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.catalyst.expressions.Conv;
 
 import java.util.*;
 
@@ -56,13 +57,12 @@ public class LinearRegressionTrainingDataProcess {
             return null; // missing optimize field or metrics
 
         Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRule, identifier, objectiveAndFields);
-
-        dataSet = convertTextToDigit(dataSet, segments);
-        Dataset<Row> oneHotVectorDf = getOneHotVectorDataSet(dataSet, segments);
+        dataSet = convertTextToDigit(dataSet, this.segments);
+        Dataset<Row> oneHotVectorDf = getOneHotVectorDataSet(dataSet, this.segments);
         Dataset<Row> selectedDataSet = oneHotVectorDf.select(getNoSpaceOptimizeFieldName(), getOneHotVectorColumns());
         Dataset<Row> learnData = this.extractDataToLearn(selectedDataSet);
 
-        this.predictiveValues = createMetricsPredictiveValues(oneHotVectorDf);
+        this.predictiveValues = createMetricsPredictiveValues(oneHotVectorDf, this.segments);
         return learnData;
     }
 
@@ -79,7 +79,7 @@ public class LinearRegressionTrainingDataProcess {
         List<String> objectiveAndFields = new ArrayList<>();
         objectiveAndFields.add(optimizeField.getField());
         //add segments
-        this.segments = this.optimizationRuleService.getSegments(this.optimizationRule);
+        this.segments = this.optimizationRuleService.getNoSpaceSegments(this.optimizationRule);
         if (this.segments != null)
             objectiveAndFields.addAll(segments);
         // digit metrics
@@ -123,7 +123,7 @@ public class LinearRegressionTrainingDataProcess {
 
     private String[] getOneHotVectorColumns() {
         List<String> mixFields = new ArrayList<>(ConvertUtil.concatIndex(this.segments, MyConstant.VECTOR));
-        mixFields.addAll(this.digitMetrics);
+        mixFields.addAll(ConvertUtil.removeSpace(this.digitMetrics));
 
         String[] segmentsAndDigitMetrics = new String[mixFields.size()];
         segmentsAndDigitMetrics = mixFields.toArray(segmentsAndDigitMetrics);
@@ -161,34 +161,35 @@ public class LinearRegressionTrainingDataProcess {
 
     /**
      * @param trainingDataSet a data set
+     * @param segments
      * @return prediction data base on each segment group.
      * Each segment group has list value of each field
      */
-    private Map<String, Map<String, double[]>> createMetricsPredictiveValues(Dataset<Row> trainingDataSet) {
-        List<String> segments = optimizationRuleService.getSegments(optimizationRule);
+    private Map<String, Map<String, double[]>> createMetricsPredictiveValues(Dataset<Row> trainingDataSet, List<String> segments) {
+
         List<String> objectiveAndFields = this.objectiveAndFields;
 
         //forecast  number value factor. (avg)
-        Dataset<Row> avgDataSet = avgNumberedData(trainingDataSet, objectiveAndFields, segments);
+        Dataset<Row> avgDataSet = avgNumberedData(trainingDataSet, objectiveAndFields, this.segments);
 
-        avgDataSet = applyIntegratedVector(avgDataSet, segments);
+        avgDataSet = applyIntegratedVector(avgDataSet, this.segments);
 
         List<Row> data = avgDataSet.collectAsList();
         String[] orderedFields = avgDataSet.columns();
         Map<String, Map<String, double[]>> predictionMap = new HashMap<>();
         for (Row row : data) {
             Map<String, String> segmentMap = new HashMap<>();
-            if (segments.isEmpty()) {
+            if (this.segments.isEmpty()) {
                 //Handle null segment (key-value 'NO_SEGMENT'-'NO_SEGMENT'). segment value become {} when save in database
                 segmentMap.put(MyConstant.NO_SEGMENT, MyConstant.NO_SEGMENT);
             } else {
                 segmentMap = new HashMap<>();
-                for (String segment : segments) {
+                for (String segment : this.segments) {
                     String segmentValue = row.getAs(segment);
                     segmentMap.put(segment, segmentValue);
                 }
             }
-            int segmentCount = segments.size();
+            int segmentCount = this.segments.size();
             Map<String, double[]> forecastMap = new LinkedHashMap<>();
             for (int col = 0; col < orderedFields.length - segmentCount; col++) {
                 String fieldKey = orderedFields[col];
@@ -240,7 +241,7 @@ public class LinearRegressionTrainingDataProcess {
     /**
      * @param trainingDataSet    training data
      * @param objectiveAndFields coefficients
-     * @param segments           ["countries Index", "Domains Index"].The labels when change text to digit
+     * @param segments   ["countries Index", "Domains Index"].The labels when change text to digit
      * @return average value of each factor and objective
      */
     private Dataset<Row> avgNumberedData(Dataset<Row> trainingDataSet, List<String> objectiveAndFields, List<String> segments) {
