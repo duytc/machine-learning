@@ -47,7 +47,7 @@ public class LinearRegressionLearner implements LearnerInterface {
             System.out.println("numIterations: " + trainingSummary.totalIterations());
             System.out.println("objectiveHistory: " + Vectors.dense(trainingSummary.objectiveHistory()));
             trainingSummary.residuals().show();
-            System.out.println("RMSE: " + trainingSummary.rootMeanSquaredError());
+            System.out.println("Root Mean Squared Error: " + trainingSummary.rootMeanSquaredError());
             System.out.println("r2: " + trainingSummary.r2());
 
             String savePath = FilePathUtil.getLearnerModelPath(
