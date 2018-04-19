@@ -67,7 +67,8 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
 
         if (resultList != null && !resultList.isEmpty()) {
             for (Row aResultList : resultList) {
-                identifiers.add(aResultList.get(0).toString());
+                if (aResultList.get(0) != null)
+                    identifiers.add(aResultList.get(0).toString());
             }
         }
         return identifiers;
