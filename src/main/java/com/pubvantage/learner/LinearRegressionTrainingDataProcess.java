@@ -57,8 +57,6 @@ public class LinearRegressionTrainingDataProcess {
             return null; // missing optimize field or metrics
 
         Dataset<Row> dataSet = sparkDataTrainingDao.getDataSet(optimizationRule, identifier, objectiveAndFields);
-        System.out.println("Data training");
-        dataSet.show(100, false);
         dataSet = convertTextToDigit(dataSet, this.segments);
         Dataset<Row> oneHotVectorDf = getOneHotVectorDataSet(dataSet, this.segments);
         Dataset<Row> selectedDataSet = oneHotVectorDf.select(getNoSpaceOptimizeFieldName(), getOneHotVectorColumns());

@@ -29,8 +29,6 @@ public class LinearRegressionLearner implements LearnerInterface {
     @Override
     public LinearRegressionModel generateModel(SparkSession sparkSession) {
         Dataset<Row> training = linearRegressionDataProcess.getTrainingDataForLinearRegression();
-        System.out.println("Structured Data training");
-        training.show(100, false);
         LinearRegression lr = new LinearRegression()
                 .setMaxIter(MAX_ITER)
                 .setRegParam(REG_PARAM)
