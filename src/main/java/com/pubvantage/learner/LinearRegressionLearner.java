@@ -39,16 +39,7 @@ public class LinearRegressionLearner implements LearnerInterface {
         try {
             // Fit the model.
             LinearRegressionModel lrModel = lr.fit(training);
-            // Print the coefficients and intercept for linear regression.
-            logger.info("Coefficients: " + lrModel.coefficients().toString() + " Intercept: " + lrModel.intercept());
-
-            // Summarize the model over the training set and print out some metrics.
-            LinearRegressionTrainingSummary trainingSummary = lrModel.summary();
-            logger.info("numIterations: " + trainingSummary.totalIterations());
-            logger.info("objectiveHistory: " + Vectors.dense(trainingSummary.objectiveHistory()));
-            trainingSummary.residuals().show();
-            logger.info("Root Mean Squared Error: " + trainingSummary.rootMeanSquaredError());
-            logger.info("r2: " + trainingSummary.r2());
+            writeTrainingSummaryLog(lrModel);
 
             String savePath = FilePathUtil.getLearnerModelPath(
                     linearRegressionDataProcess.getOptimizationRule().getId(),
@@ -61,6 +52,18 @@ public class LinearRegressionLearner implements LearnerInterface {
             logger.error(e.getMessage(), e);
         }
         return null;
+    }
+
+    private void writeTrainingSummaryLog(LinearRegressionModel lrModel) {
+        // Print the coefficients and intercept for linear regression.
+        logger.info("Coefficients: " + lrModel.coefficients().toString() + " Intercept: " + lrModel.intercept());
+        // Summarize the model over the training set and print out some metrics.
+        LinearRegressionTrainingSummary trainingSummary = lrModel.summary();
+        logger.info("numIterations: " + trainingSummary.totalIterations());
+        logger.info("objectiveHistory: " + Vectors.dense(trainingSummary.objectiveHistory()));
+        trainingSummary.residuals().show();
+        logger.info("Root Mean Squared Error: " + trainingSummary.rootMeanSquaredError());
+        logger.info("r2: " + trainingSummary.r2());
     }
 
     @Override

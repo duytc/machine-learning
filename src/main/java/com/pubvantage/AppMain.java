@@ -190,6 +190,7 @@ public class AppMain {
             regressionScoringV2.predict();
             optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, true);
 
+            logger.info(MessageConstant.SCORING_COMPLETE);
             return new Gson().toJson("{'message': 'Done'}");
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
