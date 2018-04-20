@@ -58,7 +58,7 @@ public class LinearRegressionLearner implements LearnerInterface {
 
             return lrModel;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         return null;
     }

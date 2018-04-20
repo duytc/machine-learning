@@ -1,6 +1,7 @@
 package com.pubvantage.utils;
 
 import com.pubvantage.constant.MyConstant;
+import org.apache.log4j.Logger;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 
 public class ConvertUtil {
     private static Properties properties;
+    private static Logger logger = Logger.getLogger(ConvertUtil.class.getName());
 
     static {
         AppResource appResource = new AppResource();
@@ -345,7 +347,7 @@ public class ConvertUtil {
             return nextDayString;
 
         } catch (ParseException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
             Date today = new Date();
             Date nextDay = ConvertUtil.nextDay(today);
             String nextDayString = ConvertUtil.dateToString(nextDay, MyConstant.DATE_FORMAT_JAVA);
@@ -355,7 +357,6 @@ public class ConvertUtil {
     }
 
     /**
-     *
      * @param list list of Double values
      * @return array of double values
      */
