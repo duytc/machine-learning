@@ -100,70 +100,27 @@ Because we run project on cluster, it will take about 1 minute to compile code a
 
 After that  REST API is ready.
 
-#### 5. Call API
-**Api info** :
-
-5.1. Do convert and learn
-
-URL : `http://localhost:8086/api/learner`
-
-Method : POST
-
-Header : Content-Type: application/json
-
-Parameter: `autoOptimizationConfigId`(a Auto optimization config id. Example: 1) and `token`
-        
-        
-```
-{
-  "optimizationRuleId": 1 ,
-  "token" : "eyJhbGciOiJIUzI1NiJ9"
-}
-```
-
-Return value: Example:
-**1. Success: **
-
-* Error code: 200
-
-* Json data: 
-
-  Example:
+##### 5. Logging Configuration: 
+- Open /src/main/resource/log4j.properties and customize this line
 
 ```
-{
-  "status": 200,
-  "message": "Learn successfully",
-  "data": [
-            {
-               "optimizationRuleId": 1,
-               "identifiers": [
-                     "allenwestrepublic.com",
-                     "androidauthority.com",
-                     "dzunght163.com"
-               ],
-            }
-  ],
-}
+log4j.rootLogger=INFO, file, stdout
+```
+Default logging level is INFO.
+
+Choose one of bellow logging levels:
+
+```
+OFF (most specific, no logging)
+FATAL (most specific, little data)
+ERROR
+WARN
+INFO
+DEBUG
+TRACE (least specific, a lot of data)
+ALL (least specific, all data)
 ```
 
-**2. Fail**
-
-* Error code: 401 | 400 (or other except 200)
-
-* Json data for error code 401:
-
-  Example:
-```
-{
-  "status": 401,
-  "message": "Fail authentication"
-}
-```
-**Request Example**:
-```
-curl --header "Content-Type: application/json" --request POST --data '{"autoOptimizationConfigId":1,"token":"eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIxIiwiaWF0IjoxNTE2Njg5ODMyLCJzdWIiOiJzdWJqZWN0IiwiaXNzIjoiaXNzdWVyIn0.aTkzk5DqatNh-fdE3b-dlMiXgHve1RoS7rJu4nwwkiw"}' http://localhost:8086/api/learner
-```
 
 References
 ----------
