@@ -242,6 +242,8 @@ public class AppMain {
             response.status(HttpStatus.SC_OK);
             optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, true);
 
+            logger.info(MessageConstant.GENERATE_LEARNER_MODEL_SUCCESS);
+
             return new Gson().toJson(learnerResponse);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -297,12 +299,13 @@ public class AppMain {
             coreLearnerService = new CoreLearningModelService();
             return true;
         } catch (Exception e) {
-            logger.error("Error occurs when create spark context: " + e.getMessage(), e);
+            logger.error(MessageConstant.CREATING_SPARK_CONTEXT_ERROR, e);
             return false;
         }
     }
 
     private static List<String> generateAndSaveModel(CoreOptimizationRule optimizationRule) {
+        logger.info(MessageConstant.START_LEARNING);
         List<String> successIdentifiers = new ArrayList<>();
         List<CoreLearner> modelList = new ArrayList<>();
         //distinct identifier values from data training

@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.utils.ConvertUtil;
 import com.pubvantage.utils.FilePathUtil;
+import org.apache.log4j.Logger;
 import org.apache.spark.ml.linalg.Vector;
 import org.apache.spark.ml.linalg.Vectors;
 import org.apache.spark.ml.regression.LinearRegression;
@@ -19,6 +20,7 @@ public class LinearRegressionLearner implements LearnerInterface {
     private static final double REG_PARAM = 0.3;
     private static final double ELASTIC_NET_PARAM = 0.8;
     private static final int MAX_ITER = 500;
+    private static Logger logger = Logger.getLogger(LinearRegressionLearner.class.getName());
 
     private LinearRegressionTrainingDataProcess linearRegressionDataProcess;
 
@@ -38,15 +40,15 @@ public class LinearRegressionLearner implements LearnerInterface {
             // Fit the model.
             LinearRegressionModel lrModel = lr.fit(training);
             // Print the coefficients and intercept for linear regression.
-            System.out.println("Coefficients: " + lrModel.coefficients().toString() + " Intercept: " + lrModel.intercept());
+            logger.info("Coefficients: " + lrModel.coefficients().toString() + " Intercept: " + lrModel.intercept());
 
             // Summarize the model over the training set and print out some metrics.
             LinearRegressionTrainingSummary trainingSummary = lrModel.summary();
-            System.out.println("numIterations: " + trainingSummary.totalIterations());
-            System.out.println("objectiveHistory: " + Vectors.dense(trainingSummary.objectiveHistory()));
+            logger.info("numIterations: " + trainingSummary.totalIterations());
+            logger.info("objectiveHistory: " + Vectors.dense(trainingSummary.objectiveHistory()));
             trainingSummary.residuals().show();
-            System.out.println("Root Mean Squared Error: " + trainingSummary.rootMeanSquaredError());
-            System.out.println("r2: " + trainingSummary.r2());
+            logger.info("Root Mean Squared Error: " + trainingSummary.rootMeanSquaredError());
+            logger.info("r2: " + trainingSummary.r2());
 
             String savePath = FilePathUtil.getLearnerModelPath(
                     linearRegressionDataProcess.getOptimizationRule().getId(),

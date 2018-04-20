@@ -1,5 +1,6 @@
 package com.pubvantage.prediction;
 
+import com.pubvantage.constant.MessageConstant;
 import com.pubvantage.constant.MyConstant;
 import com.pubvantage.dao.ReportViewDao;
 import com.pubvantage.entity.*;
@@ -35,6 +36,7 @@ public class LinearRegressionScoring {
      * predict score then save to database
      */
     public void predict() throws Exception {
+        logger.info(MessageConstant.PREDICTION_START);
         PredictListData predictListData = coreLearnerModelService.getPredictData(coreOptimizationRule);
 
         Map<String, Map<String, Map<String, Map<String, Double>>>> segmentsPredict = generatePrediction(predictListData);
@@ -43,6 +45,7 @@ public class LinearRegressionScoring {
         Map<String, Map<String, Map<String, Map<String, Double>>>> scoreData = computeScore(predictTransform, noHistorySegment);
         Map<String, Map<String, Map<String, Map<String, Double>>>> standardizedScore = standardizeScore(scoreData, noHistorySegment);
 
+        logger.info(MessageConstant.SCORING_COMPLETE);
         saveScore(standardizedScore, this.coreOptimizationRule, predictListData.getFutureDate());
     }
 
