@@ -31,11 +31,7 @@ db.url=jdbc:mysql://localhost:3306/unified_reports_api
 db.user=root
 db.password=123456
 ```
-- Change the __identifier correspond to your identifier column name in __training_data_x 
 
-```
-column.identifier=__identifier
-```
 **Port of Api**
 - Open `user.config.properties` and change your port as bellow
 
@@ -120,7 +116,7 @@ Parameter: `autoOptimizationConfigId`(a Auto optimization config id. Example: 1)
         
 ```
 {
-  "autoOptimizationConfigId": 1 ,
+  "optimizationRuleId": 1 ,
   "token" : "eyJhbGciOiJIUzI1NiJ9"
 }
 ```
@@ -140,7 +136,7 @@ Return value: Example:
   "message": "Learn successfully",
   "data": [
             {
-               "autoOptimizationConfigId": 1,
+               "optimizationRuleId": 1,
                "identifiers": [
                      "allenwestrepublic.com",
                      "androidauthority.com",
