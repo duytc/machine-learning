@@ -21,12 +21,11 @@ import java.util.List;
 import java.util.Map;
 
 public class OptimizationRuleService extends AbstractGenericService<CoreOptimizationRule> implements OptimizationRuleServiceInterface {
-    private CoreAutoOptimizationConfigDao coreAutoOptimizationConfigDao = new CoreAutoOptimizationConfigDao();
     private static Logger logger = Logger.getLogger(OptimizationRuleService.class.getName());
     private ReportViewServiceInterface reportViewService = new ReportViewService();
     private SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
 
-    private OptimizationRuleDaoInterface optimizationRuleDaoInterface = new OptimizationRuleDao();
+    private OptimizationRuleDaoInterface optimizationRuleDao = new OptimizationRuleDao();
 
     @Override
     public List<String> getColumnsForScoreTable(CoreOptimizationRule optimizationRule) {
@@ -82,7 +81,7 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
         boolean isValid = false;
         try {
             session = HibernateUtil.getSessionFactory().openSession();
-            isValid = coreAutoOptimizationConfigDao.checkToken(session, autoOptimizationConfigId, token);
+            isValid = optimizationRuleDao.checkToken(session, autoOptimizationConfigId, token);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         } finally {
@@ -165,7 +164,7 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
         Session session = null;
         try {
             session = HibernateUtil.getSessionFactory().openSession();
-            Object currentChecksum = coreAutoOptimizationConfigDao.getCurrentChecksum("__data_training_" + optimizationRuleId, session);
+            Object currentChecksum = optimizationRuleDao.getCurrentChecksum("__data_training_" + optimizationRuleId, session);
             if (currentChecksum == null) {
                 return null;
             }
@@ -194,10 +193,10 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
         try {
             session = HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
-            CoreOptimizationRule ruleFromDb = optimizationRuleDaoInterface.findById(optimizationRule.getId(), session);
+            CoreOptimizationRule ruleFromDb = optimizationRuleDao.findById(optimizationRule.getId(), session);
             if(ruleFromDb != null){
                 ruleFromDb.setLastTrainingDataChecksum(optimizationRule.getLastTrainingDataChecksum());
-                optimizationRuleDaoInterface.save(ruleFromDb, session);
+                optimizationRuleDao.save(ruleFromDb, session);
                 session.getTransaction().commit();
                 return true;
             }
