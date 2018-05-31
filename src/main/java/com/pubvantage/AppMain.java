@@ -235,6 +235,22 @@ public class AppMain {
             optimizationRuleId = learningProcessParams.getOptimizationRuleId();
             optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, false);
             CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId, new OptimizationRuleDao());
+
+            String currentTrainingDataChecksum = optimizationRuleService.getCurrentTrainingDataChecksum(optimizationRuleId);
+
+            if (!optimizationRuleService.isChecksumChanged(currentTrainingDataChecksum, optimizationRule.getLastTrainingDataChecksum())) {
+                logger.info(MessageConstant.SKIP_LEARNING);
+                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.SKIP_LEARNING, null);
+                return new Gson().toJson(learnerResponse);
+            }
+
+            boolean updateChecksumOk = saveNewTrainingDataChecksum(optimizationRule, currentTrainingDataChecksum);
+
+            if(!updateChecksumOk){
+                logger.error(MessageConstant.UPDATE_CHECKSUM_ERROR);
+                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, MessageConstant.UPDATE_CHECKSUM_ERROR, null);
+                return new Gson().toJson(learnerResponse);
+            }
             List<String> successIdentifiers = generateAndSaveModel(optimizationRule);
 
             //return response
@@ -254,6 +270,11 @@ public class AppMain {
         LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_NOT_FOUND, MessageConstant.INTERNAL_ERROR, null);
         response.status(HttpStatus.SC_NOT_FOUND);
         return new Gson().toJson(learnerResponse);
+    }
+
+    private static boolean saveNewTrainingDataChecksum(CoreOptimizationRule optimizationRule, String currentTrainingDataChecksum) {
+        optimizationRule.setLastTrainingDataChecksum(currentTrainingDataChecksum);
+        return optimizationRuleService.updateChecksum(optimizationRule);
     }
 
     private static JsonArray buildLearnerResponse(Long optimizationRuleId, List<String> successIdentifiers) {
@@ -372,7 +393,6 @@ public class AppMain {
     }
 
     /**
-     *
      * @param jsonSegmentGroup segment group in json type. If it is global, the value is {"NO_SEGMENT":"NO_SEGMENT"}
      * @return return {} if jsonSegmentGroup is {"NO_SEGMENT":"NO_SEGMENT"}. Otherwise return jsonSegmentGroup
      */

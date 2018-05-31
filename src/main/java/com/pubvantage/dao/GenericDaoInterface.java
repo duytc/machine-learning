@@ -13,15 +13,12 @@ public interface GenericDaoInterface<E> {
     Serializable save(E entity, Session session);
 
     /**
-     * @param entity:entity to save or update
-     */
-
-    /**
      * Find by primary key
      *
-     * @param id
+     * @param id id column
      * @return unique entity
      */
     E findById(Serializable id, Session session);
 
+    Object getCurrentChecksum(String tableName, Session session);
 }

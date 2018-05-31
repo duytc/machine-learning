@@ -26,6 +26,8 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
     private ReportViewServiceInterface reportViewService = new ReportViewService();
     private SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
 
+    private OptimizationRuleDaoInterface optimizationRuleDaoInterface = new OptimizationRuleDao();
+
     @Override
     public List<String> getColumnsForScoreTable(CoreOptimizationRule optimizationRule) {
         List<String> columns = new ArrayList<>();
@@ -155,4 +157,60 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
         return reportViewService.getNoSpaceDimensions(reportView);
     }
 
+    @Override
+    public String getCurrentTrainingDataChecksum(Long optimizationRuleId) {
+        if (optimizationRuleId == null) {
+            return null;
+        }
+        Session session = null;
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
+            Object currentChecksum = coreAutoOptimizationConfigDao.getCurrentChecksum("__data_training_" + optimizationRuleId, session);
+            if (currentChecksum == null) {
+                return null;
+            }
+            return currentChecksum.toString();
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean isChecksumChanged(String current, String last) {
+        if (current == null) {
+            return last != null;
+        }
+        return !current.equals(last);
+    }
+
+    @Override
+    public boolean updateChecksum(CoreOptimizationRule optimizationRule) {
+        Session session = null;
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
+            session.beginTransaction();
+            CoreOptimizationRule ruleFromDb = optimizationRuleDaoInterface.findById(optimizationRule.getId(), session);
+            if(ruleFromDb != null){
+                ruleFromDb.setLastTrainingDataChecksum(optimizationRule.getLastTrainingDataChecksum());
+                optimizationRuleDaoInterface.save(ruleFromDb, session);
+                session.getTransaction().commit();
+                return true;
+            }
+        } catch (Exception e) {
+            if (null != session && null != session.getTransaction()) {
+                session.getTransaction().rollback();
+            }
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+        return false;
+    }
 }

@@ -1,6 +1,7 @@
 package com.pubvantage.dao;
 
 import com.pubvantage.entity.CoreAutoOptimizationConfig;
+import com.pubvantage.entity.CoreOptimizationRule;
 import org.hibernate.Query;
 import org.hibernate.Session;
 

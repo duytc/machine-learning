@@ -9,7 +9,6 @@ public interface OptimizationRuleServiceInterface extends GenericServiceInterfac
 
     List<String> getColumnsForScoreTable(CoreOptimizationRule optimizationRule);
 
-
     List<OptimizeField> getOptimizeFields(CoreOptimizationRule optimizationRule);
 
     List<String> getIdentifiers(CoreOptimizationRule optimizationRule);
@@ -27,5 +26,11 @@ public interface OptimizationRuleServiceInterface extends GenericServiceInterfac
     List<String> getDimensions(CoreOptimizationRule optimizationRule);
 
     List<String> getNoSpaceDimensions(CoreOptimizationRule optimizationRule);
+
+    String getCurrentTrainingDataChecksum(Long optimizationRuleId);
+
+    boolean isChecksumChanged(String current, String last);
+
+    boolean updateChecksum(CoreOptimizationRule optimizationRule);
 
 }

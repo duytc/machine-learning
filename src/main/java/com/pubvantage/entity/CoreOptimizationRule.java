@@ -45,6 +45,9 @@ public class CoreOptimizationRule {
     @Column(name = "finish_loading")
     private Boolean finishLoading;
 
+    @Column(name = "last_training_data_check_sum")
+    private String lastTrainingDataChecksum;
+
     public CoreOptimizationRule() {
     }
 
@@ -60,6 +63,14 @@ public class CoreOptimizationRule {
         this.createdDate = createdDate;
         this.token = token;
         this.finishLoading = finishLoading;
+    }
+
+    public String getLastTrainingDataChecksum() {
+        return lastTrainingDataChecksum;
+    }
+
+    public void setLastTrainingDataChecksum(String lastTrainingDataChecksum) {
+        this.lastTrainingDataChecksum = lastTrainingDataChecksum;
     }
 
     public Long getId() {
