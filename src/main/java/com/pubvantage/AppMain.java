@@ -206,7 +206,8 @@ public class AppMain {
             optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, true);
 
             logger.info(MessageConstant.SCORING_COMPLETE);
-            return new Gson().toJson("{'message': 'Done'}");
+            LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.SCORING_COMPLETE, null);
+            return new Gson().toJson(learnerResponse);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, true);
