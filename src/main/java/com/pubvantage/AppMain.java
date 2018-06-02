@@ -201,7 +201,8 @@ public class AppMain {
             boolean updateRuleChecksumOk = saveNewRuleChecksum(optimizationRule, currentRuleChecksum);
             if(!updateTrainingDataChecksumOk || !updateRuleChecksumOk){
                 logger.error(MessageConstant.UPDATE_CHECKSUM_ERROR);
-                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, MessageConstant.UPDATE_CHECKSUM_ERROR, null);
+                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_CREATED, MessageConstant.UPDATE_CHECKSUM_ERROR, null);
+                response.status(HttpStatus.SC_CREATED);
                 return new Gson().toJson(learnerResponse);
             }
 
@@ -262,7 +263,8 @@ public class AppMain {
             boolean optimizedFieldsChanged = optimizationRuleService.isChecksumChanged(currentRuleChecksum, optimizationRule.getLastRuleChecksum());
             if (!optimizedFieldsChanged && !trainingDataChanged) {
                 logger.info(MessageConstant.SKIP_LEARNING);
-                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.SKIP_LEARNING, null);
+                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_CREATED, MessageConstant.SKIP_LEARNING, null);
+                response.status(HttpStatus.SC_CREATED);
                 return new Gson().toJson(learnerResponse);
             }
 
