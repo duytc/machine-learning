@@ -15,10 +15,7 @@ import org.apache.spark.sql.Row;
 import org.hibernate.Query;
 import org.hibernate.Session;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class OptimizationRuleService extends AbstractGenericService<CoreOptimizationRule> implements OptimizationRuleServiceInterface {
     private static Logger logger = Logger.getLogger(OptimizationRuleService.class.getName());
@@ -26,6 +23,7 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
     private SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
 
     private OptimizationRuleDaoInterface optimizationRuleDao = new OptimizationRuleDao();
+    private OptimizeField field;
 
     @Override
     public List<String> getColumnsForScoreTable(CoreOptimizationRule optimizationRule) {
@@ -167,7 +165,16 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
         if (optimizationRule == null) {
             return null;
         }
-        return ConvertUtil.hashMd5(optimizationRule.getOptimizeFields());
+        List<OptimizeField> optimizeFieldList = getOptimizeFields(optimizationRule);
+        Collections.sort(optimizeFieldList);
+        StringBuilder stringBuilder = new StringBuilder();
+        for (OptimizeField field : optimizeFieldList) {
+            stringBuilder.append(field.getField())
+                    .append(field.getGoal())
+                    .append(field.getWeight());
+        }
+
+        return ConvertUtil.hashMd5(stringBuilder.toString());
     }
 
     @Override
