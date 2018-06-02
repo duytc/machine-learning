@@ -187,15 +187,19 @@ public class AppMain {
             // do prediction
             CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId, new OptimizationRuleDao());
             // Check if checksum changed
+            String currentRuleChecksum = optimizationRuleService.getCurrentRuleChecksum(optimizationRule);
             String currentTrainingDataChecksum = optimizationRuleService.getCurrentTrainingDataChecksum(optimizationRuleId);
-            if (!optimizationRuleService.isChecksumChanged(currentTrainingDataChecksum, optimizationRule.getLastTrainingDataChecksum())) {
-                logger.info(MessageConstant.SKIP_SCORING);
-                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.SKIP_SCORING, null);
+            boolean trainingDataChanged = optimizationRuleService.isChecksumChanged(currentTrainingDataChecksum, optimizationRule.getLastTrainingDataChecksum());
+            boolean optimizedFieldsChanged = optimizationRuleService.isChecksumChanged(currentRuleChecksum, optimizationRule.getLastRuleChecksum());
+            if (!optimizedFieldsChanged && !trainingDataChanged) {
+                logger.info(MessageConstant.SKIP_LEARNING);
+                LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.SKIP_LEARNING, null);
                 return new Gson().toJson(learnerResponse);
             }
             //Save new checksum
-            boolean updateChecksumOk = saveNewTrainingDataChecksum(optimizationRule, currentTrainingDataChecksum);
-            if(!updateChecksumOk){
+            boolean updateTrainingDataChecksumOk = saveNewTrainingDataChecksum(optimizationRule, currentTrainingDataChecksum);
+            boolean updateRuleChecksumOk = saveNewRuleChecksum(optimizationRule, currentRuleChecksum);
+            if(!updateTrainingDataChecksumOk || !updateRuleChecksumOk){
                 logger.error(MessageConstant.UPDATE_CHECKSUM_ERROR);
                 LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_INTERNAL_SERVER_ERROR, MessageConstant.UPDATE_CHECKSUM_ERROR, null);
                 return new Gson().toJson(learnerResponse);
@@ -252,8 +256,11 @@ public class AppMain {
             optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, false);
             CoreOptimizationRule optimizationRule = optimizationRuleService.findById(optimizationRuleId, new OptimizationRuleDao());
             // Check if checksum changed
+            String currentRuleChecksum = optimizationRuleService.getCurrentRuleChecksum(optimizationRule);
             String currentTrainingDataChecksum = optimizationRuleService.getCurrentTrainingDataChecksum(optimizationRuleId);
-            if (!optimizationRuleService.isChecksumChanged(currentTrainingDataChecksum, optimizationRule.getLastTrainingDataChecksum())) {
+            boolean trainingDataChanged = optimizationRuleService.isChecksumChanged(currentTrainingDataChecksum, optimizationRule.getLastTrainingDataChecksum());
+            boolean optimizedFieldsChanged = optimizationRuleService.isChecksumChanged(currentRuleChecksum, optimizationRule.getLastRuleChecksum());
+            if (!optimizedFieldsChanged && !trainingDataChanged) {
                 logger.info(MessageConstant.SKIP_LEARNING);
                 LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.SKIP_LEARNING, null);
                 return new Gson().toJson(learnerResponse);
@@ -282,9 +289,12 @@ public class AppMain {
 
     private static boolean saveNewTrainingDataChecksum(CoreOptimizationRule optimizationRule, String currentTrainingDataChecksum) {
         optimizationRule.setLastTrainingDataChecksum(currentTrainingDataChecksum);
-        return optimizationRuleService.updateChecksum(optimizationRule);
+        return optimizationRuleService.updateTraingDataChecksum(optimizationRule);
     }
-
+    private static boolean saveNewRuleChecksum(CoreOptimizationRule optimizationRule, String currentRuleChecksum) {
+        optimizationRule.setLastRuleChecksum(currentRuleChecksum);
+        return optimizationRuleService.updateRuleChecksum(optimizationRule);
+    }
     private static JsonArray buildLearnerResponse(Long optimizationRuleId, List<String> successIdentifiers) {
         JsonArray dataResponseArray = new JsonArray();
         JsonObject jsonObject = new JsonObject();

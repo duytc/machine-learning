@@ -48,10 +48,13 @@ public class CoreOptimizationRule {
     @Column(name = "last_training_data_check_sum")
     private String lastTrainingDataChecksum;
 
+    @Column(name = "rule_check_sum")
+    private String lastRuleChecksum;
+
     public CoreOptimizationRule() {
     }
 
-    public CoreOptimizationRule(Long reportViewId, Long publisherId, String name, String dateField, String dateRange, String identifierFields, String optimizeFields, String segmentFields, Date createdDate, String token, Boolean finishLoading) {
+    public CoreOptimizationRule(Long reportViewId, Long publisherId, String name, String dateField, String dateRange, String identifierFields, String optimizeFields, String segmentFields, Date createdDate, String token, Boolean finishLoading, String lastTrainingDataChecksum, String lastRuleChecksum) {
         this.reportViewId = reportViewId;
         this.publisherId = publisherId;
         this.name = name;
@@ -63,6 +66,8 @@ public class CoreOptimizationRule {
         this.createdDate = createdDate;
         this.token = token;
         this.finishLoading = finishLoading;
+        this.lastTrainingDataChecksum = lastTrainingDataChecksum;
+        this.lastRuleChecksum = lastRuleChecksum;
     }
 
     public String getLastTrainingDataChecksum() {
@@ -71,6 +76,14 @@ public class CoreOptimizationRule {
 
     public void setLastTrainingDataChecksum(String lastTrainingDataChecksum) {
         this.lastTrainingDataChecksum = lastTrainingDataChecksum;
+    }
+
+    public String getLastRuleChecksum() {
+        return lastRuleChecksum;
+    }
+
+    public void setLastRuleChecksum(String lastRuleChecksum) {
+        this.lastRuleChecksum = lastRuleChecksum;
     }
 
     public Long getId() {
@@ -165,20 +178,14 @@ public class CoreOptimizationRule {
 
     public void setFinishLoading(Boolean finishLoading) { this.finishLoading = finishLoading; }
 
+    /**
+     * This use for generate MD5, Not change this for other purpose
+     * @return string
+     */
     @Override
     public String toString() {
         return "CoreOptimizationRule{" +
-                "id=" + id +
-                ", reportViewId=" + reportViewId +
-                ", publisherId=" + publisherId +
-                ", name='" + name + '\'' +
-                ", dateField='" + dateField + '\'' +
-                ", dateRange='" + dateRange + '\'' +
-                ", identifierFields='" + identifierFields + '\'' +
-                ", optimizeFields='" + optimizeFields + '\'' +
-                ", segmentFields='" + segmentFields + '\'' +
-                ", createdDate=" + createdDate +
-                ", token='" + token + '\'' +
+                "optimizeFields='" + optimizeFields + '\'' +
                 '}';
     }
 }

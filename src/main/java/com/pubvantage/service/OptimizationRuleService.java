@@ -156,6 +156,20 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
         return reportViewService.getNoSpaceDimensions(reportView);
     }
 
+    /**
+     * compute hash md5 use optimize field
+     *
+     * @param optimizationRule rule
+     * @return checksum
+     */
+    @Override
+    public String getCurrentRuleChecksum(CoreOptimizationRule optimizationRule) {
+        if (optimizationRule == null) {
+            return null;
+        }
+        return ConvertUtil.hashMd5(optimizationRule.getOptimizeFields());
+    }
+
     @Override
     public String getCurrentTrainingDataChecksum(Long optimizationRuleId) {
         if (optimizationRuleId == null) {
@@ -188,13 +202,39 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
     }
 
     @Override
-    public boolean updateChecksum(CoreOptimizationRule optimizationRule) {
+    public boolean updateRuleChecksum(CoreOptimizationRule optimizationRule) {
         Session session = null;
         try {
             session = HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
             CoreOptimizationRule ruleFromDb = optimizationRuleDao.findById(optimizationRule.getId(), session);
-            if(ruleFromDb != null){
+            if (ruleFromDb != null) {
+                ruleFromDb.setLastRuleChecksum(optimizationRule.getLastRuleChecksum());
+                optimizationRuleDao.save(ruleFromDb, session);
+                session.getTransaction().commit();
+                return true;
+            }
+        } catch (Exception e) {
+            if (null != session && null != session.getTransaction()) {
+                session.getTransaction().rollback();
+            }
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean updateTraingDataChecksum(CoreOptimizationRule optimizationRule) {
+        Session session = null;
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
+            session.beginTransaction();
+            CoreOptimizationRule ruleFromDb = optimizationRuleDao.findById(optimizationRule.getId(), session);
+            if (ruleFromDb != null) {
                 ruleFromDb.setLastTrainingDataChecksum(optimizationRule.getLastTrainingDataChecksum());
                 optimizationRuleDao.save(ruleFromDb, session);
                 session.getTransaction().commit();

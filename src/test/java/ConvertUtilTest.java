@@ -1,6 +1,8 @@
 import com.pubvantage.utils.AppResource;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.junit.Test;
 
 import java.util.*;
 
@@ -21,6 +23,16 @@ public class ConvertUtilTest {
 
         appResource = new AppResource();
         properties = appResource.getPropValues();
+    }
+    @Test
+    public void hash(){
+        String hash = "35454B055CC325EA1AF2126E27707052";
+        String password = "ILoveJava";
+
+        String md5Hex = DigestUtils
+                .md5Hex(password);
+
+        return;
     }
 
 //    @Test
