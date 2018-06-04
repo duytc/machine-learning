@@ -192,6 +192,7 @@ public class AppMain {
             boolean trainingDataChanged = optimizationRuleService.isChecksumChanged(currentTrainingDataChecksum, optimizationRule.getLastTrainingDataChecksum());
             boolean optimizedFieldsChanged = optimizationRuleService.isChecksumChanged(currentRuleChecksum, optimizationRule.getLastRuleChecksum());
             if (!optimizedFieldsChanged && !trainingDataChanged) {
+                optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, true);
                 logger.info(MessageConstant.SKIP_LEARNING);
                 LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_OK, MessageConstant.SKIP_LEARNING, null);
                 return new Gson().toJson(learnerResponse);
@@ -200,6 +201,7 @@ public class AppMain {
             boolean updateTrainingDataChecksumOk = saveNewTrainingDataChecksum(optimizationRule, currentTrainingDataChecksum);
             boolean updateRuleChecksumOk = saveNewRuleChecksum(optimizationRule, currentRuleChecksum);
             if(!updateTrainingDataChecksumOk || !updateRuleChecksumOk){
+                optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, true);
                 logger.error(MessageConstant.UPDATE_CHECKSUM_ERROR);
                 LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_CREATED, MessageConstant.UPDATE_CHECKSUM_ERROR, null);
                 response.status(HttpStatus.SC_CREATED);
@@ -262,6 +264,7 @@ public class AppMain {
             boolean trainingDataChanged = optimizationRuleService.isChecksumChanged(currentTrainingDataChecksum, optimizationRule.getLastTrainingDataChecksum());
             boolean optimizedFieldsChanged = optimizationRuleService.isChecksumChanged(currentRuleChecksum, optimizationRule.getLastRuleChecksum());
             if (!optimizedFieldsChanged && !trainingDataChanged) {
+                optimizationRuleService.setLoadingForOptimizationRule(optimizationRuleId, true);
                 logger.info(MessageConstant.SKIP_LEARNING);
                 LearnerResponse learnerResponse = new LearnerResponse(HttpStatus.SC_CREATED, MessageConstant.SKIP_LEARNING, null);
                 response.status(HttpStatus.SC_CREATED);
