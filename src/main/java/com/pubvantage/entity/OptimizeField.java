@@ -3,7 +3,7 @@ package com.pubvantage.entity;
 /**
  * Created by quyendq on 03/03/2018.
  */
-public class OptimizeField {
+public class OptimizeField implements Comparable {
     private String field;
     private Double weight;
     private String goal;
@@ -42,4 +42,15 @@ public class OptimizeField {
     }
 
 
+    @Override
+    public int compareTo(Object compareObject) {
+        if(compareObject == null){
+            return 1;
+        }
+        OptimizeField compareOptimizeField = (OptimizeField) compareObject;
+        if (this.field.compareTo(compareOptimizeField.getField()) >= 0) {
+            return 1;
+        }
+        return -1;
+    }
 }

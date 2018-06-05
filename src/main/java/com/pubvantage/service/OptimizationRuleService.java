@@ -15,18 +15,15 @@ import org.apache.spark.sql.Row;
 import org.hibernate.Query;
 import org.hibernate.Session;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class OptimizationRuleService extends AbstractGenericService<CoreOptimizationRule> implements OptimizationRuleServiceInterface {
-    private CoreAutoOptimizationConfigDao coreAutoOptimizationConfigDao = new CoreAutoOptimizationConfigDao();
     private static Logger logger = Logger.getLogger(OptimizationRuleService.class.getName());
     private ReportViewServiceInterface reportViewService = new ReportViewService();
     private SparkDataTrainingDaoInterface sparkDataTrainingDao = new SparkDataTrainingDao();
 
-    private OptimizationRuleDaoInterface optimizationRuleDaoInterface = new OptimizationRuleDao();
+    private OptimizationRuleDaoInterface optimizationRuleDao = new OptimizationRuleDao();
+    private OptimizeField field;
 
     @Override
     public List<String> getColumnsForScoreTable(CoreOptimizationRule optimizationRule) {
@@ -82,7 +79,7 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
         boolean isValid = false;
         try {
             session = HibernateUtil.getSessionFactory().openSession();
-            isValid = coreAutoOptimizationConfigDao.checkToken(session, autoOptimizationConfigId, token);
+            isValid = optimizationRuleDao.checkToken(session, autoOptimizationConfigId, token);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         } finally {
@@ -157,6 +154,29 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
         return reportViewService.getNoSpaceDimensions(reportView);
     }
 
+    /**
+     * compute hash md5 use optimize field
+     *
+     * @param optimizationRule rule
+     * @return checksum
+     */
+    @Override
+    public String getCurrentRuleChecksum(CoreOptimizationRule optimizationRule) {
+        if (optimizationRule == null) {
+            return null;
+        }
+        List<OptimizeField> optimizeFieldList = getOptimizeFields(optimizationRule);
+        Collections.sort(optimizeFieldList);
+        StringBuilder stringBuilder = new StringBuilder();
+        for (OptimizeField field : optimizeFieldList) {
+            stringBuilder.append(field.getField())
+                    .append(field.getGoal())
+                    .append(field.getWeight());
+        }
+
+        return ConvertUtil.hashMd5(stringBuilder.toString());
+    }
+
     @Override
     public String getCurrentTrainingDataChecksum(Long optimizationRuleId) {
         if (optimizationRuleId == null) {
@@ -165,7 +185,7 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
         Session session = null;
         try {
             session = HibernateUtil.getSessionFactory().openSession();
-            Object currentChecksum = coreAutoOptimizationConfigDao.getCurrentChecksum("__data_training_" + optimizationRuleId, session);
+            Object currentChecksum = optimizationRuleDao.getCurrentChecksum("__data_training_" + optimizationRuleId, session);
             if (currentChecksum == null) {
                 return null;
             }
@@ -189,15 +209,41 @@ public class OptimizationRuleService extends AbstractGenericService<CoreOptimiza
     }
 
     @Override
-    public boolean updateChecksum(CoreOptimizationRule optimizationRule) {
+    public boolean updateRuleChecksum(CoreOptimizationRule optimizationRule) {
         Session session = null;
         try {
             session = HibernateUtil.getSessionFactory().openSession();
             session.beginTransaction();
-            CoreOptimizationRule ruleFromDb = optimizationRuleDaoInterface.findById(optimizationRule.getId(), session);
-            if(ruleFromDb != null){
+            CoreOptimizationRule ruleFromDb = optimizationRuleDao.findById(optimizationRule.getId(), session);
+            if (ruleFromDb != null) {
+                ruleFromDb.setLastRuleChecksum(optimizationRule.getLastRuleChecksum());
+                optimizationRuleDao.save(ruleFromDb, session);
+                session.getTransaction().commit();
+                return true;
+            }
+        } catch (Exception e) {
+            if (null != session && null != session.getTransaction()) {
+                session.getTransaction().rollback();
+            }
+            logger.error(e.getMessage(), e);
+        } finally {
+            if (session != null) {
+                session.close();
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean updateTraingDataChecksum(CoreOptimizationRule optimizationRule) {
+        Session session = null;
+        try {
+            session = HibernateUtil.getSessionFactory().openSession();
+            session.beginTransaction();
+            CoreOptimizationRule ruleFromDb = optimizationRuleDao.findById(optimizationRule.getId(), session);
+            if (ruleFromDb != null) {
                 ruleFromDb.setLastTrainingDataChecksum(optimizationRule.getLastTrainingDataChecksum());
-                optimizationRuleDaoInterface.save(ruleFromDb, session);
+                optimizationRuleDao.save(ruleFromDb, session);
                 session.getTransaction().commit();
                 return true;
             }

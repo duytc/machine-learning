@@ -1,6 +1,7 @@
 package com.pubvantage.utils;
 
 import com.pubvantage.constant.MyConstant;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 
 import java.math.BigDecimal;
@@ -369,5 +370,12 @@ public class ConvertUtil {
             doubles[index] = value;
         }
         return doubles;
+    }
+
+    public static String hashMd5(String input) {
+        if (input == null) {
+            return null;
+        }
+        return DigestUtils.md5Hex(input);
     }
 }

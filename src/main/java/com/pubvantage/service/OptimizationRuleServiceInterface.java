@@ -29,8 +29,12 @@ public interface OptimizationRuleServiceInterface extends GenericServiceInterfac
 
     String getCurrentTrainingDataChecksum(Long optimizationRuleId);
 
+    String getCurrentRuleChecksum(CoreOptimizationRule optimizationRule);
+
     boolean isChecksumChanged(String current, String last);
 
-    boolean updateChecksum(CoreOptimizationRule optimizationRule);
+    boolean updateTraingDataChecksum(CoreOptimizationRule optimizationRule);
+
+    boolean updateRuleChecksum(CoreOptimizationRule optimizationRule);
 
 }
